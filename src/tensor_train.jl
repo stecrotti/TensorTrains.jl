@@ -47,20 +47,18 @@ end
 isapprox(A::T, B::T; kw...) where {T<:TensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
 "Construct a uniform TT with given bond dimensions"
-function uniform_tt(bondsizes, q...)
+function uniform_tt(bondsizes::AbstractVector{<:Integer}, q...)
     TensorTrain([ones(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
 end
 uniform_tt(d::Integer, L::Integer, q...) = uniform_tt([1; fill(d, L); 1], q...)
 
 "Construct a random TT with given bond dimensions"
-function rand_tt(bondsizes, q...)
+function rand_tt(bondsizes::AbstractVector{<:Integer}, q...)
     TensorTrain([rand(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
 end
 rand_tt(d::Integer, L::Integer, q...) = rand_tt([1; fill(d, L); 1], q...)
 
 bond_dims(A::TensorTrain) = [size(A[t], 2) for t in 1:lastindex(A)-1]
-
-getT(A::TensorTrain) = length(A) - 1
 
 eltype(::TensorTrain{F,N}) where {N,F} = F
 
@@ -78,7 +76,7 @@ function sweep_RtoL!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     @cast M[m, (n, x)] := Cᵀ[m, n, x]
     D = fill(1.0,1,1,1)  # initialize
 
-    for t in getT(C)+1:-1:2
+    for t in length(C):-1:2
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x in 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
@@ -97,7 +95,7 @@ function sweep_LtoR!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     @cast M[(m, x), n] |= C⁰[m, n, x]
     D = fill(1.0,1,1,1)  # initialize
 
-    for t in 1:getT(C)
+    for t in 1:length(C)-1
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x in 1:q
         C[t] = _reshapeas(Aᵗ, C[t])
@@ -115,14 +113,13 @@ function compress!(A::TensorTrain; svd_trunc=TruncThresh(1e-6))
 end
 
 function accumulate_L(A::TensorTrain)
-    T = getT(A)
-    L = [zeros(0) for _ in 0:T]
+    L = [zeros(0) for _ in eachindex(A)]
     A⁰ = _reshape1(A[begin])
     @reduce L⁰[a¹] := sum(x) A⁰[1,a¹,x]
     L[1] = L⁰
 
     Lᵗ = L⁰
-    for t in 1:T
+    for t in 1:length(A)-1
         Aᵗ = _reshape1(A[t+1])
         @reduce Lᵗ[aᵗ⁺¹] |= sum(x,aᵗ) Lᵗ[aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] 
         L[t+1] = Lᵗ
@@ -131,14 +128,13 @@ function accumulate_L(A::TensorTrain)
 end
 
 function accumulate_R(A::TensorTrain)
-    T = getT(A)
-    R = [zeros(0) for _ in 0:T]
+    R = [zeros(0) for _ in eachindex(A)]
     Aᵀ = _reshape1(A[end])
     @reduce Rᵀ[aᵀ] := sum(x) Aᵀ[aᵀ,1,x]
     R[end] = Rᵀ
 
     Rᵗ = Rᵀ
-    for t in T:-1:1
+    for t in length(A)-1:-1:1
         Aᵗ = _reshape1(A[t])
         @reduce Rᵗ[aᵗ] |= sum(x,aᵗ⁺¹) Aᵗ[aᵗ,aᵗ⁺¹,x] * Rᵗ[aᵗ⁺¹] 
         R[t] = Rᵗ
@@ -147,8 +143,8 @@ function accumulate_R(A::TensorTrain)
 end
 
 function accumulate_M(A::TensorTrain)
-    T = getT(A)
-    M = [zeros(0, 0) for _ in 0:T, _ in 0:T]
+    L = length(A)
+    M = [zeros(0, 0) for _ in 1:L, _ in 1:L]
     
     # initial condition
     for t in 1:T
@@ -157,7 +153,7 @@ function accumulate_M(A::TensorTrain)
         M[t, t+1] = Mᵗᵗ⁺¹
     end
 
-    for t in 1:getT(A)
+    for t in 1:L-1
         Mᵗᵘ⁻¹ = M[t, t+1]
         for u in t+2:T+1
             Aᵘ⁻¹ = _reshape1(A[u-1])
@@ -170,7 +166,7 @@ function accumulate_M(A::TensorTrain)
     return M
 end
 
-# p(xᵗ) for each t
+# p(xˡ) for each `l`
 function marginals(A::TensorTrain{F,N};
         L = accumulate_L(A), R = accumulate_R(A)) where {F,N}
     
@@ -184,7 +180,7 @@ function marginals(A::TensorTrain{F,N};
     pᵀ ./= sum(pᵀ)
     pᵀ = reshape(pᵀ, size(A[end])[3:end])
 
-    p = map(2:getT(A)) do t 
+    p = map(2:length(A)-1) do t 
         Lᵗ⁻¹ = L[t-1]
         Aᵗ = _reshape1(A[t])
         Rᵗ⁺¹ = R[t+1]
@@ -196,18 +192,18 @@ function marginals(A::TensorTrain{F,N};
     return append!([p⁰], p, [pᵀ])
 end
 
-# p(xᵗ,xᵘ) for all (t,u)
-function marginals_tu(A::TensorTrain{F,N};
+# p(xˡ,xᵐ) for all `(l,m)`
+function twovar_marginals(A::TensorTrain{F,N};
         L = accumulate_L(A), R = accumulate_R(A), M = accumulate_M(A),
-        Δtmax = getT(A)) where {F,N}
-    T = getT(A)
+        Δtmax = length(A)-1) where {F,N}
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
-    b = Array{F,2*(N-2)}[zeros(ones(Int, 2*(N-2))...) for _ in 0:T, _ in 0:T]
-    for t in 1:T
+    b = Array{F,2*(N-2)}[zeros(ones(Int, 2*(N-2))...) 
+        for _ in eachindex(A), _ in eachindex(A)]
+    for t in 1:length(A)-1
         Lᵗ⁻¹ = t == 1 ? [1.0;] : L[t-1]
         Aᵗ = _reshape1(A[t])
         for u in t+1:min(T+1,t+Δtmax)
-            Rᵘ⁺¹ = u == T + 1 ? [1.0;] : R[u+1]
+            Rᵘ⁺¹ = u == length(A) ? [1.0;] : R[u+1]
             Aᵘ = _reshape1(A[u])
             Mᵗᵘ = M[t, u]
             @tullio bᵗᵘ[xᵗ, xᵘ] :=
@@ -231,9 +227,9 @@ end
 function normalize!(A::TensorTrain)
     c = normalize_eachmatrix!(A)
     Z = normalization(A)
-    T = getT(A)
+    L = length(A)
     for a in A
-        a ./= Z^(1/(T+1))
+        a ./= Z^(1/L)
     end
     c + log(Z)
 end
@@ -268,13 +264,13 @@ end
 # returns `x,p`, the sampled sequence and its probability
 function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
         R = accumulate_R(A)) where {F,N}
-    T = getT(A)
-    @assert length(x) == T + 1
+    L = length(A)
+    @assert length(x) == L
     @assert all(length(xᵗ) == N-2 for xᵗ in x)
 
     Q = ones(F, 1, 1)  # stores product of the first `t` matrices, evaluated at the sampled `x⁰,x¹,...,xᵗ`
     for t in eachindex(A)
-        Rᵗ⁺¹ = t == T+1 ? ones(F,1) : R[t+1]
+        Rᵗ⁺¹ = t == L ? ones(F,1) : R[t+1]
         # collapse multivariate xᵗ into 1D vector, sample from it
         Aᵗ = _reshape1(A[t])
         @tullio p[x] := Q[m] * Aᵗ[m,n,x] * Rᵗ⁺¹[n]

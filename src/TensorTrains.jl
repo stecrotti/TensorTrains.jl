@@ -15,7 +15,7 @@ export
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, isapprox, evaluate, 
     bond_dims, uniform_tt, rand_tt, sweep_RtoL!, sweep_LtoR!, compress!,
-    marginalize, marginals, marginals_tu, normalization, normalize!,
+    marginalize, marginals, twovar_marginals, normalization, normalize!,
     sample!, sample
 
 include("utils.jl")

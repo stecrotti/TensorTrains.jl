@@ -1,13 +1,15 @@
 using TensorTrains
-using Random, Suppressor
+using Random, Suppressor, InvertedIndices
 using Test
+
+include("exact.jl")
 
 svd_trunc = TruncThresh(0.0)
 @suppress begin
     @show svd_trunc
 end
 
-@testset "single variable xᵗ" begin
+@testset "single variable" begin
     tensors = [rand(1,3,2), rand(3,4,2), rand(4,10,2), rand(10,1,2)]
     C = TensorTrain(tensors)
     x = [rand(1:2,1) for _ in C]
@@ -25,7 +27,7 @@ end
     @test e4 ≈ e1
 end
 
-@testset "two variables (xᵗ,yᵗ)" begin
+@testset "two variables" begin
     tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
     C = TensorTrain(tensors)
     x = [rand(1:2,2) for _ in C]
@@ -102,6 +104,18 @@ end
             x, p = sample(rng, A)
             normalize!(A)
             @test evaluate(A, x) ≈ p
+        end
+    end
+end
+
+@testset "Exact" begin
+    L = 3
+    for N in 1:3
+        for qs in 1:3
+            A = rand_tt( [1; rand(1:7, L-1); 1], qs... )
+            m = marginals(A)
+            m_exact = exact_marginals(A)
+            @test m ≈ m_exact
         end
     end
 end
