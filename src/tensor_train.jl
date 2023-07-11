@@ -1,18 +1,32 @@
+"""
+    AbstractTensorTrain
+
+An abstract type representing a Tensor Train.
+Currently, there is only one concrete subtype [TensorTrain](@ref).
+"""
+
 abstract type AbstractTensorTrain end
 
 """
-[Aᵢⱼ] ⨉ 🚂
+    TensorTrain{F<:Number, N} <: AbstractTensorTrain
+
+A type for representing a Tensor Train
+- `F` is the type of the matrix entries
+- `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-struct TensorTrain{F<:Real, N} <: AbstractTensorTrain
+struct TensorTrain{F<:Number, N} <: AbstractTensorTrain
     tensors::Vector{Array{F,N}}
-    function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Real, N}
+
+    function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N}
+        N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensors[1],1) == size(tensors[end],2) == 1 ||
             throw(ArgumentError("First matrix must have 1 row, last matrix must have 1 column"))
         check_bond_dims(tensors) ||
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
-        new{F,N}(tensors)
+        return new{F,N}(tensors)
     end
 end
+
 
 @forward TensorTrain.tensors getindex, iterate, firstindex, lastindex, setindex!, 
     check_bond_dims, length, eachindex
@@ -30,8 +44,13 @@ function check_bond_dims(tensors::Vector{<:Array})
     return true
 end
 
-# keep size of matrix elements under control by dividing by the max
-# return the log of the product of the individual normalizations 
+
+"""
+    normalize_eachmatrix!(A::TensorTrain)
+
+Divide each matrix by its maximum (absolute) element and return the sum of the logs of the individual normalizations.
+This is used to keep the entries from exploding during computations
+"""
 function normalize_eachmatrix!(A::TensorTrain)
     c = 0.0
     for m in A
@@ -46,22 +65,59 @@ end
 
 isapprox(A::T, B::T; kw...) where {T<:TensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
-"Construct a uniform TT with given bond dimensions"
+"""
+    uniform_tt(bondsizes::AbstractVector{<:Integer}, q...)
+    uniform_tt(d::Integer, L::Integer, q...)
+
+Construct a Tensor Train full of 1's, by specifying either:
+- `bondsizes`: the size of each bond
+- `d` a fixed size for all bonds, `L` the length
+and
+- `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
+"""
 function uniform_tt(bondsizes::AbstractVector{<:Integer}, q...)
     TensorTrain([ones(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
 end
-uniform_tt(d::Integer, L::Integer, q...) = uniform_tt([1; fill(d, L); 1], q...)
+uniform_tt(d::Integer, L::Integer, q...) = uniform_tt([1; fill(d, L-1); 1], q...)
 
-"Construct a random TT with given bond dimensions"
+"""
+    rand_tt(bondsizes::AbstractVector{<:Integer}, q...)
+    rand_tt(d::Integer, L::Integer, q...)
+
+Construct a Tensor Train with entries random in [0,1], by specifying either:
+- `bondsizes`: the size of each bond
+- `d` a fixed size for all bonds, `L` the length
+and
+- `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
+"""
 function rand_tt(bondsizes::AbstractVector{<:Integer}, q...)
     TensorTrain([rand(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
 end
-rand_tt(d::Integer, L::Integer, q...) = rand_tt([1; fill(d, L); 1], q...)
+rand_tt(d::Integer, L::Integer, q...) = rand_tt([1; fill(d, L-1); 1], q...)
 
+"""
+    bond_dims(A::TensorTrain)
+
+Return a vector with the dimensions of the virtual bonds
+"""
 bond_dims(A::TensorTrain) = [size(A[t], 2) for t in 1:lastindex(A)-1]
 
 eltype(::TensorTrain{F,N}) where {N,F} = F
 
+"""
+    evaluate(A::TensorTrain, X...)
+
+Evaluate the Tensor Train `A` at input `X`
+
+Example:
+```@example
+    L = 3
+    q = (2, 3)
+    A = rand_tt(4, L, q...)
+    X = [[rand(1:qi) for qi in q] for l in 1:L]
+    evaluate(A, X)
+```
+"""
 evaluate(A::TensorTrain, X...) = only(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
 
 _reshape1(x) = reshape(x, size(x,1), size(x,2), prod(size(x)[3:end])...)
@@ -168,7 +224,7 @@ end
 
 # p(xˡ) for each `l`
 function marginals(A::TensorTrain{F,N};
-        L = accumulate_L(A), R = accumulate_R(A)) where {F,N}
+        L = accumulate_L(A), R = accumulate_R(A)) where {F<:Real,N}
     
     A⁰ = _reshape1(A[begin]); R¹ = R[2]
     @reduce p⁰[x] := sum(a¹) A⁰[1,a¹,x] * R¹[a¹]
@@ -195,7 +251,7 @@ end
 # p(xˡ,xᵐ) for all `(l,m)`
 function twovar_marginals(A::TensorTrain{F,N};
         L = accumulate_L(A), R = accumulate_R(A), M = accumulate_M(A),
-        Δtmax = length(A)-1) where {F,N}
+        Δtmax = length(A)-1) where {F<:Real,N}
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
     b = Array{F,2*(N-2)}[zeros(ones(Int, 2*(N-2))...) 
         for _ in eachindex(A), _ in eachindex(A)]
@@ -263,7 +319,7 @@ end
 # hierarchical sampling p(x) = p(x⁰)p(x¹|x⁰)p(x²|x¹,x⁰) ...
 # returns `x,p`, the sampled sequence and its probability
 function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
-        R = accumulate_R(A)) where {F,N}
+        R = accumulate_R(A)) where {F<:Real,N}
     L = length(A)
     @assert length(x) == L
     @assert all(length(xᵗ) == N-2 for xᵗ in x)
@@ -284,14 +340,14 @@ function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
     return x, p
 end
 
-function sample!(x, A::TensorTrain{F,N}; R = accumulate_R(A)) where {F,N}
+function sample!(x, A::TensorTrain{F,N}; R = accumulate_R(A)) where {F<:Real,N}
     sample!(GLOBAL_RNG, x, A; R)
 end
 function sample(rng::AbstractRNG, A::TensorTrain{F,N};
-        R = accumulate_R(A)) where {F,N}
+        R = accumulate_R(A)) where {F<:Real,N}
     x = [zeros(Int, N-2) for Aᵗ in A]
     sample!(rng, x, A; R)
 end
-function sample(A::TensorTrain{F,N}; R = accumulate_R(A)) where {F,N}
+function sample(A::TensorTrain{F,N}; R = accumulate_R(A)) where {F<:Real,N}
     sample(GLOBAL_RNG, A; R)
 end
