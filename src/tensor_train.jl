@@ -147,7 +147,7 @@ function accumulate_M(A::TensorTrain)
     M = [zeros(0, 0) for _ in 1:L, _ in 1:L]
     
     # initial condition
-    for t in 1:T
+    for t in 1:L-1
         range_aᵗ⁺¹ = axes(A[t+1], 1)
         Mᵗᵗ⁺¹ = [float((a == c)) for a in range_aᵗ⁺¹, c in range_aᵗ⁺¹]
         M[t, t+1] = Mᵗᵗ⁺¹
@@ -155,7 +155,7 @@ function accumulate_M(A::TensorTrain)
 
     for t in 1:L-1
         Mᵗᵘ⁻¹ = M[t, t+1]
-        for u in t+2:T+1
+        for u in t+2:L
             Aᵘ⁻¹ = _reshape1(A[u-1])
             @tullio Mᵗᵘ[aᵗ⁺¹, aᵘ] := Mᵗᵘ⁻¹[aᵗ⁺¹, aᵘ⁻¹] * Aᵘ⁻¹[aᵘ⁻¹, aᵘ, x]
             M[t, u] = Mᵗᵘ
