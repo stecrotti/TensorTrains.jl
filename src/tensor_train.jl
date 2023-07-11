@@ -1,9 +1,11 @@
+abstract type AbstractTensorTrain end
+
 """
 [Aᵢⱼ] ⨉ 🚂
 """
-struct MatrixProductTrain{F<:Real, N} <: MPEM
+struct TensorTrain{F<:Real, N} <: AbstractTensorTrain
     tensors::Vector{Array{F,N}}
-    function MatrixProductTrain(tensors::Vector{Array{F,N}}) where {F<:Real, N}
+    function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Real, N}
         size(tensors[1],1) == size(tensors[end],2) == 1 ||
             throw(ArgumentError("First matrix must have 1 row, last matrix must have 1 column"))
         check_bond_dims(tensors) ||
@@ -12,7 +14,7 @@ struct MatrixProductTrain{F<:Real, N} <: MPEM
     end
 end
 
-@forward MatrixProductTrain.tensors getindex, iterate, firstindex, lastindex, setindex!, 
+@forward TensorTrain.tensors getindex, iterate, firstindex, lastindex, setindex!, 
     check_bond_dims, length, eachindex
 
 
@@ -30,7 +32,7 @@ end
 
 # keep size of matrix elements under control by dividing by the max
 # return the log of the product of the individual normalizations 
-function normalize_eachmatrix!(A::MatrixProductTrain)
+function normalize_eachmatrix!(A::TensorTrain)
     c = 0.0
     for m in A
         mm = maximum(abs, m)
@@ -42,25 +44,27 @@ function normalize_eachmatrix!(A::MatrixProductTrain)
     c
 end
 
-isapprox(A::T, B::T; kw...) where {T<:MatrixProductTrain} = isapprox(A.tensors, B.tensors; kw...)
+isapprox(A::T, B::T; kw...) where {T<:TensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
-const MPEM1{F} = MatrixProductTrain{F, 3}
-const MPEM2{F} = MatrixProductTrain{F, 4}
-# const MPEM3{F} = MatrixProductTrain{F, 5}
+"Construct a uniform TT with given bond dimensions"
+function uniform_tt(bondsizes, q...)
+    TensorTrain([ones(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
+end
+uniform_tt(d::Integer, L::Integer, q...) = uniform_tt([1; fill(d, L); 1], q...)
 
-"Construct a uniform mpem with given bond dimensions"
-mpem(bondsizes, q...) = MatrixProductTrain([ones(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
+"Construct a random TT with given bond dimensions"
+function rand_tt(bondsizes, q...)
+    TensorTrain([rand(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
+end
+rand_tt(d::Integer, L::Integer, q...) = rand_tt([1; fill(d, L); 1], q...)
 
-"Construct a random mpem with given bond dimensions"
-rand_mpem(bondsizes, q...) = MatrixProductTrain([rand(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
+bond_dims(A::TensorTrain) = [size(A[t], 2) for t in 1:lastindex(A)-1]
 
-bond_dims(A::MPEM) = [size(A[t], 2) for t in 1:lastindex(A)-1]
+getT(A::TensorTrain) = length(A) - 1
 
-getT(A::MatrixProductTrain) = length(A) - 1
+eltype(::TensorTrain{F,N}) where {N,F} = F
 
-eltype(::MatrixProductTrain{F,N}) where {N,F} = F
-
-evaluate(A::MatrixProductTrain, X...) = only(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
+evaluate(A::TensorTrain, X...) = only(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
 
 _reshape1(x) = reshape(x, size(x,1), size(x,2), prod(size(x)[3:end])...)
 _reshapeas(x,y) = reshape(x, size(x,1), size(x,2), size(y)[3:end]...)
@@ -68,7 +72,7 @@ _reshapeas(x,y) = reshape(x, size(x,1), size(x,2), size(y)[3:end]...)
 
 
 # when truncating it assumes that matrices are already left-orthogonal
-function sweep_RtoL!(C::MatrixProductTrain; svd_trunc=TruncThresh(1e-6))
+function sweep_RtoL!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     Cᵀ = _reshape1(C[end])
     q = size(Cᵀ, 3)
     @cast M[m, (n, x)] := Cᵀ[m, n, x]
@@ -87,7 +91,7 @@ function sweep_RtoL!(C::MatrixProductTrain; svd_trunc=TruncThresh(1e-6))
 end
 
 # when truncating it assumes that matrices are already right-orthogonal
-function sweep_LtoR!(C::MatrixProductTrain; svd_trunc=TruncThresh(1e-6))
+function sweep_LtoR!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     C⁰ = _reshape1(C[begin])
     q = size(C⁰, 3)
     @cast M[(m, x), n] |= C⁰[m, n, x]
@@ -105,12 +109,12 @@ function sweep_LtoR!(C::MatrixProductTrain; svd_trunc=TruncThresh(1e-6))
     return C
 end
 
-function compress!(A::MatrixProductTrain; svd_trunc=TruncThresh(1e-6))
+function compress!(A::TensorTrain; svd_trunc=TruncThresh(1e-6))
     sweep_LtoR!(A, svd_trunc=TruncThresh(0.0))
     sweep_RtoL!(A; svd_trunc)
 end
 
-function accumulate_L(A::MatrixProductTrain)
+function accumulate_L(A::TensorTrain)
     T = getT(A)
     L = [zeros(0) for _ in 0:T]
     A⁰ = _reshape1(A[begin])
@@ -126,7 +130,7 @@ function accumulate_L(A::MatrixProductTrain)
     return L
 end
 
-function accumulate_R(A::MatrixProductTrain)
+function accumulate_R(A::TensorTrain)
     T = getT(A)
     R = [zeros(0) for _ in 0:T]
     Aᵀ = _reshape1(A[end])
@@ -142,7 +146,7 @@ function accumulate_R(A::MatrixProductTrain)
     return R
 end
 
-function accumulate_M(A::MatrixProductTrain)
+function accumulate_M(A::TensorTrain)
     T = getT(A)
     M = [zeros(0, 0) for _ in 0:T, _ in 0:T]
     
@@ -167,7 +171,7 @@ function accumulate_M(A::MatrixProductTrain)
 end
 
 # p(xᵗ) for each t
-function marginals(A::MatrixProductTrain{F,N};
+function marginals(A::TensorTrain{F,N};
         L = accumulate_L(A), R = accumulate_R(A)) where {F,N}
     
     A⁰ = _reshape1(A[begin]); R¹ = R[2]
@@ -193,7 +197,7 @@ function marginals(A::MatrixProductTrain{F,N};
 end
 
 # p(xᵗ,xᵘ) for all (t,u)
-function marginals_tu(A::MatrixProductTrain{F,N};
+function marginals_tu(A::TensorTrain{F,N};
         L = accumulate_L(A), R = accumulate_R(A), M = accumulate_M(A),
         Δtmax = getT(A)) where {F,N}
     T = getT(A)
@@ -216,7 +220,7 @@ function marginals_tu(A::MatrixProductTrain{F,N};
     b
 end
 
-function normalization(A::MatrixProductTrain; l = accumulate_L(A), r = accumulate_R(A))
+function normalization(A::TensorTrain; l = accumulate_L(A), r = accumulate_R(A))
     z = only(l[end])
     @assert only(r[begin]) ≈ z "z=$z, got $(only(r[begin])), A=$A"  # sanity check
     z
@@ -224,7 +228,7 @@ end
 
 # normalize so that the sum over all trajectories is 1.
 # return log of the normalization
-function normalize!(A::MatrixProductTrain)
+function normalize!(A::TensorTrain)
     c = normalize_eachmatrix!(A)
     Z = normalization(A)
     T = getT(A)
@@ -235,10 +239,10 @@ function normalize!(A::MatrixProductTrain)
 end
 
 # return a new MPTrain such that `A(x)+B(x)=(A+B)(x)`. Matrix sizes are doubled
-+(A::MatrixProductTrain, B::MatrixProductTrain) = _compose(+, A, B)
--(A::MatrixProductTrain, B::MatrixProductTrain) = _compose(-, A, B)
++(A::TensorTrain, B::TensorTrain) = _compose(+, A, B)
+-(A::TensorTrain, B::TensorTrain) = _compose(-, A, B)
 
-function _compose(f, A::MatrixProductTrain{F,NA}, B::MatrixProductTrain{F,NB}) where {F,NA,NB}
+function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     @assert NA == NB
     @assert length(A) == length(B)
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
@@ -257,12 +261,12 @@ function _compose(f, A::MatrixProductTrain{F,NA}, B::MatrixProductTrain{F,NB}) w
             reshape( reduce(hcat, Cᵗ), (sa .+ sb)[1:2]..., size(Aᵗ)[3:end]...)
         end
     end
-    MatrixProductTrain(tensors)
+    TensorTrain(tensors)
 end
 
 # hierarchical sampling p(x) = p(x⁰)p(x¹|x⁰)p(x²|x¹,x⁰) ...
 # returns `x,p`, the sampled sequence and its probability
-function sample!(rng::AbstractRNG, x, A::MatrixProductTrain{F,N};
+function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
         R = accumulate_R(A)) where {F,N}
     T = getT(A)
     @assert length(x) == T + 1
@@ -284,14 +288,14 @@ function sample!(rng::AbstractRNG, x, A::MatrixProductTrain{F,N};
     return x, p
 end
 
-function sample!(x, A::MatrixProductTrain{F,N}; R = accumulate_R(A)) where {F,N}
+function sample!(x, A::TensorTrain{F,N}; R = accumulate_R(A)) where {F,N}
     sample!(GLOBAL_RNG, x, A; R)
 end
-function sample(rng::AbstractRNG, A::MatrixProductTrain{F,N};
+function sample(rng::AbstractRNG, A::TensorTrain{F,N};
         R = accumulate_R(A)) where {F,N}
     x = [zeros(Int, N-2) for Aᵗ in A]
     sample!(rng, x, A; R)
 end
-function sample(A::MatrixProductTrain{F,N}; R = accumulate_R(A)) where {F,N}
+function sample(A::TensorTrain{F,N}; R = accumulate_R(A)) where {F,N}
     sample(GLOBAL_RNG, A; R)
 end
