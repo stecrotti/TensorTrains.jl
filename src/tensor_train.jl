@@ -202,7 +202,7 @@ function twovar_marginals(A::TensorTrain{F,N};
     for t in 1:length(A)-1
         Lᵗ⁻¹ = t == 1 ? [1.0;] : L[t-1]
         Aᵗ = _reshape1(A[t])
-        for u in t+1:min(T+1,t+Δtmax)
+        for u in t+1:min(length(A),t+Δtmax)
             Rᵘ⁺¹ = u == length(A) ? [1.0;] : R[u+1]
             Aᵘ = _reshape1(A[u])
             Mᵗᵘ = M[t, u]
