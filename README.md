@@ -77,13 +77,18 @@ L = 3        # length
 q = (2, 3)   # number of values taken by x, y
 d = 5        # bond dimension
 A = rand_tt(d, L, q...)    # construct Tensor Train with random positive entries
-xy = [[rand(1:qi) for qi in q] for _ in 1:L]    # random set of indices
+xy = [ [rand(1:qi) for qi in q] for _ in 1:L]    # random set of indices
 p = evaluate(A, xy)    # evaluate `A` at `xy`
-compress!(A; svd_trunc=TruncThresh(1e-8));    # compress `A` to reduce the bond dimension
+compress!(A; svd_trunc = TruncThresh(1e-8));    # compress `A` to reduce the bond dimension
 pnew = evaluate(A, xy)
-ε = abs((p-pnew)/p)
+ε = abs( (p - pnew)/p )
 ```
 
 ## References
 - https://tensornetwork.org: "an open-source review article focused on tensor network algorithms, applications, and software"
 - Oseledets, I.V., 2011. [Tensor-train decomposition](https://sites.pitt.edu/~sjh95/related_papers/tensor_train_decomposition.pdf). SIAM Journal on Scientific Computing, 33(5).
+
+## Related packages
+- [TensorTrains.jl](https://github.com/mbachmayr/TensorTrains.jl): conceived for the application of Tensor Train decomposition to elliptic PDEs, does not cover anything related to probability
+- [Tensor-Train-Julia](https://github.com/msdupuy/Tensor-Train-Julia): less lightweight, mostly designed for quantum applications, still WIP
+- [Itensors.jl](https://github.com/ITensor/ITensors.jl): a full-fledged Tensor Network library, mostly designed for quantum applications. Interface is more intuitive, but likely less efficient if all you need to do is simple operations on 1D Tensor Networks (e.g. tensors are `mutable` structs)
