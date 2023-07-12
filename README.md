@@ -62,7 +62,7 @@ Common operations are:
 - `sample` from a Tensor Train intended as a probability ditribution, see above
 - `+`,`-`: take the sum/difference of two TensorTrains
 
-## Example
+### Example
 Let's construct and initialize at random a Tensor Train of the form
 ```math
 f\left((x^1,y^1), (x^2,y^2), (x^3,y^3)\right) = \sum_{a^1,a^2} [A^1(x^1,y^1)]_{a^1}[A^2(x^2,y^2)]_{a^1,a^2}[A^3(x^3,y^3)]_{a^2}
@@ -80,3 +80,6 @@ pnew = compress!(A; svd_trunc=TruncThresh(1e-8));    # compress `A` to reduce th
 ε = abs((p-pnew)/p)
 ```
 
+## References
+- https://tensornetwork.org: "an open-source review article focused on tensor network algorithms, applications, and software"
+- Oseledets, I.V., 2011. [Tensor-train decomposition](https://sites.pitt.edu/~sjh95/related_papers/tensor_train_decomposition.pdf). SIAM Journal on Scientific Computing, 33(5).
