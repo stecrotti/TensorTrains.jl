@@ -22,4 +22,16 @@ normalize!(::TensorTrain)
 -
 sample!
 sample
+orthogonalize_right!
+orthogonalize_left!
+compress!
+```
+
+# SVD Truncators
+```@docs
+SVDTrunc
+TruncThresh
+TruncBond
+TruncBondMax
+TruncBondThresh
 ```

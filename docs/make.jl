@@ -2,7 +2,7 @@ using Documenter
 using TensorTrains
 
 makedocs(
-    sitename = "TensorTrains",
+    sitename = "TensorTrains.jl",
     format = Documenter.HTML(),
     modules = [TensorTrains]
 )

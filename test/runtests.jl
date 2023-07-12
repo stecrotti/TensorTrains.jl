@@ -15,11 +15,11 @@ end
     x = [rand(1:2,1) for _ in C]
     e1 = evaluate(C, x)
 
-    sweep_RtoL!(C; svd_trunc)
+    orthogonalize_right!(C; svd_trunc)
     e2 = evaluate(C, x)
     @test e2 ≈ e1
 
-    sweep_LtoR!(C; svd_trunc)
+    orthogonalize_left!(C; svd_trunc)
     e3 = evaluate(C, x)
     @test e3 ≈ e1
 
@@ -33,11 +33,11 @@ end
     x = [rand(1:2,2) for _ in C]
     e1 = evaluate(C, x)
 
-    sweep_RtoL!(C; svd_trunc)
+    orthogonalize_right!(C; svd_trunc)
     e2 = evaluate(C, x)
     @test e2 ≈ e1
 
-    sweep_LtoR!(C; svd_trunc)
+    orthogonalize_left!(C; svd_trunc)
     e3 = evaluate(C, x)
     @test e3 ≈ e1
 end
@@ -50,11 +50,11 @@ end
     x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
     e1 = evaluate(C, x)
 
-    sweep_RtoL!(C; svd_trunc)
+    orthogonalize_right!(C; svd_trunc)
     e2 = evaluate(C, x)
     @test e2 ≈ e1
 
-    sweep_LtoR!(C; svd_trunc)
+    orthogonalize_left!(C; svd_trunc)
     e3 = evaluate(C, x)
     @test e3 ≈ e1
 end

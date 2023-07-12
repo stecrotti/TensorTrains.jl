@@ -124,12 +124,18 @@ _reshapeas(x,y) = reshape(x, size(x,1), size(x,2), size(y)[3:end]...)
 
 
 
-# when truncating it assumes that matrices are already left-orthogonal
-function sweep_RtoL!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
+"""
+    orthogonalize_right!(A::TensorTrain; svd_trunc::SVDTrunc)
+
+Bring `A` to right-orthogonal form by means of SVD decompositions.
+
+Optionally perform truncations by passing a `SVDTrunc`.
+"""
+function orthogonalize_right!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     Cᵀ = _reshape1(C[end])
     q = size(Cᵀ, 3)
     @cast M[m, (n, x)] := Cᵀ[m, n, x]
-    D = fill(1.0,1,1,1)  # initialize
+    D = fill(1.0,1,1,1)
 
     for t in length(C):-1:2
         U, λ, V = svd_trunc(M)
@@ -143,12 +149,18 @@ function sweep_RtoL!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     return C
 end
 
-# when truncating it assumes that matrices are already right-orthogonal
-function sweep_LtoR!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
+"""
+    orthogonalize_left!(A::TensorTrain; svd_trunc::SVDTrunc)
+
+Bring `A` to left-orthogonal form by means of SVD decompositions.
+
+Optionally perform truncations by passing a `SVDTrunc`.
+"""
+function orthogonalize_left!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     C⁰ = _reshape1(C[begin])
     q = size(C⁰, 3)
     @cast M[(m, x), n] |= C⁰[m, n, x]
-    D = fill(1.0,1,1,1)  # initialize
+    D = fill(1.0,1,1,1)
 
     for t in 1:length(C)-1
         U, λ, V = svd_trunc(M)
@@ -162,9 +174,14 @@ function sweep_LtoR!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     return C
 end
 
+"""
+    compress!(A::TensorTrain; svd_trunc::SVDTrunc)
+
+Compress `A` by means of SVD decompositions + truncations
+"""
 function compress!(A::TensorTrain; svd_trunc=TruncThresh(1e-6))
-    sweep_LtoR!(A, svd_trunc=TruncThresh(0.0))
-    sweep_RtoL!(A; svd_trunc)
+    orthogonalize_right!(A, svd_trunc=TruncThresh(0.0))
+    orthogonalize_left!(A; svd_trunc)
 end
 
 function accumulate_L(A::TensorTrain)
