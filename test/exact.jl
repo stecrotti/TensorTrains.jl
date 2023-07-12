@@ -15,3 +15,17 @@ function exact_marginals(A::TensorTrain{F,N};
         mˡ
     end
 end
+
+function exact_twovar_marginals(A::TensorTrain{F,N}; 
+        p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A]) where {F,N}
+    map(Iterators.product(eachindex(A), eachindex(A))) do (l,m)
+        if l ≥ m
+            zeros(zeros(Int, 2*(N-2))...)
+        else
+            v = sum(p, dims=eachindex(A)[Not(l,m)])
+            pˡᵐ = reshape(v, qs[l]..., qs[m]...)
+            pˡᵐ ./= sum(pˡᵐ)
+            pˡᵐ
+        end
+    end
+end

@@ -12,6 +12,10 @@ end
 @testset "single variable" begin
     tensors = [rand(1,3,2), rand(3,4,2), rand(4,10,2), rand(10,1,2)]
     C = TensorTrain(tensors)
+
+    @test bond_dims(C) == [3,4,10]
+    @test eltype(C) == eltype(1.0)
+
     x = [rand(1:2,1) for _ in C]
     e1 = evaluate(C, x)
 
@@ -40,6 +44,10 @@ end
     orthogonalize_left!(C; svd_trunc)
     e3 = evaluate(C, x)
     @test e3 ≈ e1
+
+    compress!(C; svd_trunc=TruncThresh(1e-15))
+    e4 = evaluate(C, x)
+    @test e4 ≈ e1
 end
 
 @testset "random" begin
@@ -59,12 +67,32 @@ end
     @test e3 ≈ e1
 end
 
+@testset "uniform" begin
+    L = 5
+    q = (2, 4)
+    d = 3
+    C = uniform_tt(d, L, q...)
+    x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
+    e1 = evaluate(C, x)
+
+    orthogonalize_right!(C; svd_trunc)
+    e2 = evaluate(C, x)
+    @test e2 ≈ e1
+
+    orthogonalize_left!(C; svd_trunc)
+    e3 = evaluate(C, x)
+    @test e3 ≈ e1
+end
+
 @testset "Accumulators" begin
     tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
     A = TensorTrain(tensors)
-    L = TensorTrains.accumulate_L(A)
-    R = TensorTrains.accumulate_R(A)
-    @test L[end] ≈ R[begin]
+    l = TensorTrains.accumulate_L(A)
+    r = TensorTrains.accumulate_R(A)
+    m = TensorTrains.accumulate_M(A)
+    Z = only(l[end])
+    @test only(r[begin]) ≈ Z
+    @test l[begin]' * m[1,end] * r[end] ≈ Z
 end
 
 @testset "Sum of TTs" begin
@@ -116,6 +144,9 @@ end
             m = marginals(A)
             m_exact = exact_marginals(A)
             @test m ≈ m_exact
+            m2 = twovar_marginals(A)
+            m2_exact = exact_twovar_marginals(A)
+            @test m2 ≈ m2_exact
         end
     end
 end
