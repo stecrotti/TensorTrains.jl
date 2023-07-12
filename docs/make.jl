@@ -4,7 +4,11 @@ using TensorTrains
 makedocs(
     sitename = "TensorTrains.jl",
     format = Documenter.HTML(),
-    modules = [TensorTrains]
+    modules = [TensorTrains],
+    pages = [
+        "Home" => "index.md",
+        "Guide" => "guide.md"
+    ]
 )
 
 deploydocs(

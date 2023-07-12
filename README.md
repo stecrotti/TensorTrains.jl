@@ -31,7 +31,9 @@ Z = \sum_{x^1, x^2, \ldots, x^L} \sum_{a^1,a^2,\ldots,a^{L-1}} [A^1(x^1)]_{a^1}[
 ```
 such that 
 ```math
-\sum_{x^1, x^2, \ldots, x^L}p(x^1, x^2, \ldots, x^L)=\sum_{x^1, x^2, \ldots, x^L}\frac1Z \sum_{a^1,a^2,\ldots,a^{L-1}} [A^1(x^1)]_{a^1}[A^2(x^2)]_{a^1,a^2}\cdots [A^{L-1}(x^{L-1})]_{a^{L-2},a^{L-1}}[A^L(x^L)]_{a^{L-1}}=1
+\begin{aligned}
+1&=\sum_{x^1, x^2, \ldots, x^L}p(x^1, x^2, \ldots, x^L)\\&=\sum_{x^1, x^2, \ldots, x^L}\frac1Z \sum_{a^1,a^2,\ldots,a^{L-1}} [A^1(x^1)]_{a^1}[A^2(x^2)]_{a^1,a^2}\cdots [A^{L-1}(x^{L-1})]_{a^{L-2},a^{L-1}}[A^L(x^L)]_{a^{L-1}}
+\end{aligned}
 ```
 ### Compute marginals
 Single-variable
