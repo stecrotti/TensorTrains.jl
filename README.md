@@ -51,7 +51,16 @@ by first sampling $x^1\sim p(x^1)$, then $x^2\sim p(x^2|x^1)$ and so on.
 ## What can this package do?
 This small package provides some utilities for creating, manipulating and evaluating Tensor Trains interpreted as functions, with a focus on the probabilistic side. 
 Each variable $x^l$ is assumed to be multivariate.
-It is responsability of the user to make sure that the Tensor Train always represents a valid probability distribution.
+Whenever performing some probability-related operation, it is responsability of the user to make sure that the Tensor Train always represents a valid probability distribution.
+
+Common operations are:
+
+- `evaluate` a Tensor Train at a given set of indices
+- `orthogonalize_left!`, `orthogonalize_right!`: bring a Tensor Train to [left/right orthogonal form](https://tensornetwork.org/mps/)
+- `compress!` a Tensor Train using [SVD](https://en.wikipedia.org/wiki/Singular_value_decomposition)-based truncations
+- `normalize!` a Tensor Train in the probability sense (not in the $L_2$ norm sense!), see above
+- `sample` from a Tensor Train intended as a probability ditribution, see above
+- `+`,`-`: take the sum/difference of two TensorTrains
 
 ## Example
 Let's construct and initialize at random a Tensor Train of the form
@@ -64,5 +73,10 @@ using TensorTrains
 L = 3        # length
 q = (2, 3)   # number of values taken by x, y
 d = 5        # bond dimension
+A = rand_tt(d, L, q...)    # construct Tensor Train with random positive entries
+xy = [[rand(1:qi) for qi in q] for _ in 1:L]    # random set of indices
+p = evaluate(A, xy)    # evaluate `A` at `x`
+pnew = compress!(A; svd_trunc=TruncThresh(1e-8));    # compress `A` to reduce the bond dimension
+ε = abs((p-pnew)/p)
 ```
 
