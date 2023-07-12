@@ -2,9 +2,8 @@
     AbstractTensorTrain
 
 An abstract type representing a Tensor Train.
-Currently, there is only one concrete subtype [TensorTrain](@ref).
+Currently, there is only one concrete subtype [`TensorTrain`](@ref).
 """
-
 abstract type AbstractTensorTrain end
 
 """
