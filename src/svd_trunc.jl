@@ -70,7 +70,6 @@ end
 
 summary(svd_trunc::TruncBond) = "SVD truncation to bond size m'="*string(svd_trunc.mprime)
 
-
 """
     TruncBondMax{T} <: SVDTrunc
 
