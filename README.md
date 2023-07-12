@@ -75,8 +75,9 @@ q = (2, 3)   # number of values taken by x, y
 d = 5        # bond dimension
 A = rand_tt(d, L, q...)    # construct Tensor Train with random positive entries
 xy = [[rand(1:qi) for qi in q] for _ in 1:L]    # random set of indices
-p = evaluate(A, xy)    # evaluate `A` at `x`
-pnew = compress!(A; svd_trunc=TruncThresh(1e-8));    # compress `A` to reduce the bond dimension
+p = evaluate(A, xy)    # evaluate `A` at `xy`
+compress!(A; svd_trunc=TruncThresh(1e-8));    # compress `A` to reduce the bond dimension
+pnew = evaluate(A, xy)
 ε = abs((p-pnew)/p)
 ```
 
