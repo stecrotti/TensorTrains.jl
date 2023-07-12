@@ -22,7 +22,7 @@ Tensor Trains are used to parametrize wavefunctions in many-body quantum physics
 In this package we focus on the "classical" case where the Tensor Train directly represents a probability distribution $p(x^1, x^2, \ldots, x^L)$. 
 
 ## Efficient computation
-Given a Tensor Train Some simple recursive strategies can be employed to
+Given a Tensor Train some simple recursive strategies can be employed to
 
 ### Compute the normalization
 ```math
