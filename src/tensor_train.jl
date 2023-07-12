@@ -169,33 +169,33 @@ function compress!(A::TensorTrain; svd_trunc=TruncThresh(1e-6))
 end
 
 function accumulate_L(A::TensorTrain)
-    L = [zeros(0) for _ in eachindex(A)]
+    l = [zeros(0) for _ in eachindex(A)]
     A⁰ = _reshape1(A[begin])
-    @reduce L⁰[a¹] := sum(x) A⁰[1,a¹,x]
-    L[1] = L⁰
+    @reduce l⁰[a¹] := sum(x) A⁰[1,a¹,x]
+    l[1] = l⁰
 
-    Lᵗ = L⁰
+    lᵗ = l⁰
     for t in 1:length(A)-1
         Aᵗ = _reshape1(A[t+1])
-        @reduce Lᵗ[aᵗ⁺¹] |= sum(x,aᵗ) Lᵗ[aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] 
-        L[t+1] = Lᵗ
+        @reduce lᵗ[aᵗ⁺¹] |= sum(x,aᵗ) lᵗ[aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] 
+        l[t+1] = lᵗ
     end
-    return L
+    return l
 end
 
 function accumulate_R(A::TensorTrain)
-    R = [zeros(0) for _ in eachindex(A)]
+    r = [zeros(0) for _ in eachindex(A)]
     Aᵀ = _reshape1(A[end])
-    @reduce Rᵀ[aᵀ] := sum(x) Aᵀ[aᵀ,1,x]
-    R[end] = Rᵀ
+    @reduce rᵀ[aᵀ] := sum(x) Aᵀ[aᵀ,1,x]
+    r[end] = rᵀ
 
-    Rᵗ = Rᵀ
+    rᵗ = rᵀ
     for t in length(A)-1:-1:1
         Aᵗ = _reshape1(A[t])
-        @reduce Rᵗ[aᵗ] |= sum(x,aᵗ⁺¹) Aᵗ[aᵗ,aᵗ⁺¹,x] * Rᵗ[aᵗ⁺¹] 
-        R[t] = Rᵗ
+        @reduce rᵗ[aᵗ] |= sum(x,aᵗ⁺¹) Aᵗ[aᵗ,aᵗ⁺¹,x] * rᵗ[aᵗ⁺¹] 
+        r[t] = rᵗ
     end
-    return R
+    return r
 end
 
 function accumulate_M(A::TensorTrain)
@@ -222,25 +222,32 @@ function accumulate_M(A::TensorTrain)
     return M
 end
 
-# p(xˡ) for each `l`
+"""
+    marginals(A::TensorTrain; l, r)
+
+Compute the marginal distributions ``p(x^l)`` at each site
+
+### Optional arguments
+- `l = accumulate_L(A)`, `r = accumulate_R(A)` pre-computed partial nommalizations
+"""
 function marginals(A::TensorTrain{F,N};
-        L = accumulate_L(A), R = accumulate_R(A)) where {F<:Real,N}
+        l = accumulate_L(A), r = accumulate_R(A)) where {F<:Real,N}
     
-    A⁰ = _reshape1(A[begin]); R¹ = R[2]
-    @reduce p⁰[x] := sum(a¹) A⁰[1,a¹,x] * R¹[a¹]
+    A⁰ = _reshape1(A[begin]); r¹ = r[2]
+    @reduce p⁰[x] := sum(a¹) A⁰[1,a¹,x] * r¹[a¹]
     p⁰ ./= sum(p⁰)
     p⁰ = reshape(p⁰, size(A[begin])[3:end])
 
-    Aᵀ = _reshape1(A[end]); Lᵀ⁻¹ = L[end-1]
-    @reduce pᵀ[x] := sum(aᵀ) Lᵀ⁻¹[aᵀ] * Aᵀ[aᵀ,1,x]
+    Aᵀ = _reshape1(A[end]); lᵀ⁻¹ = l[end-1]
+    @reduce pᵀ[x] := sum(aᵀ) lᵀ⁻¹[aᵀ] * Aᵀ[aᵀ,1,x]
     pᵀ ./= sum(pᵀ)
     pᵀ = reshape(pᵀ, size(A[end])[3:end])
 
     p = map(2:length(A)-1) do t 
-        Lᵗ⁻¹ = L[t-1]
+        lᵗ⁻¹ = l[t-1]
         Aᵗ = _reshape1(A[t])
-        Rᵗ⁺¹ = R[t+1]
-        @reduce pᵗ[x] := sum(aᵗ,aᵗ⁺¹) Lᵗ⁻¹[aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] * Rᵗ⁺¹[aᵗ⁺¹]  
+        rᵗ⁺¹ = r[t+1]
+        @reduce pᵗ[x] := sum(aᵗ,aᵗ⁺¹) lᵗ⁻¹[aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] * rᵗ⁺¹[aᵗ⁺¹]  
         pᵗ ./= sum(pᵗ)
         reshape(pᵗ, size(A[t])[3:end])
     end
@@ -248,23 +255,31 @@ function marginals(A::TensorTrain{F,N};
     return append!([p⁰], p, [pᵀ])
 end
 
-# p(xˡ,xᵐ) for all `(l,m)`
+"""
+    marginals(A::TensorTrain; l, r, M, Δlmax)
+
+Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
+
+### Optional arguments
+- `l = accumulate_L(A)`, `r = accumulate_R(A)`, `M = accumulate_M(A)` pre-computed partial normalizations
+- `Δlmax=length(A)`: compute marginals only at distance `Δlmax`: ``|l-m|\\le Δlmax``
+"""
 function twovar_marginals(A::TensorTrain{F,N};
-        L = accumulate_L(A), R = accumulate_R(A), M = accumulate_M(A),
-        Δtmax = length(A)-1) where {F<:Real,N}
+        l = accumulate_L(A), r = accumulate_R(A), M = accumulate_M(A),
+        Δlmax = length(A)-1) where {F<:Real,N}
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
     b = Array{F,2*(N-2)}[zeros(ones(Int, 2*(N-2))...) 
         for _ in eachindex(A), _ in eachindex(A)]
     for t in 1:length(A)-1
-        Lᵗ⁻¹ = t == 1 ? [1.0;] : L[t-1]
+        lᵗ⁻¹ = t == 1 ? [1.0;] : l[t-1]
         Aᵗ = _reshape1(A[t])
-        for u in t+1:min(length(A),t+Δtmax)
-            Rᵘ⁺¹ = u == length(A) ? [1.0;] : R[u+1]
+        for u in t+1:min(length(A),t+Δlmax)
+            rᵘ⁺¹ = u == length(A) ? [1.0;] : r[u+1]
             Aᵘ = _reshape1(A[u])
             Mᵗᵘ = M[t, u]
             @tullio bᵗᵘ[xᵗ, xᵘ] :=
-                Lᵗ⁻¹[aᵗ] * Aᵗ[aᵗ, aᵗ⁺¹, xᵗ] * Mᵗᵘ[aᵗ⁺¹, aᵘ] * 
-                Aᵘ[aᵘ, aᵘ⁺¹, xᵘ] * Rᵘ⁺¹[aᵘ⁺¹]
+                lᵗ⁻¹[aᵗ] * Aᵗ[aᵗ, aᵗ⁺¹, xᵗ] * Mᵗᵘ[aᵗ⁺¹, aᵘ] * 
+                Aᵘ[aᵘ, aᵘ⁺¹, xᵘ] * rᵘ⁺¹[aᵘ⁺¹]
             bᵗᵘ ./= sum(bᵗᵘ)
             b[t,u] = reshape(bᵗᵘ, qs)
         end
@@ -272,14 +287,22 @@ function twovar_marginals(A::TensorTrain{F,N};
     b
 end
 
+"""
+    normalization(A::TensorTrain; l, r)
+
+Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``
+"""
 function normalization(A::TensorTrain; l = accumulate_L(A), r = accumulate_R(A))
     z = only(l[end])
     @assert only(r[begin]) ≈ z "z=$z, got $(only(r[begin])), A=$A"  # sanity check
     z
 end
 
-# normalize so that the sum over all trajectories is 1.
-# return log of the normalization
+"""
+    normalize!(A::TensorTrain)
+
+Normalize `A` to a probability distribution
+"""
 function normalize!(A::TensorTrain)
     c = normalize_eachmatrix!(A)
     Z = normalization(A)
@@ -290,8 +313,18 @@ function normalize!(A::TensorTrain)
     c + log(Z)
 end
 
-# return a new MPTrain such that `A(x)+B(x)=(A+B)(x)`. Matrix sizes are doubled
+"""
+    +(A::TensorTrain, B::TensorTrain)
+
+Compute the sum of two Tensor Trains. Matrix sizes are doubled
+"""
 +(A::TensorTrain, B::TensorTrain) = _compose(+, A, B)
+
+"""
+    -(A::TensorTrain, B::TensorTrain)
+
+Compute the difference of two Tensor Trains. Matrix sizes are doubled
+"""
 -(A::TensorTrain, B::TensorTrain) = _compose(-, A, B)
 
 function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
@@ -316,38 +349,56 @@ function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     TensorTrain(tensors)
 end
 
-# hierarchical sampling p(x) = p(x⁰)p(x¹|x⁰)p(x²|x¹,x⁰) ...
-# returns `x,p`, the sampled sequence and its probability
+"""
+    sample!([rng], x, A::TensorTrain; r)
+
+Draw an exact sample from `A` and store the result in `x`.
+
+Optionally specify a random number generator `rng` as the first argument
+  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
+
+The output is `x,p`, the sampled sequence and its probability
+"""
 function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
-        R = accumulate_R(A)) where {F<:Real,N}
+        r = accumulate_R(A)) where {F<:Real,N}
     L = length(A)
     @assert length(x) == L
     @assert all(length(xᵗ) == N-2 for xᵗ in x)
 
     Q = ones(F, 1, 1)  # stores product of the first `t` matrices, evaluated at the sampled `x⁰,x¹,...,xᵗ`
     for t in eachindex(A)
-        Rᵗ⁺¹ = t == L ? ones(F,1) : R[t+1]
+        rᵗ⁺¹ = t == L ? ones(F,1) : r[t+1]
         # collapse multivariate xᵗ into 1D vector, sample from it
         Aᵗ = _reshape1(A[t])
-        @tullio p[x] := Q[m] * Aᵗ[m,n,x] * Rᵗ⁺¹[n]
+        @tullio p[x] := Q[m] * Aᵗ[m,n,x] * rᵗ⁺¹[n]
         p ./= sum(p)
         xᵗ = sample_noalloc(rng, p)
         x[t] .= CartesianIndices(size(A[t])[3:end])[xᵗ] |> Tuple
         # update prob
         Q = Q * Aᵗ[:,:,xᵗ]
     end
-    p = only(Q) / only(first(R))
+    p = only(Q) / only(first(r))
     return x, p
 end
-
-function sample!(x, A::TensorTrain{F,N}; R = accumulate_R(A)) where {F<:Real,N}
+function sample!(x, A::TensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
     sample!(GLOBAL_RNG, x, A; R)
 end
+
+"""
+    sample([rng], A::TensorTrain; r)
+
+Draw an exact sample from `A`.
+
+Optionally specify a random number generator `rng` as the first argument
+  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
+
+The output is `x,p`, the sampled sequence and its probability
+"""
 function sample(rng::AbstractRNG, A::TensorTrain{F,N};
-        R = accumulate_R(A)) where {F<:Real,N}
+        r = accumulate_R(A)) where {F<:Real,N}
     x = [zeros(Int, N-2) for Aᵗ in A]
-    sample!(rng, x, A; R)
+    sample!(rng, x, A; r)
 end
-function sample(A::TensorTrain{F,N}; R = accumulate_R(A)) where {F<:Real,N}
-    sample(GLOBAL_RNG, A; R)
+function sample(A::TensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
+    sample(GLOBAL_RNG, A; r)
 end
