@@ -32,6 +32,8 @@ end
 end
 
 @testset "two variables" begin
+    svd_trunc = TruncBond(20)
+
     tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
     C = TensorTrain(tensors)
     x = [rand(1:2,2) for _ in C]
@@ -40,6 +42,8 @@ end
     orthogonalize_right!(C; svd_trunc)
     e2 = evaluate(C, x)
     @test e2 ≈ e1
+
+    svd_trunc = TruncBondMax(20)
 
     orthogonalize_left!(C; svd_trunc)
     e3 = evaluate(C, x)
@@ -51,6 +55,8 @@ end
 end
 
 @testset "random" begin
+    svd_trunc = TruncBondThresh(20, 0.0)
+
     L = 5
     q = (2, 4)
     d = 3
