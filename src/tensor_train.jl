@@ -42,7 +42,7 @@ function check_bond_dims(tensors::Vector{<:Array})
     end
     return true
 end
-
+  
 
 """
     normalize_eachmatrix!(A::TensorTrain)
@@ -278,18 +278,18 @@ Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
 
 ### Optional arguments
 - `l = accumulate_L(A)`, `r = accumulate_R(A)`, `M = accumulate_M(A)` pre-computed partial normalizations
-- `Δlmax=length(A)`: compute marginals only at distance `Δlmax`: ``|l-m|\\le Δlmax``
+- `Δmax=length(A)`: compute marginals only at distance `Δmax`: ``|l-m|\\le Δmax``
 """
 function twovar_marginals(A::TensorTrain{F,N};
         l = accumulate_L(A), r = accumulate_R(A), M = accumulate_M(A),
-        Δlmax = length(A)-1) where {F<:Real,N}
+        Δmax = length(A)-1) where {F<:Real,N}
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
     b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...) 
         for _ in eachindex(A), _ in eachindex(A)]
     for t in 1:length(A)-1
         lᵗ⁻¹ = t == 1 ? [1.0;] : l[t-1]
         Aᵗ = _reshape1(A[t])
-        for u in t+1:min(length(A),t+Δlmax)
+        for u in t+1:min(length(A),t+Δmax)
             rᵘ⁺¹ = u == length(A) ? [1.0;] : r[u+1]
             Aᵘ = _reshape1(A[u])
             Mᵗᵘ = M[t, u]
