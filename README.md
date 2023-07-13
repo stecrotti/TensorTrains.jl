@@ -23,9 +23,9 @@ Tensor Trains are used to parametrize wavefunctions in many-body quantum physics
 In this package we focus on the "classical" case where the Tensor Train directly represents a probability distribution $p(x^1, x^2, \ldots, x^L)$. 
 
 ## Efficient computation
-Given a Tensor Train some simple recursive strategies can be employed to
+Given a Tensor Train some simple recursive strategies can be employed to do the following operations in time $\mathcal O (L)$
 
-### Compute the normalization
+#### Compute the normalization
 ```math
 Z = \sum_{x^1, x^2, \ldots, x^L} \sum_{a^1,a^2,\ldots,a^{L-1}} [A^1(x^1)]_{a^1}[A^2(x^2)]_{a^1,a^2}\cdots [A^{L-1}(x^{L-1})]_{a^{L-2},a^{L-1}}[A^L(x^L)]_{a^{L-1}}
 ```
@@ -35,7 +35,7 @@ such that
 1&=\sum_{x^1, x^2, \ldots, x^L}p(x^1, x^2, \ldots, x^L)\\&=\sum_{x^1, x^2, \ldots, x^L}\frac1Z \sum_{a^1,a^2,\ldots,a^{L-1}} [A^1(x^1)]_{a^1}[A^2(x^2)]_{a^1,a^2}\cdots [A^{L-1}(x^{L-1})]_{a^{L-2},a^{L-1}}[A^L(x^L)]_{a^{L-1}}
 \end{aligned}
 ```
-### Compute marginals
+#### Compute marginals
 Single-variable
 ```math
 p(x^l=x) = \sum_{x^1, x^2, \ldots, x^L} p(x^1, x^2, \ldots, x^L) \delta(x^l,x)
@@ -44,7 +44,7 @@ and two-variable
 ```math
 p(x^l=x, x^m=x') = \sum_{x^1, x^2, \ldots, x^L} p(x^1, x^2, \ldots, x^L) \delta(x^l,x)\delta(x^m,x')
 ```
-### Extract exact samples
+#### Extract samples
 Via hierarchical sampling
 ```math
 p(x^1, x^2, \ldots, x^L) = p(x^1)p(x^2|x^1)p(x^3|x^1,x^2)\cdots p(x^L|x^1,x^2,\ldots,x^{L-1})
