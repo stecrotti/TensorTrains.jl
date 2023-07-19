@@ -1,19 +1,11 @@
 """
-    AbstractTensorTrain
-
-An abstract type representing a Tensor Train.
-Currently, there is only one concrete subtype [`TensorTrain`](@ref).
-"""
-abstract type AbstractTensorTrain end
-
-"""
-    TensorTrain{F<:Number, N} <: AbstractTensorTrain
+    TensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
 
 A type for representing a Tensor Train
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-struct TensorTrain{F<:Number, N} <: AbstractTensorTrain
+struct TensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
 
     function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N}
@@ -43,27 +35,6 @@ function check_bond_dims(tensors::Vector{<:Array})
     return true
 end
   
-
-"""
-    normalize_eachmatrix!(A::TensorTrain)
-
-Divide each matrix by its maximum (absolute) element and return the sum of the logs of the individual normalizations.
-This is used to keep the entries from exploding during computations
-"""
-function normalize_eachmatrix!(A::TensorTrain)
-    c = 0.0
-    for m in A
-        mm = maximum(abs, m)
-        if !any(isnan, mm) && !any(isinf, mm)
-            m ./= mm
-            c += log(mm)
-        end
-    end
-    c
-end
-
-isapprox(A::T, B::T; kw...) where {T<:TensorTrain} = isapprox(A.tensors, B.tensors; kw...)
-
 """
     uniform_tt(bondsizes::AbstractVector{<:Integer}, q...)
     uniform_tt(d::Integer, L::Integer, q...)
@@ -95,16 +66,15 @@ end
 rand_tt(d::Integer, L::Integer, q...) = rand_tt([1; fill(d, L-1); 1], q...)
 
 """
-    bond_dims(A::TensorTrain)
+    bond_dims(A::AbstractTensorTrain)
 
 Return a vector with the dimensions of the virtual bonds
 """
 bond_dims(A::TensorTrain) = [size(A[t], 2) for t in 1:lastindex(A)-1]
 
-eltype(::TensorTrain{F,N}) where {N,F} = F
 
 """
-    evaluate(A::TensorTrain, X...)
+    evaluate(A::AbstractTensorTrain, X...)
 
 Evaluate the Tensor Train `A` at input `X`
 
@@ -118,10 +88,6 @@ Example:
 ```
 """
 evaluate(A::TensorTrain, X...) = only(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
-
-_reshape1(x) = reshape(x, size(x,1), size(x,2), prod(size(x)[3:end])...)
-_reshapeas(x,y) = reshape(x, size(x,1), size(x,2), size(y)[3:end]...)
-
 
 
 """
@@ -214,32 +180,8 @@ function accumulate_R(A::TensorTrain)
     return r
 end
 
-function accumulate_M(A::TensorTrain)
-    L = length(A)
-    M = [zeros(0, 0) for _ in 1:L, _ in 1:L]
-    
-    # initial condition
-    for t in 1:L-1
-        range_aᵗ⁺¹ = axes(A[t+1], 1)
-        Mᵗᵗ⁺¹ = [float((a == c)) for a in range_aᵗ⁺¹, c in range_aᵗ⁺¹]
-        M[t, t+1] = Mᵗᵗ⁺¹
-    end
-
-    for t in 1:L-1
-        Mᵗᵘ⁻¹ = M[t, t+1]
-        for u in t+2:L
-            Aᵘ⁻¹ = _reshape1(A[u-1])
-            @tullio Mᵗᵘ[aᵗ⁺¹, aᵘ] := Mᵗᵘ⁻¹[aᵗ⁺¹, aᵘ⁻¹] * Aᵘ⁻¹[aᵘ⁻¹, aᵘ, x]
-            M[t, u] = Mᵗᵘ
-            Mᵗᵘ⁻¹, Mᵗᵘ = Mᵗᵘ, Mᵗᵘ⁻¹
-        end
-    end
-
-    return M
-end
-
 """
-    marginals(A::TensorTrain; l, r)
+    marginals(A::AbstractTensorTrain; l, r)
 
 Compute the marginal distributions ``p(x^l)`` at each site
 
@@ -272,7 +214,7 @@ function marginals(A::TensorTrain{F,N};
 end
 
 """
-    marginals(A::TensorTrain; l, r, M, Δlmax)
+    twovar_marginals(A::AbstractTensorTrain; l, r, M, Δlmax)
 
 Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
 
@@ -304,7 +246,7 @@ function twovar_marginals(A::TensorTrain{F,N};
 end
 
 """
-    normalization(A::TensorTrain; l, r)
+    normalization(A::AbstractTensorTrain; l, r)
 
 Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``
 """
@@ -315,11 +257,11 @@ function normalization(A::TensorTrain; l = accumulate_L(A), r = accumulate_R(A))
 end
 
 """
-    normalize!(A::TensorTrain)
+    normalize!(A::AbstractTensorTrain)
 
 Normalize `A` to a probability distribution
 """
-function normalize!(A::TensorTrain)
+function normalize!(A::AbstractTensorTrain)
     c = normalize_eachmatrix!(A)
     Z = normalization(A)
     L = length(A)
@@ -329,20 +271,7 @@ function normalize!(A::TensorTrain)
     c + log(Z)
 end
 
-"""
-    +(A::TensorTrain, B::TensorTrain)
-
-Compute the sum of two Tensor Trains. Matrix sizes are doubled
-"""
-+(A::TensorTrain, B::TensorTrain) = _compose(+, A, B)
-
-"""
-    -(A::TensorTrain, B::TensorTrain)
-
-Compute the difference of two Tensor Trains. Matrix sizes are doubled
-"""
--(A::TensorTrain, B::TensorTrain) = _compose(-, A, B)
-
+# used to do stuff like `A+B` with `A,B` tensor trains
 function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     @assert NA == NB
     @assert length(A) == length(B)
@@ -366,7 +295,7 @@ function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
 end
 
 """
-    sample!([rng], x, A::TensorTrain; r)
+    sample!([rng], x, A::AbstractTensorTrain; r)
 
 Draw an exact sample from `A` and store the result in `x`.
 
@@ -381,7 +310,7 @@ function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
     @assert length(x) == L
     @assert all(length(xᵗ) == N-2 for xᵗ in x)
 
-    Q = ones(F, 1, 1)  # stores product of the first `t` matrices, evaluated at the sampled `x⁰,x¹,...,xᵗ`
+    Q = ones(F, 1, 1)  # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
     for t in eachindex(A)
         rᵗ⁺¹ = t == L ? ones(F,1) : r[t+1]
         # collapse multivariate xᵗ into 1D vector, sample from it
@@ -395,26 +324,4 @@ function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
     end
     p = only(Q) / only(first(r))
     return x, p
-end
-function sample!(x, A::TensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample!(GLOBAL_RNG, x, A; R)
-end
-
-"""
-    sample([rng], A::TensorTrain; r)
-
-Draw an exact sample from `A`.
-
-Optionally specify a random number generator `rng` as the first argument
-  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
-
-The output is `x,p`, the sampled sequence and its probability
-"""
-function sample(rng::AbstractRNG, A::TensorTrain{F,N};
-        r = accumulate_R(A)) where {F<:Real,N}
-    x = [zeros(Int, N-2) for Aᵗ in A]
-    sample!(rng, x, A; r)
-end
-function sample(A::TensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample(GLOBAL_RNG, A; r)
 end
