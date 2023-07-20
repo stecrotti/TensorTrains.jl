@@ -5,6 +5,14 @@ end
 
 @testset "TensorTrain" begin
 
+    @testset "basics" begin
+        tensors = [rand(1,5,2,2), rand(5,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
+        A = TensorTrain(tensors)
+        B = TensorTrain(copy(tensors))
+        @test A == B
+        @test A ≈ B
+    end
+
     @testset "single variable" begin
         tensors = [rand(1,3,2), rand(3,4,2), rand(4,10,2), rand(10,1,2)]
         C = TensorTrain(tensors)
@@ -50,7 +58,7 @@ end
         @test e4 ≈ e1
     end
 
-    @testset "random" begin
+    @testset "Random" begin
         svd_trunc = TruncBondThresh(20, 0.0)
 
         L = 5
@@ -69,7 +77,7 @@ end
         @test e3 ≈ e1
     end
 
-    @testset "uniform" begin
+    @testset "Uniform" begin
         L = 5
         q = (2, 4)
         d = 3
@@ -131,7 +139,10 @@ end
                 qs = fill(q, N)
                 L = 6
                 A = rand_tt( [1; rand(rng, 1:7, L-1); 1], qs... )
-                x, p = sample(rng, A)
+                x, p = sample(copy(rng), A)
+                y = deepcopy(x)
+                sample!(rng, y, A)
+                @test x == y
                 normalize!(A)
                 @test evaluate(A, x) ≈ p
             end

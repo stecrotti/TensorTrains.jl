@@ -17,14 +17,50 @@
         @test evaluate(A + A, x) ≈ evaluate(B + B, x)
     end
 
-    @testset "Sample" begin
+    @testset "Random" begin
+        svd_trunc = TruncBondThresh(20, 0.0)
+        L = 5
+        q = (2, 4)
+        d = 3
+        C = rand_periodic_tt(d, L, q...)
+        x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
+        e1 = evaluate(C, x)
+
+        orthogonalize_right!(C; svd_trunc)
+        e2 = evaluate(C, x)
+        @test e2 ≈ e1
+
+        orthogonalize_left!(C; svd_trunc)
+        e3 = evaluate(C, x)
+        @test e3 ≈ e1
+    end
+
+    @testset "Uniform" begin
+        svd_trunc = TruncBondThresh(20, 0.0)
+        L = 5
+        q = (2, 4)
+        d = 3
+        C = uniform_periodic_tt(d, L, q...)
+        x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
+        e1 = evaluate(C, x)
+
+        orthogonalize_right!(C; svd_trunc)
+        e2 = evaluate(C, x)
+        @test e2 ≈ e1
+
+        orthogonalize_left!(C; svd_trunc)
+        e3 = evaluate(C, x)
+        @test e3 ≈ e1
+    end
+
+    @testset "Sampling" begin
         rng = MersenneTwister(0)
         for N in 1:3
             for q in 1:3
                 qs = fill(q, N)
                 L = 6
                 A = rand_periodic_tt( rand(rng, 2:7, L-1), qs... )
-                x, p = sample(rng, A)
+                x, p = sample(A)
                 normalize!(A)
                 @test evaluate(A, x) ≈ p
             end

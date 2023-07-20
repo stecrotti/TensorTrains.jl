@@ -35,7 +35,7 @@ function uniform_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
     tensors = [ones(bondsizes[t], bondsizes[mod1(t+1,length(bondsizes))], q...) for t in eachindex(bondsizes)]
     PeriodicTensorTrain(tensors)
 end
-uniform_periodic_tt(d::Integer, L::Integer, q...) = uniform_tt(fill(d, L-1), q...)
+uniform_periodic_tt(d::Integer, L::Integer, q...) = uniform_periodic_tt(fill(d, L-1), q...)
 
 """
     rand_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
@@ -50,7 +50,7 @@ and
 function rand_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
     PeriodicTensorTrain([rand(bondsizes[t], bondsizes[mod1(t+1,length(bondsizes))], q...) for t in eachindex(bondsizes)])
 end
-rand_periodic_tt(d::Integer, L::Integer, q...) = rand_tt(fill(d, L-1), q...)
+rand_periodic_tt(d::Integer, L::Integer, q...) = rand_periodic_tt(fill(d, L-1), q...)
 
 bond_dims(A::PeriodicTensorTrain) = [size(A[t], 1) for t in 1:lastindex(A)]
 
