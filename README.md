@@ -15,6 +15,13 @@ The first matrix must have 1 row and the last matrix should have 1 column, such 
 
 The Tensor Train factorization can be used to parametrize probability distributions, which is the main focus of this package. In this case, $f$ should be properly normalized and always return a non-negative value. 
 
+### Tensor Trains with Periodic Boundary Conditions
+A slight generalization, useful to describe systems with periodic boundary conditions is the following:
+```math
+f(x^1, x^2, \ldots, x^L) = \sum_{a^1,a^2,\ldots,a^{L}} [A^1(x^1)]_{a^1,a^2}[A^2(x^2)]_{a^2,a^3}\cdots [A^{L-1}(x^{L-1})]_{a^{L-1},a^{L}}[A^L(x^L)]_{a^{L},a^1}
+```
+In other words, to evaluate $f$ one takes the trace of the product of matrices.
+
 ## Notation and terminology
 Tensor Trains are the most basic type of [Tensor Network](https://tensornetwork.org/). Tensor networks are a large family of tensor factorizations which are often best represented in diagrammatic notation. For this reason, the term _bond_ is used interchangeably as _index_. The indices $a^1,a^2,\ldots,a^{L-1}$ are usually called the _virtual indices_, while $x^1, x^2, \ldots, x^L$ are the _physical indices_.
 
