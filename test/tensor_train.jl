@@ -145,6 +145,8 @@ end
                 @test x == y
                 normalize!(A)
                 @test evaluate(A, x) ≈ p
+                x, p = sample!(x, A)
+                @test evaluate(A, x) ≈ p
             end
         end
     end

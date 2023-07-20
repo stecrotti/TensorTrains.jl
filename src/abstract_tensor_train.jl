@@ -81,7 +81,7 @@ Compute the difference of two Tensor Trains. Matrix sizes are doubled
 
 ## Fallback sampling methods
 function sample!(x, A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample!(GLOBAL_RNG, x, A; R)
+    sample!(GLOBAL_RNG, x, A; r)
 end
 
 """
