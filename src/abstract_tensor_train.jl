@@ -26,7 +26,7 @@ function normalize_eachmatrix!(A::AbstractTensorTrain)
     c
 end
 
-isequal(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors; kw...)
+==(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
 isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
 
