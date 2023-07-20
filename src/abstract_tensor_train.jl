@@ -56,6 +56,16 @@ end
 
 
 """
+    compress!(A::AbstractTensorTrain; svd_trunc::SVDTrunc)
+
+Compress `A` by means of SVD decompositions + truncations
+"""
+function compress!(A::AbstractTensorTrain; svd_trunc=TruncThresh(1e-6))
+    orthogonalize_right!(A, svd_trunc=TruncThresh(0.0))
+    orthogonalize_left!(A; svd_trunc)
+end
+
+"""
     +(A::AbstracTensorTrain, B::AbstracTensorTrain)
 
 Compute the sum of two Tensor Trains. Matrix sizes are doubled

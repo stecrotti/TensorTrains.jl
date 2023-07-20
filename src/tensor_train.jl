@@ -140,15 +140,6 @@ function orthogonalize_left!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     return C
 end
 
-"""
-    compress!(A::TensorTrain; svd_trunc::SVDTrunc)
-
-Compress `A` by means of SVD decompositions + truncations
-"""
-function compress!(A::TensorTrain; svd_trunc=TruncThresh(1e-6))
-    orthogonalize_right!(A, svd_trunc=TruncThresh(0.0))
-    orthogonalize_left!(A; svd_trunc)
-end
 
 function accumulate_L(A::TensorTrain)
     l = [zeros(0) for _ in eachindex(A)]

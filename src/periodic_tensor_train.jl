@@ -156,3 +156,53 @@ function sample!(rng::AbstractRNG, x, A::PeriodicTensorTrain{F,N};
     p = tr(Q) / tr(first(r))
     return x, p
 end
+
+function orthogonalize_right!(C::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6))
+    C⁰ = _reshape1(C[begin])
+    q = size(C⁰, 3)
+    @cast M[m, (n, x)] := C⁰[m, n, x]
+    U, λ, V = svd_trunc(M)
+    @cast A⁰[m, n, x] := V'[m, (n, x)] x in 1:q
+    C[begin] = _reshapeas(A⁰, C[begin])     
+    Cᵗ⁻¹ = _reshape1(C[end])
+    @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
+    @cast M[m, (n, x)] := D[m, n, x]
+
+    for t in length(C):-1:2
+        U, λ, V = svd_trunc(M)
+        @cast Aᵗ[m, n, x] := V'[m, (n, x)] x in 1:q
+        C[t] = _reshapeas(Aᵗ, C[t])     
+        Cᵗ⁻¹ = _reshape1(C[t-1])
+        @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
+        @cast M[m, (n, x)] := D[m, n, x]
+    end
+    C[begin] = _reshapeas(D, C[begin])
+
+    @assert check_bond_dims(C.tensors)
+
+    return C
+end
+
+function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6))
+    A⁰ = _reshape1(A[begin])
+    q = size(A⁰, 3)
+    @cast M[(m, x), n] |= A⁰[m, n, x]
+    D = fill(1.0,1,1,1)  # initialize
+
+    for t in 1:length(A)-1
+        U, λ, V = svd_trunc(M)
+        @cast Aᵗ[m, n, x] := U[(m, x), n] x in 1:q
+        A[t] = _reshapeas(Aᵗ, A[t])
+        Aᵗ⁺¹ = _reshape1(A[t+1])
+        @tullio D[m, n, x] := λ[m] * V'[m, l] * Aᵗ⁺¹[l, n, x]
+        @cast M[(m, x), n] |= D[m, n, x]
+    end
+    U, λ, V = svd_trunc(M)
+    @cast Aᵀ[m, n, x] := U[(m, x), n] x in 1:q
+    A[end] = _reshapeas(Aᵀ, A[end])
+    A⁰ = _reshape1(A[begin])
+    @tullio D[m, n, x] := λ[m] * V'[m, l] * A⁰[l, n, x]
+    A[begin] = _reshapeas(D,  A[begin])
+
+    return A
+end
