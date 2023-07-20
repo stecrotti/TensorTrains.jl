@@ -3,7 +3,7 @@ module TensorTrains
 using Reexport
 @reexport import Base:
     eltype, getindex, iterate, firstindex, lastindex, setindex!, eachindex, 
-    length, isapprox, isequal, +, -, show
+    length, isapprox, ==, +, -, show
 import Lazy: @forward
 import TensorCast: @cast, @reduce, TensorCast
 import LinearAlgebra: svd, normalize!, norm, tr, I
