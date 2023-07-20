@@ -91,7 +91,7 @@ evaluate(A::TensorTrain, X...) = only(prod(@view a[:, :, x...] for (a,x) in zip(
 
 
 """
-    orthogonalize_right!(A::TensorTrain; svd_trunc::SVDTrunc)
+    orthogonalize_right!(A::AbstractTensorTrain; svd_trunc::SVDTrunc)
 
 Bring `A` to right-orthogonal form by means of SVD decompositions.
 
@@ -116,7 +116,7 @@ function orthogonalize_right!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
 end
 
 """
-    orthogonalize_left!(A::TensorTrain; svd_trunc::SVDTrunc)
+    orthogonalize_left!(A::AbstractTensorTrain; svd_trunc::SVDTrunc)
 
 Bring `A` to left-orthogonal form by means of SVD decompositions.
 

@@ -1,3 +1,10 @@
+"""
+    PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+
+A type for representing a Tensor Train with periodic boundary conditions
+- `F` is the type of the matrix entries
+- `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
+"""
 struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
 
@@ -14,12 +21,32 @@ end
 @forward PeriodicTensorTrain.tensors getindex, iterate, firstindex, lastindex, setindex!, 
     check_bond_dims, length, eachindex
 
+"""
+    uniform_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
+    uniform_periodic_tt(d::Integer, L::Integer, q...)
+
+Construct a Tensor Train with periodic boundary conditions full of 1's, by specifying either:
+- `bondsizes`: the size of each bond
+- `d` a fixed size for all bonds, `L` the length
+and
+- `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
+"""
 function uniform_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
     tensors = [ones(bondsizes[t], bondsizes[mod1(t+1,length(bondsizes))], q...) for t in eachindex(bondsizes)]
     PeriodicTensorTrain(tensors)
 end
 uniform_periodic_tt(d::Integer, L::Integer, q...) = uniform_tt(fill(d, L-1), q...)
 
+"""
+    rand_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
+    rand_periodic_tt(d::Integer, L::Integer, q...)
+
+Construct a Tensor Train with periodic boundary conditions with entries random in [0,1], by specifying either:
+- `bondsizes`: the size of each bond
+- `d` a fixed size for all bonds, `L` the length
+and
+- `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
+"""
 function rand_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
     PeriodicTensorTrain([rand(bondsizes[t], bondsizes[mod1(t+1,length(bondsizes))], q...) for t in eachindex(bondsizes)])
 end

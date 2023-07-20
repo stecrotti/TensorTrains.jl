@@ -3,6 +3,7 @@
 ```@docs
 AbstractTensorTrain
 TensorTrain
+PeriodicTensorTrain
 ```
 
 # Functions
@@ -10,6 +11,8 @@ TensorTrain
 normalize_eachmatrix!
 uniform_tt
 rand_tt
+uniform_periodic_tt
+rand_periodic_tt
 bond_dims
 evaluate
 marginals
