@@ -120,10 +120,10 @@ end
 
     @testset "Difference of TTs" begin
         rng = MersenneTwister(0)
+        L = 4
         for N in 1:3
             for q in 1:3
                 qs = fill(q, N)
-                L = 6
                 A = rand_tt( [1; rand(1:7, L-1); 1], qs... )
                 B = rand_tt( [1; rand(1:7, L-1); 1], qs... )
                 x = [rand(1:q[1],N) for _ in 1:L]
@@ -151,20 +151,26 @@ end
         end
     end
 
-    @testset "Exact" begin
+    @testset "Marginals" begin
         L = 3
         for N in 1:3
-            for qs in 1:3
-                A = rand_tt( [1; rand(1:7, L-1); 1], qs... )
+            for q in 1:3
+                qs = fill(q, N)
+                A = rand_tt([1; rand(1:7, L-1); 1], qs... )
                 m = marginals(A)
                 m_exact = exact_marginals(A)
                 @test m ≈ m_exact
                 m2 = twovar_marginals(A)
                 m2_exact = exact_twovar_marginals(A)
                 @test m2 ≈ m2_exact
-                @test exact_norm(A) ≈ norm(A)
             end
         end
     end
 
+    @testset "Norm" begin
+        L = 3; N = 2; q = 2; qs = fill(q, N)
+        A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
+        B = rand_tt( [1; rand(1:3, L-1); 1], qs... )
+        @test norm(A-B) ≈ exact_norm(A-B) ≈ normAminusB(A,B)
+    end
 end

@@ -21,6 +21,7 @@ normalization
 normalize!(::TensorTrain)
 +
 -
+trABt
 norm
 sample!
 sample
