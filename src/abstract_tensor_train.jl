@@ -93,7 +93,7 @@ Given two tensor trains `A,B`, compute `tr(A*B')`
 \text{Tr}\left[A(x)B(x)^\dagger\right]
 ```
 """
-function trABt(A::AbstractTensorTrain, B::AbstractTensorTrain; T = typeof(0.0))
+function trABt(A::AbstractTensorTrain, B::AbstractTensorTrain; T::Type = typeof(0.0))
     all(size(a)[3:end] == size(b)[3:end] for (a,b) in zip(A.tensors, B.tensors)) || 
         throw(ArgumentError("Tensor Trains must have same number of states for each variable"))
     toT(A) = convert(T, A)
@@ -117,7 +117,7 @@ Compute the 2-norm (Frobenius norm) of tensor train `A`
 \sqrt{\sum_x\left|A(x)\right|_2^2} = \sqrt{\sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]}
 ```
 """
-norm(A::AbstractTensorTrain; T = typeof(0.0)) = sqrt(trABt(A, A; T))
+norm(A::AbstractTensorTrain; T::Type = typeof(0.0)) = sqrt(trABt(A, A; T))
 
 @doc raw"""
     normAminusB(A::AbstractTensorTrain, B::AbstractTensorTrain
@@ -128,7 +128,7 @@ Given two tensor trains `A,B`, compute `norm(A - B)` as
 \sqrt{\sum_x\left|A(x)-B(x)\right|_2^2} = \sqrt{\sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]+\sum_x \text{Tr}\left[B(x)B(x)^\dagger\right] -2\sum_x \text{Tr}\left[A(x)B(x)^\dagger\right]}
 ```
 """
-function normAminusB(A::AbstractTensorTrain, B::AbstractTensorTrain; T = typeof(0.0)) 
+function normAminusB(A::AbstractTensorTrain, B::AbstractTensorTrain; T::Type = typeof(0.0)) 
     return sqrt(norm(A; T)^2 + norm(B; T)^2 - 2*trABt(A, B; T))
 end
 
