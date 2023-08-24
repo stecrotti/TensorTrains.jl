@@ -133,6 +133,20 @@
         @test x1 == x2
     end
 
-end
+    @testset "Exact" begin
+        L = 3
+        for N in 1:3
+            for qs in 1:3
+                A = rand_periodic_tt( [1; rand(1:7, L-1); 1], qs... )
+                m = marginals(A)
+                m_exact = exact_marginals(A)
+                @test m ≈ m_exact
+                m2 = twovar_marginals(A)
+                m2_exact = exact_twovar_marginals(A)
+                @test m2 ≈ m2_exact
+                @test exact_norm(A) ≈ norm(A)
+            end
+        end
+    end
 
-nothing
+end

@@ -162,6 +162,7 @@ end
                 m2 = twovar_marginals(A)
                 m2_exact = exact_twovar_marginals(A)
                 @test m2 ≈ m2_exact
+                @test exact_norm(A) ≈ norm(A)
             end
         end
     end
