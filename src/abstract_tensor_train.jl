@@ -87,7 +87,7 @@ end
 @doc raw"""
     LinearAlgebra.norm(A::AbstractTensorTrain)
 
-Compute the 2-norm (Frobenius norm) of `A`
+Compute the 2-norm (Frobenius norm) of tensor train `A`
 
 ```math
 \sqrt{\sum_x\left|A(x)\right|_2^2} = \sqrt{\sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]}
@@ -96,9 +96,10 @@ Compute the 2-norm (Frobenius norm) of `A`
 function norm(A::AbstractTensorTrain)
     Aᵀ = _reshape1(A[end])
     R = sum(Aᵀ[:,:,xᵀ] * Aᵀ[:,:,xᵀ]' for xᵀ in axes(Aᵀ, 3))
+    Aᵀ = reshape(A[end], size(A[end], 1), :)
     for At in Iterators.drop(Iterators.reverse(A), 1)
         Aᵗ = _reshape1(At)
-        R = sum(Aᵗ[:,:,xᵗ] * R * Aᵗ[:,:,xᵗ]' for xᵗ in axes(Aᵗ, 3))
+        R = Hermitian(sum(Aᵗ[:,:,xᵗ] * R * Aᵗ[:,:,xᵗ]' for xᵗ in axes(Aᵗ, 3)))
     end
     sqrt(tr(R))
 end

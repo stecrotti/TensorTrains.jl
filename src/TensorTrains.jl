@@ -6,7 +6,7 @@ using Reexport
     length, isapprox, ==, +, -, show
 import Lazy: @forward
 import TensorCast: @cast, @reduce, TensorCast
-import LinearAlgebra: svd, normalize!, norm, tr, I
+import LinearAlgebra: svd, normalize!, norm, tr, I, Hermitian
 import Tullio: @tullio
 import Random: AbstractRNG, GLOBAL_RNG
 import StatsBase: sample!, sample
