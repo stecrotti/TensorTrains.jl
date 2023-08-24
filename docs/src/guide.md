@@ -21,6 +21,7 @@ normalization
 normalize!(::TensorTrain)
 +
 -
+norm
 sample!
 sample
 orthogonalize_right!

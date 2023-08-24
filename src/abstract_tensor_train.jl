@@ -84,6 +84,25 @@ function sample!(x, A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:
     sample!(GLOBAL_RNG, x, A; r)
 end
 
+@doc raw"""
+    LinearAlgebra.norm(A::AbstractTensorTrain)
+
+Compute the 2-norm (Frobenius norm) of `A`
+
+```math
+\sqrt{\sum_x\left|A(x)\right|_2^2} = \sqrt{\sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]}
+```
+"""
+function norm(A::AbstractTensorTrain)
+    Aᵀ = _reshape1(A[end])
+    R = sum(Aᵀ[:,:,xᵀ] * Aᵀ[:,:,xᵀ]' for xᵀ in axes(Aᵀ, 3))
+    for At in Iterators.drop(Iterators.reverse(A), 1)
+        Aᵗ = _reshape1(At)
+        R = sum(Aᵗ[:,:,xᵗ] * R * Aᵗ[:,:,xᵗ]' for xᵗ in axes(Aᵗ, 3))
+    end
+    sqrt(tr(R))
+end
+
 """
     sample([rng], A::AbstractTensorTrain; r)
 

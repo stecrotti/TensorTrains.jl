@@ -1,4 +1,4 @@
-function exact_prob(A::TensorTrain{F,N}) where {F,N}
+function exact_prob(A::AbstractTensorTrain{F,N}) where {F,N}
     qs = [size(Aˡ)[3:end] for Aˡ in A]
     X = Iterators.product((1:prod(qˡ) for (Aˡ,qˡ) in zip(A,qs))...)
     map(X) do x
@@ -6,7 +6,7 @@ function exact_prob(A::TensorTrain{F,N}) where {F,N}
     end
 end
 
-function exact_marginals(A::TensorTrain{F,N}; 
+function exact_marginals(A::AbstractTensorTrain{F,N}; 
         p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A]) where {F,N}
     map(eachindex(A)) do l
         v = sum(p, dims=eachindex(A)[Not(l)])
@@ -16,7 +16,7 @@ function exact_marginals(A::TensorTrain{F,N};
     end
 end
 
-function exact_twovar_marginals(A::TensorTrain{F,N}; 
+function exact_twovar_marginals(A::AbstractTensorTrain{F,N}; 
         p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A]) where {F,N}
     map(Iterators.product(eachindex(A), eachindex(A))) do (l,m)
         if l ≥ m
@@ -28,4 +28,8 @@ function exact_twovar_marginals(A::TensorTrain{F,N};
             pˡᵐ
         end
     end
+end
+
+function exact_norm(A::AbstractTensorTrain{F,N}; p = exact_prob(A)) where {F,N}
+    sqrt(sum(abs2, p))
 end
