@@ -126,7 +126,7 @@
         svd_trunc = TruncThresh(0.0)
         q = 4; N = 3; L = 6
         qs = fill(q, N)
-        A = uniform_periodic_tt( rand(5:20, L-1), qs... )
+        A = uniform_periodic_tt(rand(5:20, L-1), qs... )
         x1 = sample(MersenneTwister(1234), A)[1]
         orthogonalize_left!(A; svd_trunc)
         x2 = sample(MersenneTwister(1234), A)[1]
@@ -136,8 +136,9 @@
     @testset "Exact" begin
         L = 3
         for N in 1:3
-            for qs in 1:3
-                A = rand_periodic_tt( [1; rand(1:7, L-1); 1], qs... )
+            for q in 1:3
+                qs = fill(q, N)
+                A = rand_periodic_tt([1; rand(1:7, L-1); 1], qs... )
                 m = marginals(A)
                 m_exact = exact_marginals(A)
                 @test m ≈ m_exact
@@ -147,6 +148,13 @@
                 @test exact_norm(A) ≈ norm(A)
             end
         end
+    end
+
+    @testset "Norm" begin
+        L = 3; N = 4; q = 2; qs = fill(q, N)
+        A = rand_periodic_tt( [1; rand(1:3, L-1); 1], qs... )
+        B = rand_periodic_tt( [1; rand(1:3, L-1); 1], qs... )
+        @test exact_norm(A-B) ≈ normAminusB(A, B)
     end
 
 end
