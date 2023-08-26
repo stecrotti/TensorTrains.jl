@@ -15,7 +15,7 @@ export
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
     bond_dims, uniform_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, compress!,
-    marginalize, marginals, twovar_marginals, normalization, normalize!, norm, trABt, 
+    marginals, twovar_marginals, normalization, normalize!, norm, trABt, 
     normAminusB,
     sample!, sample,
     PeriodicTensorTrain, uniform_periodic_tt, rand_periodic_tt
