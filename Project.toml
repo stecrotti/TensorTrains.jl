@@ -1,7 +1,7 @@
 name = "TensorTrains"
 uuid = "89893e69-996d-40b1-ba32-8ff5f34c0dd5"
 authors = ["stecrotti <stefano.crotti@polito.it>", "abraunst <alfredo.braunstein@polito.it"]
-version = "0.4.0"
+version = "0.5.0"
 
 [deps]
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
@@ -13,11 +13,11 @@ TensorCast = "02d47bb6-7ce6-556a-be16-bb1710789e2b"
 Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
 [compat]
-TensorCast = "0.4"
-StatsBase = "0.33, 0.34"
 Lazy = "0.15"
-Tullio = "0.3"
 Reexport = "1"
+StatsBase = "0.33, 0.34"
+TensorCast = "0.4"
+Tullio = "0.3"
 julia = "1.8, 1.9"
 
 [extras]
