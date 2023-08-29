@@ -8,7 +8,7 @@ A type for representing a Tensor Train with periodic boundary conditions
 struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
 
-    function PeriodicTensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N}
+    function PeriodicTensorTrain{F,N}(tensors::Vector{Array{F,N}}) where {F<:Number, N}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensors[1],1) == size(tensors[end],2) ||
             throw(ArgumentError("Number of rows of the first matrix should coincide with the number of columns of the last matrix"))
@@ -16,6 +16,9 @@ struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
         return new{F,N}(tensors)
     end
+end
+function PeriodicTensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N} 
+    return PeriodicTensorTrain{F,N}(tensors)
 end
 
 @forward PeriodicTensorTrain.tensors getindex, iterate, firstindex, lastindex, setindex!, 

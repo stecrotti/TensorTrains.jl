@@ -8,7 +8,7 @@ A type for representing a Tensor Train
 struct TensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
 
-    function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N}
+    function TensorTrain{F,N}(tensors::Vector{Array{F,N}}) where {F<:Number, N}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensors[1],1) == size(tensors[end],2) == 1 ||
             throw(ArgumentError("First matrix must have 1 row, last matrix must have 1 column"))
@@ -16,6 +16,9 @@ struct TensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
         return new{F,N}(tensors)
     end
+end
+function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N} 
+    return TensorTrain{F,N}(tensors)
 end
 
 
