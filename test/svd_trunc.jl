@@ -8,7 +8,7 @@ L = 10; N = 3; q = 10; qs = fill(q, N)
         svd_trunc = TruncThresh(ε)
         A = deepcopy(B)
         compress!(A; svd_trunc)
-        @test normAminusB(A, B) < L*ε
+        @test norm2m(A, B) < (L*ε)^2
     end
 end
 
@@ -19,6 +19,6 @@ end
         svd_trunc = TruncBondThresh(2, ε)
         A = deepcopy(B)
         compress!(A; svd_trunc)
-        @test normAminusB(A, B) < L*ε
+        @test norm2m(A, B) < (L*ε)^2
     end
 end

@@ -120,16 +120,16 @@ Compute the 2-norm (Frobenius norm) of tensor train `A`
 norm(A::AbstractTensorTrain; T::Type = typeof(0.0)) = sqrt(trABt(A, A; T))
 
 @doc raw"""
-    normAminusB(A::AbstractTensorTrain, B::AbstractTensorTrain
+    norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
 
-Given two tensor trains `A,B`, compute `norm(A - B)` as
+Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 
 ```math
-\sqrt{\sum_x\left|A(x)-B(x)\right|_2^2} = \sqrt{\sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]+\sum_x \text{Tr}\left[B(x)B(x)^\dagger\right] -2\sum_x \text{Tr}\left[A(x)B(x)^\dagger\right]}
+\sum_x\left|A(x)-B(x)\right|_2^2 = \sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]+\sum_x \text{Tr}\left[B(x)B(x)^\dagger\right] -2\sum_x \text{Tr}\left[A(x)B(x)^\dagger\right]
 ```
 """
-function normAminusB(A::AbstractTensorTrain, B::AbstractTensorTrain; T::Type = typeof(0.0)) 
-    return sqrt(norm(A; T)^2 + norm(B; T)^2 - 2*trABt(A, B; T))
+function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain; T::Type = typeof(0.0)) 
+    return norm(A; T)^2 + norm(B; T)^2 - 2*trABt(A, B; T)
 end
 
 """
