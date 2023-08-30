@@ -36,7 +36,15 @@ end
 function (svd_trunc::TruncThresh)(M::AbstractMatrix)
     U, λ, V = svd(M)
     λ_norm = norm(λ)
-    mprime = findlast(λₖ > svd_trunc.ε*λ_norm for λₖ in λ)
+    mprime = 1
+    s = 0.0
+    for (k, λₖ) in Iterators.drop(Iterators.reverse(pairs(λ)), 1)
+        s += λₖ ^ 2
+        if s ≥ (λ_norm * svd_trunc.ε)^2
+            mprime = k + 1
+            break
+        end
+    end
     _debug_svd(M, U, λ, V, mprime)
     U[:,1:mprime], λ[1:mprime], V[:,1:mprime]
 end
@@ -88,7 +96,7 @@ function (svd_trunc::TruncBondMax)(M::AbstractMatrix)
     U, λ, V = svd(M)
     mprime = min(length(λ), svd_trunc.mprime)
     _debug_svd(M, U, λ, V, mprime)
-    err = sum(abs2, @view λ[mprime+1:end]) / sum(abs2, λ) |> sqrt
+    err = sum(abs2, @view λ[mprime+1:end]; init=0.0) / sum(abs2, λ) |> sqrt
     svd_trunc.maxerr[1] = max(svd_trunc.maxerr[1], err) 
     U[:,1:mprime], λ[1:mprime], V[:,1:mprime]
 end
@@ -121,11 +129,16 @@ end
 function (svd_trunc::TruncBondThresh)(M::AbstractMatrix)
     U, λ, V = svd(M)
     λ_norm = norm(λ)
-    mprime = min(
-        findlast(λₖ > svd_trunc.ε*λ_norm for λₖ in λ),
-        length(λ), 
-        svd_trunc.mprime
-        )
+    mprime = 1
+    s = 0.0
+    for (k, λₖ) in Iterators.drop(Iterators.reverse(pairs(λ)), 1)
+        s += λₖ ^ 2
+        if s ≥ (λ_norm * svd_trunc.ε)^2
+            mprime = k + 1
+            break
+        end
+    end
+    mprime = min(mprime, svd_trunc.mprime)
     _debug_svd(M, U, λ, V, mprime)
     U[:,1:mprime], λ[1:mprime], V[:,1:mprime]
 end
