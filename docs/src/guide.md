@@ -23,7 +23,7 @@ normalize!(::TensorTrain)
 -
 trABt
 norm
-normAminusB
+norm2m
 sample!
 sample
 orthogonalize_right!

@@ -171,6 +171,6 @@ end
         L = 3; N = 2; q = 2; qs = fill(q, N)
         A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
         B = rand_tt( [1; rand(1:3, L-1); 1], qs... )
-        @test norm(A-B) ≈ exact_norm(A-B) ≈ normAminusB(A,B)
+        @test norm(A-B)^2 ≈ exact_norm(A-B)^2 ≈ norm2m(A,B)
     end
 end
