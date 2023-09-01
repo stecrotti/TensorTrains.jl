@@ -4,12 +4,14 @@ using Reexport
 @reexport import Base:
     eltype, getindex, iterate, firstindex, lastindex, setindex!, eachindex, 
     length, isapprox, ==, +, -, show
-import Lazy: @forward
-import TensorCast: @cast, @reduce, TensorCast
-import LinearAlgebra: svd, normalize!, norm, tr, I, Hermitian
-import Tullio: @tullio
-import Random: AbstractRNG, GLOBAL_RNG
-import StatsBase: sample!, sample
+using Lazy: @forward
+using TensorCast: @cast, @reduce, TensorCast
+using LinearAlgebra: svd, norm, tr, I, Hermitian
+using LinearAlgebra
+using Tullio: @tullio
+using Random: AbstractRNG, GLOBAL_RNG
+using StatsBase: sample!, sample
+using StatsBase
 
 export 
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,

@@ -164,7 +164,7 @@ end
 
 PeriodicTensorTrain(A::TensorTrain) = PeriodicTensorTrain(A.tensors)
 
-function sample!(rng::AbstractRNG, x, A::PeriodicTensorTrain{F,N};
+function StatsBase.sample!(rng::AbstractRNG, x, A::PeriodicTensorTrain{F,N};
         r = accumulate_R(A)) where {F<:Real,N}
     L = length(A)
     @assert length(x) == L
