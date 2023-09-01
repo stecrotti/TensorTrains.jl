@@ -250,21 +250,6 @@ function normalization(A::TensorTrain; l = accumulate_L(A), r = accumulate_R(A))
     z
 end
 
-"""
-    normalize!(A::AbstractTensorTrain)
-
-Normalize `A` to a probability distribution
-"""
-function normalize!(A::AbstractTensorTrain)
-    c = normalize_eachmatrix!(A)
-    Z = normalization(A)
-    L = length(A)
-    for a in A
-        a ./= Z^(1/L)
-    end
-    c + log(Z)
-end
-
 # used to do stuff like `A+B` with `A,B` tensor trains
 function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     @assert NA == NB
@@ -288,17 +273,7 @@ function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     TensorTrain(tensors)
 end
 
-"""
-    sample!([rng], x, A::AbstractTensorTrain; r)
-
-Draw an exact sample from `A` and store the result in `x`.
-
-Optionally specify a random number generator `rng` as the first argument
-  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
-
-The output is `x,p`, the sampled sequence and its probability
-"""
-function sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
+function StatsBase.sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
         r = accumulate_R(A)) where {F<:Real,N}
     L = length(A)
     @assert length(x) == L

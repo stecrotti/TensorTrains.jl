@@ -6,7 +6,7 @@ It currently supports 2 subtypes [`TensorTrain`](@ref) and [`PeriodicTensorTrain
 """
 abstract type AbstractTensorTrain{F<:Number, N} end
 
-eltype(::AbstractTensorTrain{F,N}) where {N,F} = F
+Base.eltype(::AbstractTensorTrain{F,N}) where {N,F} = F
 
 """
     normalize_eachmatrix!(A::AbstractTensorTrain)
@@ -26,8 +26,8 @@ function normalize_eachmatrix!(A::AbstractTensorTrain)
     c
 end
 
-==(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
-isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
+Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
+Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
 
 function accumulate_M(A::AbstractTensorTrain)
@@ -66,21 +66,49 @@ function compress!(A::AbstractTensorTrain; svd_trunc=TruncThresh(1e-6))
 end
 
 """
-    +(A::AbstracTensorTrain, B::AbstracTensorTrain)
+    Base.:(+)(A::AbstracTensorTrain, B::AbstracTensorTrain)
 
 Compute the sum of two Tensor Trains. Matrix sizes are doubled
 """
-+(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(+, A, B)
+Base.:(+)(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(+, A, B)
 
 """
     -(A::AbstracTensorTrain, B::AbstracTensorTrain)
 
 Compute the difference of two Tensor Trains. Matrix sizes are doubled
 """
--(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(-, A, B)
+Base.:(-)(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(-, A, B)
 
-## Fallback sampling methods
-function sample!(x, A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
+"""
+    sample([rng], A::AbstractTensorTrain; r)
+
+Draw an exact sample from `A`.
+
+Optionally specify a random number generator `rng` as the first argument
+  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
+
+The output is `x,p`, the sampled sequence and its probability
+"""
+function StatsBase.sample(rng::AbstractRNG, A::AbstractTensorTrain{F,N};
+        r = accumulate_R(A)) where {F<:Real,N}
+    x = [zeros(Int, N-2) for Aᵗ in A]
+    sample!(rng, x, A; r)
+end
+function StatsBase.sample(A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
+    sample(GLOBAL_RNG, A; r)
+end
+
+"""
+    sample!([rng], x, A::AbstractTensorTrain; r)
+
+Draw an exact sample from `A` and store the result in `x`.
+
+Optionally specify a random number generator `rng` as the first argument
+  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
+
+The output is `x,p`, the sampled sequence and its probability
+"""
+function StatsBase.sample!(x, A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
     sample!(GLOBAL_RNG, x, A; r)
 end
 
@@ -117,7 +145,7 @@ Compute the 2-norm (Frobenius norm) of tensor train `A`
 \sqrt{\sum_x\left|A(x)\right|_2^2} = \sqrt{\sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]}
 ```
 """
-norm(A::AbstractTensorTrain; T::Type = typeof(0.0)) = sqrt(trABt(A, A; T))
+LinearAlgebra.norm(A::AbstractTensorTrain; T::Type = typeof(0.0)) = sqrt(trABt(A, A; T))
 
 @doc raw"""
     norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
@@ -133,20 +161,16 @@ function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain; T::Type = typeof
 end
 
 """
-    sample([rng], A::AbstractTensorTrain; r)
+    LinearAlgebra.normalize!(A::AbstractTensorTrain)
 
-Draw an exact sample from `A`.
-
-Optionally specify a random number generator `rng` as the first argument
-  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
-
-The output is `x,p`, the sampled sequence and its probability
+Normalize `A` to a probability distribution
 """
-function sample(rng::AbstractRNG, A::AbstractTensorTrain{F,N};
-        r = accumulate_R(A)) where {F<:Real,N}
-    x = [zeros(Int, N-2) for Aᵗ in A]
-    sample!(rng, x, A; r)
-end
-function sample(A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample(GLOBAL_RNG, A; r)
+function LinearAlgebra.normalize!(A::AbstractTensorTrain)
+    c = normalize_eachmatrix!(A)
+    Z = normalization(A)
+    L = length(A)
+    for a in A
+        a ./= Z^(1/L)
+    end
+    c + log(Z)
 end
