@@ -27,7 +27,7 @@ end
 
 
 function check_bond_dims(tensors::Vector{<:Array})
-    for t in 1:lastindex(tensors)-1
+    for t in Iterators.take(eachindex(tensors), length(tensors)-1)
         dᵗ = size(tensors[t],2)
         dᵗ⁺¹ = size(tensors[t+1],1)
         if dᵗ != dᵗ⁺¹
@@ -106,7 +106,7 @@ function orthogonalize_right!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     @cast M[m, (n, x)] := Cᵀ[m, n, x]
     D = fill(1.0,1,1,1)
 
-    for t in length(C):-1:2
+    for t in Iterators.take(Iterators.reverse(eachindex(C)), length(C)-1)
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x in 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
@@ -131,7 +131,7 @@ function orthogonalize_left!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
     @cast M[(m, x), n] |= C⁰[m, n, x]
     D = fill(1.0,1,1,1)
 
-    for t in 1:length(C)-1
+    for t in Iterators.take(eachindex(C), length(C)-1)
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x in 1:q
         C[t] = _reshapeas(Aᵗ, C[t])
@@ -222,7 +222,7 @@ function twovar_marginals(A::TensorTrain{F,N};
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
     b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...) 
         for _ in eachindex(A), _ in eachindex(A)]
-    for t in 1:length(A)-1
+    for t in Iterators.take(eachindex(A), length(A)-1)
         lᵗ⁻¹ = t == 1 ? [1.0;] : l[t-1]
         Aᵗ = _reshape1(A[t])
         for u in t+1:min(length(A),t+maxdist)

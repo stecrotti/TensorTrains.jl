@@ -66,7 +66,7 @@ function accumulate_L(A::PeriodicTensorTrain)
     l[1] = l⁰
 
     lᵗ = l⁰
-    for t in 1:length(A)-1
+    for t in Iterators.take(eachindex(A), length(A)-1)
         Aᵗ = _reshape1(A[t+1])
         @reduce lᵗ[a¹,aᵗ⁺¹] |= sum(x,aᵗ) lᵗ[a¹,aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] 
         l[t+1] = lᵗ
@@ -81,7 +81,7 @@ function accumulate_R(A::PeriodicTensorTrain)
     r[end] = rᴸ
 
     rᵗ = rᴸ
-    for t in length(A)-1:-1:1
+    for t in Iterators.drop(reverse(eachindex(A)), 1)
         Aᵗ = _reshape1(A[t])
         @reduce rᵗ[aᵗ,a¹] |= sum(x,aᵗ⁺¹) Aᵗ[aᵗ,aᵗ⁺¹,x] * rᵗ[aᵗ⁺¹,a¹] 
         r[t] = rᵗ
@@ -121,7 +121,7 @@ function twovar_marginals(A::PeriodicTensorTrain{F,N};
     b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...) 
         for _ in eachindex(A), _ in eachindex(A)]
     d = first(bond_dims(A))
-    for t in 1:length(A)-1
+    for t in Iterators.take(eachindex(A), length(A)-1)
         lᵗ⁻¹ = t == 1 ? Matrix(I, d, d) : l[t-1]
         Aᵗ = _reshape1(A[t])
         for u in t+1:min(length(A),t+maxdist)
@@ -198,7 +198,7 @@ function orthogonalize_right!(C::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6
     @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
     @cast M[m, (n, x)] := D[m, n, x]
 
-    for t in length(C):-1:2
+    for t in Iterators.take(Iterators.reverse(eachindex(C)), length(C)-1)
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x in 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
@@ -219,7 +219,7 @@ function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6)
     @cast M[(m, x), n] |= A⁰[m, n, x]
     D = fill(1.0,1,1,1)  # initialize
 
-    for t in 1:length(A)-1
+    for t in Iterators.take(eachindex(A), length(A)-1)
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x in 1:q
         A[t] = _reshapeas(Aᵗ, A[t])
