@@ -4,6 +4,8 @@
 [![Build Status](https://github.com/stecrotti/TensorTrains.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/stecrotti/TensorTrains.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/stecrotti/TensorTrains.jl/branch/main/graph/badge.svg?token=eNeXzhhZ5R)](https://codecov.io/gh/stecrotti/TensorTrains.jl)
 
+⚠️ This package is still work in progress, some breaking changes should be expected.
+
 ## What is a Tensor Train?
 A [Tensor Train](https://tensornetwork.org/mps/) is a type of tensor factorization involving the product of 3-index tensors organized on a one-dimensional chain. 
 In the context of function approximation and probability, a function of $L$ discrete variables is in Tensor Train format if it is written as
