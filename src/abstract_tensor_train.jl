@@ -73,7 +73,7 @@ Compute the sum of two Tensor Trains. Matrix sizes are doubled
 Base.:(+)(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(+, A, B)
 
 """
-    -(A::AbstracTensorTrain, B::AbstracTensorTrain)
+    Base.:(-)(A::AbstracTensorTrain, B::AbstracTensorTrain)
 
 Compute the difference of two Tensor Trains. Matrix sizes are doubled
 """
@@ -113,27 +113,27 @@ function StatsBase.sample!(x, A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) 
 end
 
 @doc raw"""
-    trABt(A::AbstractTensorTrain, B::AbstractTensorTrain
+    LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
 
-Given two tensor trains `A,B`, compute `tr(A*B')`
+Compute the inner product between tensor trains `A` and `B`
 
 ```math
-\text{Tr}\left[A(x)B(x)^\dagger\right]
+A\cdot B = \sum_{x^1,x^2,\ldots,x^L}A^1(x^1)A^2(x^2)\cdots A^L(x^L)B^1(x^1)B^2(x^2)\cdots B^L(x^L)
 ```
 """
-function trABt(A::AbstractTensorTrain, B::AbstractTensorTrain; T::Type = typeof(0.0))
-    all(size(a)[3:end] == size(b)[3:end] for (a,b) in zip(A.tensors, B.tensors)) || 
-        throw(ArgumentError("Tensor Trains must have same number of states for each variable"))
-    toT(A) = convert(T, A)
-    Aᵀ =  _reshape1(A[end]) .|> toT
-    Bᵀ =  _reshape1(B[end]) .|> toT
-    R = sum(Aᵀ[:,:,xᵀ] * Bᵀ[:,:,xᵀ]' for xᵀ in axes(Aᵀ, 3))
-    for (At,Bt) in Iterators.drop(Iterators.reverse(Iterators.zip(A,B)), 1)
-        Aᵗ = _reshape1(At)
-        Bᵗ = _reshape1(Bt)
-        R = sum(Aᵗ[:,:,xᵗ] * R * Bᵗ[:,:,xᵗ]' for xᵗ in axes(Aᵗ, 3))
+function LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
+    Aᴸ = _reshape1(A[end])
+    Bᴸ = _reshape1(B[end])
+    @tullio C[aᴸ,a¹,b¹,bᴸ] := Aᴸ[aᴸ,a¹,xᴸ] * Bᴸ[bᴸ,b¹,xᴸ]
+
+    for (Al, Bl) in Iterators.drop(Iterators.reverse(zip(A,B)), 1)
+        Aˡ = _reshape1(Al)
+        Bˡ = _reshape1(Bl)
+        @tullio Cnew[aˡ,a¹,b¹,bˡ] := Aˡ[aˡ,aˡ⁺¹,xˡ] * C[aˡ⁺¹,a¹,b¹,bˡ⁺¹] * Bˡ[bˡ,bˡ⁺¹,xˡ]
+        C = Cnew
     end
-    tr(R)
+
+    @tullio d = C[a¹,a¹,b¹,b¹]
 end
 
 @doc raw"""
@@ -142,10 +142,10 @@ end
 Compute the 2-norm (Frobenius norm) of tensor train `A`
 
 ```math
-\sqrt{\sum_x\left|A(x)\right|_2^2} = \sqrt{\sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]}
+\lVert A\rVert_2 = \sqrt{\sum_{x^1,x^2,\ldots,x^L}\left[A^1(x^1)A^2(x^2)\cdots A^L(x^L)\right]^2} = \sqrt{A\cdot A}
 ```
 """
-LinearAlgebra.norm(A::AbstractTensorTrain; T::Type = typeof(0.0)) = sqrt(trABt(A, A; T))
+LinearAlgebra.norm(A::AbstractTensorTrain) = sqrt(dot(A, A))
 
 @doc raw"""
     norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
@@ -153,11 +153,11 @@ LinearAlgebra.norm(A::AbstractTensorTrain; T::Type = typeof(0.0)) = sqrt(trABt(A
 Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 
 ```math
-\sum_x\left|A(x)-B(x)\right|_2^2 = \sum_x \text{Tr}\left[A(x)A(x)^\dagger\right]+\sum_x \text{Tr}\left[B(x)B(x)^\dagger\right] -2\sum_x \text{Tr}\left[A(x)B(x)^\dagger\right]
+\lVert A-B\rVert_2^2 = \lVert A \rVert_2^2 + \lVert B \rVert_2^2 - 2A\cdot B
 ```
 """
-function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain; T::Type = typeof(0.0)) 
-    return norm(A; T)^2 + norm(B; T)^2 - 2*trABt(A, B; T)
+function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain) 
+    return norm(A)^2 + norm(B)^2 - 2*dot(A, B)
 end
 
 """
