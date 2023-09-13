@@ -13,6 +13,11 @@ end
         @test A ≈ B
     end
 
+    @testset "Bond dimensions" begin
+        tensors = [rand(1,4,2,2), rand(3,5,2,2)]
+        @test TensorTrains.check_bond_dims(tensors) == false
+    end
+
     @testset "single variable" begin
         tensors = [rand(1,3,2), rand(3,4,2), rand(4,10,2), rand(10,1,2)]
         C = TensorTrain(tensors)
