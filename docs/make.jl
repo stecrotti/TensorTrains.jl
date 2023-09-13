@@ -12,5 +12,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "https://github.com/stecrotti/TensorTrains.jl.git"
+    repo = "https://github.com/stecrotti/TensorTrains.jl.git",
+    push_preview = true
 )
