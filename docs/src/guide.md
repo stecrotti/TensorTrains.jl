@@ -1,12 +1,11 @@
-# Types
-
+## Types
 ```@docs
 AbstractTensorTrain
 TensorTrain
 PeriodicTensorTrain
 ```
 
-# Functions
+## Functions
 ```@docs
 normalize_eachmatrix!
 uniform_tt
@@ -31,7 +30,7 @@ orthogonalize_left!
 compress!
 ```
 
-# SVD Truncators
+## SVD Truncators
 ```@docs
 SVDTrunc
 TruncThresh
