@@ -180,7 +180,7 @@ end
 Compute the marginal distributions ``p(x^l)`` at each site
 
 ### Optional arguments
-- `l = accumulate_L(A)`, `r = accumulate_R(A)` pre-computed partial nommalizations
+- `l = accumulate_L(A)`, `r = accumulate_R(A)` pre-computed partial normalizations
 """
 function marginals(A::TensorTrain{F,N};
         l = accumulate_L(A), r = accumulate_R(A)) where {F<:Real,N}
