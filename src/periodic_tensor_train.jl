@@ -5,7 +5,7 @@ A type for representing a Tensor Train with periodic boundary conditions
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+struct PeriodicTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
 
     function PeriodicTensorTrain{F,N}(tensors::Vector{Array{F,N}}) where {F<:Number, N}
@@ -55,11 +55,11 @@ function rand_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
 end
 rand_periodic_tt(d::Integer, L::Integer, q...) = rand_periodic_tt(fill(d, L-1), q...)
 
-bond_dims(A::PeriodicTensorTrain) = [size(A[t], 1) for t in 1:lastindex(A)]
+bond_dims(A::AbstractPeriodicTensorTrain) = [size(A[t], 1) for t in 1:lastindex(A)]
 
-evaluate(A::PeriodicTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
+evaluate(A::AbstractPeriodicTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
 
-function accumulate_L(A::PeriodicTensorTrain)
+function accumulate_L(A::AbstractPeriodicTensorTrain)
     l = [zeros(0,0) for _ in eachindex(A)]
     A⁰ = _reshape1(first(A))
     @reduce l⁰[a¹,a²] := sum(x) A⁰[a¹,a²,x]
@@ -74,7 +74,7 @@ function accumulate_L(A::PeriodicTensorTrain)
     return l
 end
 
-function accumulate_R(A::PeriodicTensorTrain)
+function accumulate_R(A::AbstractPeriodicTensorTrain)
     r = [zeros(0,0) for _ in eachindex(A)]
     A⁰ = _reshape1(last(A))
     @reduce rᴸ[aᴸ,a¹] := sum(x) A⁰[aᴸ,a¹,x]
@@ -114,7 +114,7 @@ function marginals(A::PeriodicTensorTrain{F,N};
     return append!([p¹], p, [pᴸ])
 end
 
-function twovar_marginals(A::PeriodicTensorTrain{F,N};
+function twovar_marginals(A::AbstractPeriodicTensorTrain{F,N};
         l = accumulate_L(A), r = accumulate_R(A), M = accumulate_M(A),
         maxdist = length(A)-1) where {F<:Real,N}
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
@@ -164,7 +164,7 @@ end
 
 PeriodicTensorTrain(A::TensorTrain) = PeriodicTensorTrain(A.tensors)
 
-function StatsBase.sample!(rng::AbstractRNG, x, A::PeriodicTensorTrain{F,N};
+function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractPeriodicTensorTrain{F,N};
         r = accumulate_R(A)) where {F<:Real,N}
     L = length(A)
     @assert length(x) == L

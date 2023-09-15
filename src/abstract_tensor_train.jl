@@ -8,6 +8,8 @@ abstract type AbstractTensorTrain{F<:Number, N} end
 
 Base.eltype(::AbstractTensorTrain{F,N}) where {N,F} = F
 
+abstract type AbstractPeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N} end 
+
 """
     normalize_eachmatrix!(A::AbstractTensorTrain)
 

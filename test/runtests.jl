@@ -1,6 +1,6 @@
 using TensorTrains
-using Random, Suppressor, InvertedIndices
 using Test
+using Random, Suppressor, InvertedIndices#, LinearAlgebra
 using Aqua
 
 @testset "Aqua" begin
@@ -11,6 +11,7 @@ end
 include("exact.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
+include("uniform_tensor_train.jl")
 include("svd_trunc.jl")
 
 nothing
