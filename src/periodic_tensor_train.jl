@@ -5,7 +5,7 @@ A type for representing a Tensor Train with periodic boundary conditions
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-mutable struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+mutable struct PeriodicTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
     z::Logarithmic{F}
 
