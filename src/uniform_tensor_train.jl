@@ -74,7 +74,7 @@ function _compose(f, ::UniformTensorTrain, ::UniformTensorTrain)
 end
 
 function Base.:(+)(A::UniformTensorTrain{F,NA}, B::UniformTensorTrain{F,NB}) where {F,NA,NB}
-    @assert NA == NB
+    NA == NB || throw(ArgumentError("Tensor Trains must have the same number of variables, got $NA and $NB"))
     L = length(A)
     @assert length(B) == L
     sa = size(A.tensor); sb = size(B.tensor)
@@ -84,9 +84,9 @@ function Base.:(+)(A::UniformTensorTrain{F,NA}, B::UniformTensorTrain{F,NB}) whe
     return UniformTensorTrain(tensor, L)
 end
 
-function Base.:(-)(::UniformTensorTrain, ::UniformTensorTrain)
-    error("Not implemented")
-end
+# function Base.:(-)(::UniformTensorTrain, ::UniformTensorTrain)
+#     error("Not implemented")
+# end
 
 function symmetrized_uniform_tensor_train(A::AbstractTensorTrain)
     sz = size(A[1])[3:end]
