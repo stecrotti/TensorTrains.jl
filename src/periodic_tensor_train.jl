@@ -58,8 +58,8 @@ rand_periodic_tt(d::Integer, L::Integer, q...) = rand_periodic_tt(fill(d, L-1), 
 
 
 function _compose(f, A::PeriodicTensorTrain{F,NA}, B::PeriodicTensorTrain{F,NB}) where {F,NA,NB}
-    @assert NA == NB
-    @assert length(A) == length(B)
+    NA == NB || throw(ArgumentError("Tensor Trains must have the same number of variables, got $NA and $NB"))
+    length(A) == length(B) || throw(ArgumentError("Tensor Trains must have the same length, got $(length(A)) and $(length(B))"))
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
         sa = size(Aᵗ); sb = size(Bᵗ)
         if t == 1
