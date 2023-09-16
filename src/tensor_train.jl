@@ -245,15 +245,13 @@ end
 Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``
 """
 function normalization(A::TensorTrain; l = accumulate_L(A), r = accumulate_R(A))
-    z = only(l[end])
-    @assert only(r[begin]) ≈ z "z=$z, got $(only(r[begin])), A=$A"  # sanity check
-    z
+    return only(l[end])
 end
 
 # used to do stuff like `A+B` with `A,B` tensor trains
 function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
-    @assert NA == NB
-    @assert length(A) == length(B)
+    NA == NB || throw(ArgumentError("Tensor Trains must have the same number of variables, got $NA and $NB"))
+    length(A) == length(B) || throw(ArgumentError("Tensor Trains must have the same length, got $(length(A)) and $(length(B))"))
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
         sa = size(Aᵗ); sb = size(Bᵗ)
         if t == 1
@@ -276,8 +274,8 @@ end
 function StatsBase.sample!(rng::AbstractRNG, x, A::TensorTrain{F,N};
         r = accumulate_R(A)) where {F<:Real,N}
     L = length(A)
-    @assert length(x) == L
-    @assert all(length(xᵗ) == N-2 for xᵗ in x)
+    length(x) == L || throw(DimensionMismatch("`x` and `A` have lengths $(length(x)) and $L"))
+    all(length(xᵗ) == N-2 for xᵗ in x) || throw(DimensionMismatch("All elements of `x` must have correct dimension"))
 
     Q = ones(F, 1, 1)  # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
     for t in eachindex(A)

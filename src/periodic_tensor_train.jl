@@ -145,8 +145,8 @@ function normalization(A::PeriodicTensorTrain; l = accumulate_L(A), r = accumula
 end
 
 function _compose(f, A::PeriodicTensorTrain{F,NA}, B::PeriodicTensorTrain{F,NB}) where {F,NA,NB}
-    @assert NA == NB
-    @assert length(A) == length(B)
+    NA == NB || throw(ArgumentError("Tensor Trains must have the same number of variables, got $NA and $NB"))
+    length(A) == length(B) || throw(ArgumentError("Tensor Trains must have the same length, got $(length(A)) and $(length(B))"))
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
         sa = size(Aᵗ); sb = size(Bᵗ)
         if t == 1
@@ -167,10 +167,10 @@ PeriodicTensorTrain(A::TensorTrain) = PeriodicTensorTrain(A.tensors)
 function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractPeriodicTensorTrain{F,N};
         r = accumulate_R(A)) where {F<:Real,N}
     L = length(A)
-    @assert length(x) == L
-    @assert all(length(xᵗ) == N-2 for xᵗ in x)
+    length(x) == L || throw(DimensionMismatch("`x` and `A` have lengths $(length(x)) and $L"))
+    all(length(xᵗ) == N-2 for xᵗ in x) || throw(DimensionMismatch("All elements of `x` must have correct dimension"))
+    
     d = first(bond_dims(A))
-
     Q = Matrix(I, d, d)     # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
     for t in eachindex(A)
         rᵗ⁺¹ = t == L ? Matrix(I, d, d) : r[t+1]
@@ -207,9 +207,6 @@ function orthogonalize_right!(C::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6
         @cast M[m, (n, x)] := D[m, n, x]
     end
     C[begin] = _reshapeas(D, C[begin])
-
-    @assert check_bond_dims(C.tensors)
-
     return C
 end
 
@@ -233,6 +230,5 @@ function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6)
     A⁰ = _reshape1(A[begin])
     @tullio D[m, n, x] := λ[m] * V'[m, l] * A⁰[l, n, x]
     A[begin] = _reshapeas(D,  A[begin])
-
     return A
 end
