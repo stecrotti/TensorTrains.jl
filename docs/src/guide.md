@@ -1,8 +1,10 @@
 ## Types
 ```@docs
 AbstractTensorTrain
+AbstractPeriodicTensorTrain
 TensorTrain
 PeriodicTensorTrain
+UniformTensorTrain
 ```
 
 ## Functions
@@ -12,12 +14,14 @@ uniform_tt
 rand_tt
 uniform_periodic_tt
 rand_periodic_tt
+periodic_tensor_train
+symmetrized_uniform_tensor_train
 bond_dims
 evaluate
 marginals
 twovar_marginals
 normalization
-normalize!(::TensorTrain)
+normalize!
 +
 -
 dot

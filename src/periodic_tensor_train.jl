@@ -1,5 +1,5 @@
 """
-    PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+    PeriodicTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
 
 A type for representing a Tensor Train with periodic boundary conditions
 - `F` is the type of the matrix entries
