@@ -1,13 +1,17 @@
 """
-    AbstractTensorTrain
+    AbstractTensorTrain{F<:Number, N}
 
 An abstract type representing a Tensor Train.
-It currently supports 2 subtypes [`TensorTrain`](@ref) and [`PeriodicTensorTrain`](@ref).
 """
 abstract type AbstractTensorTrain{F<:Number, N} end
 
 Base.eltype(::AbstractTensorTrain{F,N}) where {N,F} = F
 
+"""
+    AbstractPeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+
+An abstract type representing a Tensor Train with periodic boundary conditions.
+"""
 abstract type AbstractPeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N} end 
 
 """

@@ -31,7 +31,6 @@ function check_bond_dims(tensors::Vector{<:Array})
         dᵗ = size(tensors[t],2)
         dᵗ⁺¹ = size(tensors[t+1],1)
         if dᵗ != dᵗ⁺¹
-            println("Bond size for matrix t=$t. dᵗ=$dᵗ, dᵗ⁺¹=$dᵗ⁺¹")
             return false
         end
     end

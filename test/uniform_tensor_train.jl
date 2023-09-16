@@ -40,13 +40,17 @@
     end
 
     @testset "Symmetrized uniform TT" begin
-        C = symmetrized_uniform_tensor_train(A)
-        x = sample(rng, A)[1]
-        y = sum(evaluate(A, circshift(x,i)) for i in eachindex(x))
-        @test all(evaluate(C, circshift(x,i)) ≈ y for i in eachindex(x))
+        alltypes = [rand_tt([1,4,3,1], 2, 3), rand_periodic_tt([3,1,4], 1, 2), A]
+        for B in alltypes
+            S = symmetrized_uniform_tensor_train(B)
+            x = sample(rng, B)[1]
+            y = sum(evaluate(B, circshift(x,i)) for i in eachindex(x))
+            @test all(evaluate(S, circshift(x,i)) ≈ y for i in eachindex(x))
+        end
     end
 
     @testset "Errors" begin
+        @test_throws ArgumentError (A[3] .= 1)
         @test_throws "Not implemented" orthogonalize_left!(A)
         @test_throws "Not implemented" orthogonalize_right!(A)
         @test_throws "Not implemented" compress!(A)

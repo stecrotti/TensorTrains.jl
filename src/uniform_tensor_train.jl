@@ -1,3 +1,14 @@
+"""
+    UniformTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
+
+A type for representing a Tensor Train with periodic boundary conditions and all matrices equal
+- `F` is the type of the matrix entries
+- `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
+
+## FIELDS
+- `tensor` only one is stored
+- `L` the length of the tensor train
+"""
 struct UniformTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
     tensor::Array{F,N}
     L :: Int
@@ -14,6 +25,11 @@ function UniformTensorTrain(tensor::Array{F,N}, L::Integer) where {F<:Number, N}
     return UniformTensorTrain{F,N}(tensor, L)
 end
 
+"""
+    periodic_tensor_train(A::UniformTensorTrain)
+
+Produce a `PeriodicTensorTrain` corresponding to `A`, with the matrix concretely repeated `length(A)` times
+"""
 periodic_tensor_train(A::UniformTensorTrain) = PeriodicTensorTrain(fill(A.tensor, A.L))
 
 Base.length(A::UniformTensorTrain) = A.L
@@ -84,10 +100,17 @@ function Base.:(+)(A::UniformTensorTrain{F,NA}, B::UniformTensorTrain{F,NB}) whe
     return UniformTensorTrain(tensor, L)
 end
 
-# function Base.:(-)(::UniformTensorTrain, ::UniformTensorTrain)
-#     error("Not implemented")
-# end
+@doc raw"""
+    symmetrized_uniform_tensor_train(A::AbstractTensorTrain)
 
+Convert a tensor train ``f(x^1,x^2,\ldots,x^L)`` into a `UniformTensorTrain` ``g`` such that
+
+```math
+g(\mathcal P[x^1,x^2,\ldots,x^L]) = g(x^1,x^2,\ldots,x^L) = \sum_{l=1}^L f(x^l, x^{l+1},\ldots,x^L,x^1,\ldots,x^{l-1})
+```
+
+for any cyclic permutation ``\mathcal P``
+"""
 function symmetrized_uniform_tensor_train(A::AbstractTensorTrain)
     sz = size(A[1])[3:end]
     rowdims = [size(a, 1) for a in A]
