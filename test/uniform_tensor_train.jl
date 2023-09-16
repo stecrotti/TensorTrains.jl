@@ -50,7 +50,7 @@
     end
 
     @testset "Errors" begin
-        @test_throws ArgumentError (A[3] .= 1)
+        @test_throws ArgumentError (A[3] = rand(rng, 4,4,2,3))
         @test_throws "Not implemented" orthogonalize_left!(A)
         @test_throws "Not implemented" orthogonalize_right!(A)
         @test_throws "Not implemented" compress!(A)
