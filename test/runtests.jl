@@ -1,6 +1,6 @@
 using TensorTrains
 using Test
-using Random, Suppressor, InvertedIndices#, LinearAlgebra
+using Random, Suppressor, InvertedIndices
 using Aqua
 
 @testset "Aqua" begin

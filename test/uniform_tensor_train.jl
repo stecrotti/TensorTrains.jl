@@ -1,11 +1,18 @@
 @testset "Uniform Tensor Trains" begin
+    rng = MersenneTwister(1)
+    tensor = rand(rng, 4,4,2,3)
+    L = 5
+    A = UniformTensorTrain(tensor, L)
+
+    @testset "Basics" begin
+        @test bond_dims(A) == fill(4, L)
+        B = UniformTensorTrain(tensor, L)
+        @test A == B
+        C = UniformTensorTrain(tensor .+ 1e-16, L)
+        @test C ≈ A
+    end
 
     @testset "Concrete uniform TT" begin
-        rng = MersenneTwister(1)
-        tensor = rand(rng, 4,4,2,3)
-        L = 5
-        A = UniformTensorTrain(tensor, L)
-        @test bond_dims(A) == fill(4, L)
         B = periodic_tensor_train(A)
         x = sample(rng, B)[1]
         @test evaluate(A,x) == evaluate(B, x)
@@ -33,13 +40,19 @@
     end
 
     @testset "Symmetrized uniform TT" begin
-        rng = MersenneTwister(1)
-        tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
-        C = TensorTrain(tensors)
-        A = symmetrized_uniform_tensor_train(C)
-        x = sample(rng, C)[1]
-        y = sum(evaluate(C, circshift(x,i)) for i in eachindex(x))
-        @test all(evaluate(A, circshift(x,i)) ≈ y for i in eachindex(x))
+        C = symmetrized_uniform_tensor_train(A)
+        x = sample(rng, A)[1]
+        y = sum(evaluate(A, circshift(x,i)) for i in eachindex(x))
+        @test all(evaluate(C, circshift(x,i)) ≈ y for i in eachindex(x))
+    end
+
+    @testset "Errors" begin
+        @test_throws "Not implemented" orthogonalize_left!(A)
+        @test_throws "Not implemented" orthogonalize_right!(A)
+        @test_throws "Not implemented" compress!(A)
+        tensor = rand(rng, 4,4,2,3)
+        B = UniformTensorTrain(tensor, L)
+        @test_throws "Not implemented" A - B
     end
 
 end
