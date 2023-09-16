@@ -1,8 +1,7 @@
 """
-    AbstractTensorTrain
+    AbstractTensorTrain{F<:Number, N}
 
 An abstract type representing a Tensor Train.
-It currently supports 2 subtypes [`TensorTrain`](@ref) and [`PeriodicTensorTrain`](@ref).
 """
 abstract type AbstractTensorTrain{F<:Number, N} end
 
