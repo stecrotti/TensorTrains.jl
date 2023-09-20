@@ -33,3 +33,8 @@ end
 function exact_norm(A::AbstractTensorTrain{F,N}; p = exact_prob(A)) where {F,N}
     sqrt(sum(abs2, p))
 end
+
+function exact_dot(A::AbstractTensorTrain{F,N}, B::AbstractTensorTrain{F,N};
+        pA = exact_prob(A), pB = exact_prob(B)) where {F,N}
+    dot(pA, pB)
+end

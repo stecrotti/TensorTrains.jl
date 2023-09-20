@@ -138,7 +138,7 @@
         for N in 1:3
             for q in 1:3
                 qs = fill(q, N)
-                A = rand_periodic_tt([1; rand(1:7, L-1); 1], qs... )
+                A = rand_periodic_tt(rand(1:7, L), qs...)
                 m = marginals(A)
                 m_exact = exact_marginals(A)
                 @test m ≈ m_exact
@@ -146,6 +146,8 @@
                 m2_exact = exact_twovar_marginals(A)
                 @test m2 ≈ m2_exact
                 @test exact_norm(A) ≈ norm(A)
+                B = rand_periodic_tt(rand(1:7, L), qs...)
+                @test exact_dot(A, B) ≈ dot(A, B)
             end
         end
     end
