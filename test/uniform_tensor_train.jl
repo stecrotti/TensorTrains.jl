@@ -12,6 +12,12 @@
         @test C ≈ A
     end
 
+    @testset "Normalization" begin
+        AA = deepcopy(A)
+        normalize!(AA)
+        @test normalization(AA) ≈ 1
+    end
+
     @testset "Concrete uniform TT" begin
         B = periodic_tensor_train(A)
         x = sample(rng, B)[1]
@@ -58,5 +64,30 @@
         B = UniformTensorTrain(tensor, L)
         @test_throws "Not implemented" A - B
     end
+end
 
+@testset "Infinite Uniform Tensor Train" begin
+    rng = MersenneTwister(1)
+    tensor = rand(rng, 4,4,2,3)
+    A = InfiniteUniformTensorTrain(tensor)
+    tensor2 = rand(rng, 3,3,2,3)
+    C = InfiniteUniformTensorTrain(tensor2)
+    B = UniformTensorTrain(tensor, 100)
+    D = UniformTensorTrain(tensor2, 100)
+
+    @testset "Normalization" begin
+        B = deepcopy(A)
+        normalize!(B)
+        @test normalization(B) ≈ 1
+        C = UniformTensorTrain(tensor, 50)
+        @test normalization(A)^50 ≈ normalization(C)
+    end
+
+    @testset "Marginals" begin
+        @test marginals(A) ≈ marginals(B)
+    end
+
+    @testset "Plus" begin
+        @test isapprox(marginals(A+C), marginals(B+D); atol=1e-6)
+    end
 end
