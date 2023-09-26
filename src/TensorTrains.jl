@@ -20,7 +20,8 @@ export
     dot, norm, norm2m,
     sample!, sample,
     AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
-    UniformTensorTrain, periodic_tensor_train, symmetrized_uniform_tensor_train
+    AbstractUniformTensorTrain, UniformTensorTrain, periodic_tensor_train,
+    symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
 
 include("utils.jl")
 include("svd_trunc.jl")
