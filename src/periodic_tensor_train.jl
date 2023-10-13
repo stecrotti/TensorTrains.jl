@@ -62,14 +62,14 @@ evaluate(A::PeriodicTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) i
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
 function accumulate_L(A::PeriodicTensorTrain)
-    L = I(size(A[begin],2)) |> Matrix
+    L = I(size(A[begin],1)) |> Matrix
     map(trace(Atx) for Atx in A) do At
         L = L * At
     end
 end
 
 function accumulate_R(A::PeriodicTensorTrain)
-    R = I(size(A[end],1)) |> Matrix
+    R = I(size(A[end],2)) |> Matrix
     map(trace(Atx) for Atx in Iterators.reverse(A)) do At
         R = At * R
     end |> reverse
