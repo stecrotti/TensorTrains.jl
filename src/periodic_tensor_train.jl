@@ -60,33 +60,17 @@ bond_dims(A::PeriodicTensorTrain) = [size(A[t], 1) for t in 1:lastindex(A)]
 evaluate(A::PeriodicTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
 
 function accumulate_L(A::PeriodicTensorTrain)
-    l = [zeros(0,0) for _ in eachindex(A)]
-    A⁰ = _reshape1(first(A))
-    @reduce l⁰[a¹,a²] := sum(x) A⁰[a¹,a²,x]
-    l[1] = l⁰
-
-    lᵗ = l⁰
-    for t in 1:length(A)-1
-        Aᵗ = _reshape1(A[t+1])
-        @reduce lᵗ[a¹,aᵗ⁺¹] |= sum(x,aᵗ) lᵗ[a¹,aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] 
-        l[t+1] = lᵗ
+    L = I(size(A[begin],2)) |> Matrix
+    map(_reshape1(At) for At in A) do At
+        L = L * (@tullio _[aᵗ,aᵗ⁺¹] := At[aᵗ,aᵗ⁺¹,x])
     end
-    return l
 end
 
 function accumulate_R(A::PeriodicTensorTrain)
-    r = [zeros(0,0) for _ in eachindex(A)]
-    A⁰ = _reshape1(last(A))
-    @reduce rᴸ[aᴸ,a¹] := sum(x) A⁰[aᴸ,a¹,x]
-    r[end] = rᴸ
-
-    rᵗ = rᴸ
-    for t in length(A)-1:-1:1
-        Aᵗ = _reshape1(A[t])
-        @reduce rᵗ[aᵗ,a¹] |= sum(x,aᵗ⁺¹) Aᵗ[aᵗ,aᵗ⁺¹,x] * rᵗ[aᵗ⁺¹,a¹] 
-        r[t] = rᵗ
-    end
-    return r
+    R = I(size(A[end],1)) |> Matrix
+    map(_reshape1(At) for At in Iterators.reverse(A)) do At
+        R = (@tullio _[aᵗ,aᵗ⁺¹] := At[aᵗ,aᵗ⁺¹,x]) * R
+    end |> reverse
 end
 
 function marginals(A::PeriodicTensorTrain{F,N};
