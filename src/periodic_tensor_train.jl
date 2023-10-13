@@ -108,7 +108,7 @@ end
 function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6))
     A⁰ = _reshape1(A[begin])
     q = size(A⁰, 3)
-    @cast M[(m, x), n] := A⁰[m, n, x]
+    @cast M[(m, x), n] |= A⁰[m, n, x]
     D = fill(1.0,1,1,1)  # initialize
 
     for t in 1:length(A)-1
@@ -117,7 +117,7 @@ function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6)
         A[t] = _reshapeas(Aᵗ, A[t])
         Aᵗ⁺¹ = _reshape1(A[t+1])
         @tullio D[m, n, x] := λ[m] * V'[m, l] * Aᵗ⁺¹[l, n, x]
-        @cast M[(m, x), n] := D[m, n, x]
+        @cast M[(m, x), n] |= D[m, n, x]
     end
     U, λ, V = svd_trunc(M)
     @cast Aᵀ[m, n, x] := U[(m, x), n] x in 1:q
