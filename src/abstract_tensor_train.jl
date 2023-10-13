@@ -8,6 +8,27 @@ abstract type AbstractTensorTrain{F<:Number, N} end
 
 Base.eltype(::AbstractTensorTrain{F,N}) where {N,F} = F
 
+
+"""
+    bond_dims(A::AbstractTensorTrain)
+
+Return a vector with the dimensions of the virtual bonds
+"""
+bond_dims(A::AbstractTensorTrain) = [size(A[t], 1) for t in 1:lastindex(A)]
+
+function check_bond_dims(tensors::Vector{<:Array})
+    for t in 1:lastindex(tensors)
+        dᵗ = size(tensors[t],2)
+        dᵗ⁺¹ = size(tensors[mod1(t+1, length(tensors))],1)
+        if dᵗ != dᵗ⁺¹
+            println("Bond size for matrix t=$t. dᵗ=$dᵗ, dᵗ⁺¹=$dᵗ⁺¹")
+            return false
+        end
+    end
+    return true
+end
+
+
 """
     normalize_eachmatrix!(A::AbstractTensorTrain)
 
@@ -25,6 +46,30 @@ function normalize_eachmatrix!(A::AbstractTensorTrain)
     end
     c
 end
+
+function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractTensorTrain{F,N};
+    r = accumulate_R(A)) where {F<:Real,N}
+L = length(A)
+@assert length(x) == L
+@assert all(length(xᵗ) == N-2 for xᵗ in x)
+d = first(bond_dims(A))
+
+Q = Matrix(I, d, d)     # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
+for t in eachindex(A)
+    rᵗ⁺¹ = t == L ? Matrix(I, d, d) : r[t+1]
+    # collapse multivariate xᵗ into 1D vector, sample from it
+    Aᵗ = _reshape1(A[t])
+    @tullio p[x] := Q[k,m] * Aᵗ[m,n,x] * rᵗ⁺¹[n,k]
+    p ./= sum(p)
+    xᵗ = sample_noalloc(rng, p)
+    x[t] .= CartesianIndices(size(A[t])[3:end])[xᵗ] |> Tuple
+    # update prob
+    Q = Q * Aᵗ[:,:,xᵗ]
+end
+p = tr(Q) / tr(first(r))
+return x, p
+end
+
 
 Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
 Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
@@ -54,6 +99,97 @@ function accumulate_M(A::AbstractTensorTrain)
     return M
 end
 
+trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
+
+function accumulate_L(A::AbstractTensorTrain)
+    L = Matrix(I, size(A[begin],1), size(A[begin],1))
+    map(trace(Atx) for Atx in A) do At
+        L = L * At
+    end
+end
+
+function accumulate_R(A::AbstractTensorTrain)
+    R = Matrix(I, size(A[end],2), size(A[end],2))
+    map(trace(Atx) for Atx in Iterators.reverse(A)) do At
+        R = At * R
+    end |> reverse
+end
+
+"""
+    marginals(A::AbstractTensorTrain; l, r)
+
+Compute the marginal distributions ``p(x^l)`` at each site
+
+### Optional arguments
+- `l = accumulate_L(A)`, `r = accumulate_R(A)` pre-computed partial normalizations
+"""
+function marginals(A::AbstractTensorTrain{F,N};
+    l = accumulate_L(A), r = accumulate_R(A)) where {F<:Real,N}
+
+    A¹ = _reshape1(A[begin]); r² = r[2]
+    @tullio p¹[x] := A¹[a¹,a²,x] * r²[a²,a¹]
+    p¹ ./= sum(p¹)
+    p¹ = reshape(p¹, size(A[begin])[3:end])
+
+    Aᴸ = _reshape1(A[end]); lᴸ⁻¹ = l[end-1]
+    @tullio pᴸ[x] := lᴸ⁻¹[a¹,aᴸ] * Aᴸ[aᴸ,a¹,x]
+    pᴸ ./= sum(pᴸ)
+    pᴸ = reshape(pᴸ, size(A[end])[3:end])
+
+    p = map(2:length(A)-1) do t 
+        Aᵗ = _reshape1(A[t])
+        rl = r[t+1] * l[t-1]
+        @tullio pᵗ[x] := rl[aᵗ⁺¹,aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x]  
+        pᵗ ./= sum(pᵗ)
+        reshape(pᵗ, size(A[t])[3:end])
+    end
+
+    return append!([p¹], p, [pᴸ])
+end
+
+"""
+    twovar_marginals(A::AbstractTensorTrain; l, r, M, Δlmax)
+
+Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
+
+### Optional arguments
+- `l = accumulate_L(A)`, `r = accumulate_R(A)`, `M = accumulate_M(A)` pre-computed partial normalizations
+- `maxdist = length(A)`: compute marginals only at distance `maxdist`: ``|l-m|\\le maxdist``
+"""
+function twovar_marginals(A::AbstractTensorTrain{F,N};
+    l = accumulate_L(A), r = accumulate_R(A), M = accumulate_M(A),
+    maxdist = length(A)-1) where {F<:Real,N}
+    qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
+    b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...) 
+        for _ in eachindex(A), _ in eachindex(A)]
+    d = first(bond_dims(A))
+    for t in 1:length(A)-1
+        lᵗ⁻¹ = t == 1 ? Matrix(I, d, d) : l[t-1]
+        Aᵗ = _reshape1(A[t])
+        for u in t+1:min(length(A),t+maxdist)
+            rᵘ⁺¹ = u == length(A) ? Matrix(I, d, d) : r[u+1]
+            Aᵘ = _reshape1(A[u])
+            Mᵗᵘ = M[t, u]
+            @tullio bᵗᵘ[xᵗ, xᵘ] :=
+                lᵗ⁻¹[a¹,aᵗ] * Aᵗ[aᵗ, aᵗ⁺¹, xᵗ] * Mᵗᵘ[aᵗ⁺¹, aᵘ] * 
+                Aᵘ[aᵘ, aᵘ⁺¹, xᵘ] * rᵘ⁺¹[aᵘ⁺¹,a¹]
+            bᵗᵘ ./= sum(bᵗᵘ)
+            b[t,u] = reshape(bᵗᵘ, qs)
+        end
+    end
+    b
+end
+
+"""
+    normalization(A::AbstractTensorTrain; l, r)
+
+Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``
+"""
+function normalization(A::AbstractTensorTrain; l = accumulate_L(A), r = accumulate_R(A))
+    z = tr(l[end])
+    @assert tr(r[begin]) ≈ z "z=$z, got $(tr(r[begin])), A=$A"  # sanity check
+    z
+end
 
 """
     compress!(A::AbstractTensorTrain; svd_trunc::SVDTrunc)

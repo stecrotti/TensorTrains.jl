@@ -22,7 +22,7 @@ end
         tensors = [rand(1,3,2), rand(3,4,2), rand(4,10,2), rand(10,1,2)]
         C = TensorTrain(tensors)
 
-        @test bond_dims(C) == [3,4,10]
+        @test bond_dims(C) == [1,3,4,10]
         @test eltype(C) == eltype(1.0)
 
         x = [rand(1:2,1) for _ in C]
@@ -107,7 +107,7 @@ end
         m = TensorTrains.accumulate_M(A)
         Z = only(l[end])
         @test only(r[begin]) ≈ Z
-        @test l[begin]' * m[1,end] * r[end] ≈ Z
+        @test only(l[begin] * m[1,end] * r[end]) ≈ Z
     end
 
     @testset "Sum of TTs" begin
