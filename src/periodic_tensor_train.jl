@@ -59,17 +59,19 @@ bond_dims(A::PeriodicTensorTrain) = [size(A[t], 1) for t in 1:lastindex(A)]
 
 evaluate(A::PeriodicTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
 
+trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
+
 function accumulate_L(A::PeriodicTensorTrain)
     L = I(size(A[begin],2)) |> Matrix
-    map(_reshape1(At) for At in A) do At
-        L = L * (@tullio _[aᵗ,aᵗ⁺¹] := At[aᵗ,aᵗ⁺¹,x])
+    map(trace(Atx) for Atx in A) do At
+        L = L * At
     end
 end
 
 function accumulate_R(A::PeriodicTensorTrain)
     R = I(size(A[end],1)) |> Matrix
-    map(_reshape1(At) for At in Iterators.reverse(A)) do At
-        R = (@tullio _[aᵗ,aᵗ⁺¹] := At[aᵗ,aᵗ⁺¹,x]) * R
+    map(trace(Atx) for Atx in Iterators.reverse(A)) do At
+        R = At * R
     end |> reverse
 end
 
