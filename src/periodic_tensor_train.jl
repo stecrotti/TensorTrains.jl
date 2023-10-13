@@ -62,14 +62,14 @@ evaluate(A::PeriodicTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) i
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
 function accumulate_L(A::PeriodicTensorTrain)
-    L = I(size(A[begin],1)) |> Matrix
+    L = Matrix(I, size(A[begin],1), size(A[begin],1))
     map(trace(Atx) for Atx in A) do At
         L = L * At
     end
 end
 
 function accumulate_R(A::PeriodicTensorTrain)
-    R = I(size(A[end],2)) |> Matrix
+    R = Matrix(I, size(A[end],2), size(A[end],2))
     map(trace(Atx) for Atx in Iterators.reverse(A)) do At
         R = At * R
     end |> reverse
@@ -79,20 +79,19 @@ function marginals(A::PeriodicTensorTrain{F,N};
         l = accumulate_L(A), r = accumulate_R(A)) where {F<:Real,N}
 
     A¹ = _reshape1(A[begin]); r² = r[2]
-    @reduce p¹[x] := sum(a¹,a²) A¹[a¹,a²,x] * r²[a²,a¹]
+    @tullio p¹[x] := A¹[a¹,a²,x] * r²[a²,a¹]
     p¹ ./= sum(p¹)
     p¹ = reshape(p¹, size(A[begin])[3:end])
 
     Aᴸ = _reshape1(A[end]); lᴸ⁻¹ = l[end-1]
-    @reduce pᴸ[x] := sum(aᴸ,a¹) lᴸ⁻¹[a¹,aᴸ] * Aᴸ[aᴸ,a¹,x]
+    @tullio pᴸ[x] := lᴸ⁻¹[a¹,aᴸ] * Aᴸ[aᴸ,a¹,x]
     pᴸ ./= sum(pᴸ)
     pᴸ = reshape(pᴸ, size(A[end])[3:end])
 
     p = map(2:length(A)-1) do t 
-        lᵗ⁻¹ = l[t-1]
         Aᵗ = _reshape1(A[t])
-        rᵗ⁺¹ = r[t+1]
-        @reduce pᵗ[x] := sum(a¹,aᵗ,aᵗ⁺¹) lᵗ⁻¹[a¹,aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] * rᵗ⁺¹[aᵗ⁺¹,a¹]  
+        rl = r[t+1] * l[t-1]
+        @tullio pᵗ[x] := rl[aᵗ⁺¹,aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x]  
         pᵗ ./= sum(pᵗ)
         reshape(pᵗ, size(A[t])[3:end])
     end
@@ -202,7 +201,7 @@ end
 function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6))
     A⁰ = _reshape1(A[begin])
     q = size(A⁰, 3)
-    @cast M[(m, x), n] |= A⁰[m, n, x]
+    @cast M[(m, x), n] := A⁰[m, n, x]
     D = fill(1.0,1,1,1)  # initialize
 
     for t in 1:length(A)-1
@@ -211,7 +210,7 @@ function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6)
         A[t] = _reshapeas(Aᵗ, A[t])
         Aᵗ⁺¹ = _reshape1(A[t+1])
         @tullio D[m, n, x] := λ[m] * V'[m, l] * Aᵗ⁺¹[l, n, x]
-        @cast M[(m, x), n] |= D[m, n, x]
+        @cast M[(m, x), n] := D[m, n, x]
     end
     U, λ, V = svd_trunc(M)
     @cast Aᵀ[m, n, x] := U[(m, x), n] x in 1:q
