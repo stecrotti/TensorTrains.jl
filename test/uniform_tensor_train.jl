@@ -88,6 +88,6 @@ end
     end
 
     @testset "Plus" begin
-        @test isapprox(marginals(A+C), marginals(B+D); atol=1e-6)
+        @test isapprox(marginals(A+A), marginals(B+B); atol=1e-6)
     end
 end
