@@ -1,4 +1,4 @@
-To run the benchmarks, do
+## Run the benchmarks
 
 ```julia
 using PkgBenchmark
@@ -13,3 +13,6 @@ directory = "./"
 fn = directory * "benchmark_" * day * ".md"
 export_markdown(fn, res)
 ```
+
+## Compare across commits
+Run `benchmark/run_benchmarks.jl` after modifying the baseline and target variables therein.
