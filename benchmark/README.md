@@ -8,9 +8,9 @@ res = benchmarkpkg("TensorTrains")
 Pretty-print on a markdown file
 ```julia
 using Dates
-day = string(today())
+datetime = string(now())
 directory = "./"
-fn = directory * "benchmark_" * day * ".md"
+fn = directory * "benchmark_" * datetime * ".md"
 export_markdown(fn, res)
 ```
 
