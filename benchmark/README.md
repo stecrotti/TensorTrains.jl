@@ -5,7 +5,7 @@ using PkgBenchmark
 res = benchmarkpkg("TensorTrains")
 ```
 
-Optionally pretty-print on a file
+Pretty-print on a markdown file
 ```julia
 using Dates
 day = string(today())
