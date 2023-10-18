@@ -176,9 +176,11 @@ end
 
 Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``
 """
-function normalization(A::AbstractTensorTrain; l = accumulate_L(A), r = accumulate_R(A))
+function normalization(A::AbstractTensorTrain; l = accumulate_L(A))
     z = tr(l[end])
-    @assert tr(r[begin]) ≈ z "z=$z, got $(tr(r[begin])), A=$A"  # sanity check
+    @debug let r = accumulate_R(A)
+        @assert tr(r[begin]) ≈ z "z=$z, got $(tr(r[begin])), A=$A"  # sanity check
+    end
     z
 end
 
