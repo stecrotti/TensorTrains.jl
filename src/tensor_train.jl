@@ -59,23 +59,6 @@ rand_tt(d::Integer, L::Integer, q...) = rand_tt([1; fill(d, L-1); 1], q...)
 
 
 """
-    evaluate(A::AbstractTensorTrain, X...)
-
-Evaluate the Tensor Train `A` at input `X`
-
-Example:
-```@example
-    L = 3
-    q = (2, 3)
-    A = rand_tt(4, L, q...)
-    X = [[rand(1:qi) for qi in q] for l in 1:L]
-    evaluate(A, X)
-```
-"""
-evaluate(A::TensorTrain, X...) = only(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
-
-
-"""
     orthogonalize_right!(A::AbstractTensorTrain; svd_trunc::SVDTrunc)
 
 Bring `A` to right-orthogonal form by means of SVD decompositions.

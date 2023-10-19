@@ -53,10 +53,6 @@ function rand_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
 end
 rand_periodic_tt(d::Integer, L::Integer, q...) = rand_periodic_tt(fill(d, L-1), q...)
 
-evaluate(A::PeriodicTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
-
-
-
 
 function _compose(f, A::PeriodicTensorTrain{F,NA}, B::PeriodicTensorTrain{F,NB}) where {F,NA,NB}
     @assert NA == NB
