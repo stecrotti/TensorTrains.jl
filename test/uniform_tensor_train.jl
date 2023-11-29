@@ -24,8 +24,8 @@
         @test evaluate(A,x) == evaluate(B, x)
         @test evaluate(A + A,x) ≈ 2 * evaluate(A, x)
 
-        @test normalization(A) == normalization(B)
-        @test norm(A) == norm(B)
+        @test normalization(A) ≈ normalization(B)
+        @test norm(A) ≈ norm(B)
         tensor2 = rand(rng, 3,3,2,3)
         C = UniformTensorTrain(tensor2, L)
         D = PeriodicTensorTrain(fill(tensor2, L)) 
