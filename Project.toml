@@ -14,8 +14,8 @@ Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
 [compat]
 Lazy = "0.15"
-LinearAlgebra = "1.9"
-Random = "1.9"
+LinearAlgebra = "1.8"
+Random = "1.8"
 Reexport = "1"
 StatsBase = "0.33, 0.34"
 TensorCast = "0.4"
