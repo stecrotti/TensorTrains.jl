@@ -4,7 +4,6 @@ AbstractTensorTrain
 AbstractPeriodicTensorTrain
 TensorTrain
 PeriodicTensorTrain
-UniformTensorTrain
 ```
 
 ## Functions
@@ -14,8 +13,6 @@ flat_tt
 rand_tt
 flat_periodic_tt
 rand_periodic_tt
-periodic_tensor_train
-symmetrized_uniform_tensor_train
 bond_dims
 evaluate
 marginals
