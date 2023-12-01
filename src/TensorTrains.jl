@@ -19,9 +19,7 @@ export
     bond_dims, uniform_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, compress!,
     marginals, twovar_marginals, normalization, normalize!, dot, norm, norm2m,
     sample!, sample,
-    AbstractPeriodicTensorTrain, PeriodicTensorTrain, uniform_periodic_tt, rand_periodic_tt,
-    AbstractUniformTensorTrain, UniformTensorTrain, periodic_tensor_train,
-    symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
+    AbstractPeriodicTensorTrain, PeriodicTensorTrain, uniform_periodic_tt, rand_periodic_tt
 
 include("utils.jl")
 include("svd_trunc.jl")
