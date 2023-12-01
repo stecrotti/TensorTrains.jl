@@ -1,3 +1,6 @@
+import TensorTrains: UniformTensorTrain, periodic_tensor_train,
+    symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
+
 @testset "Uniform Tensor Trains" begin
     rng = MersenneTwister(1)
     tensor = rand(rng, 4,4,2,3)
@@ -79,8 +82,9 @@ end
         B = deepcopy(A)
         normalize!(B)
         @test normalization(B) ≈ 1
-        C = UniformTensorTrain(tensor, 50)
-        @test normalization(A)^50 ≈ normalization(C)
+        T = 50
+        C = UniformTensorTrain(tensor, T)
+        @test isapprox(T*log(normalization(A)), log(normalization(C)))
     end
 
     @testset "Marginals" begin
