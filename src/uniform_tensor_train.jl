@@ -69,11 +69,11 @@ end
 
 function normalization(A::UniformTensorTrain; B = one_normalization(A))
     L = length(A)
-    return tr(B^L)
+    return abs(tr(B^L))
 end
 
 function LinearAlgebra.normalize!(A::UniformTensorTrain)
-    Z = abs(normalization(A))
+    Z = normalization(A)
     A.tensor ./= Z^(1/length(A))
     return log(Z)
 end
@@ -170,20 +170,21 @@ Base.isapprox(A::T, B::T; kw...) where {T<:InfiniteUniformTensorTrain} = isappro
 
 function _eigen(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     Q = eigen(B, sortby = λ -> (-abs(λ)))
-    r = eigvecs(Q) |> real
-    l = pinv(r)
+    R = eigvecs(Q) |> real
+    L = pinv(R)
     λ = abs(eigvals(Q)[1])
-    l = l[1,:]
-    r = r[:,1]
+    l = L[1,:]
+    r = R[:,1]
     λ, l, r
 end
+
 function normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     λ, l, r = _eigen(A; B)
-    return λ * dot(l, r)
+    return abs(λ * dot(l, r))
 end
 
 function LinearAlgebra.normalize!(A::InfiniteUniformTensorTrain)
-    Z = abs(normalization(A))
+    Z = normalization(A)
     A.tensor ./= Z
     return log(Z)
 end
