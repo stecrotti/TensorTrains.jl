@@ -13,6 +13,8 @@ using Random: AbstractRNG, GLOBAL_RNG
 using StatsBase: sample!, sample
 using StatsBase
 
+import KrylovKit
+
 export 
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
