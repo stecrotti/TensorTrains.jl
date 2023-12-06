@@ -11,6 +11,8 @@ using Random: AbstractRNG, GLOBAL_RNG
 using StatsBase: sample!, sample
 using StatsBase
 
+import KrylovKit
+
 export 
     getindex, iterate, firstindex, lastindex, setindex!, eachindex, length, show,
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
