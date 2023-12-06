@@ -169,22 +169,22 @@ Base.:(==)(A::T, B::T) where {T<:InfiniteUniformTensorTrain} = isequal(A.tensor,
 Base.isapprox(A::T, B::T; kw...) where {T<:InfiniteUniformTensorTrain} = isapprox(A.tensor, B.tensor; kw...)
 
 function _eigen(A::InfiniteUniformTensorTrain; B = one_normalization(A))
-    Q = eigen(B, sortby = λ -> (-abs(λ)))
-    R = eigvecs(Q) |> real
-    L = pinv(R)
-    λ = abs(eigvals(Q)[1])
-    l = L[1,:]
-    r = R[:,1]
+    d, R, _ = KrylovKit.eigsolve(B)
+    _, L, _ = KrylovKit.eigsolve(transpose(B))
+    r = R[1]
+    l = L[1]
+    l ./= dot(l, r)
+    λ = d[1]
     λ, l, r
 end
 
 function normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     λ, l, r = _eigen(A; B)
-    return abs(λ * dot(l, r))
+    return λ# * dot(l, r)
 end
 
 function LinearAlgebra.normalize!(A::InfiniteUniformTensorTrain)
-    Z = normalization(A)
+    Z = abs(normalization(A))
     A.tensor ./= Z
     return log(Z)
 end
