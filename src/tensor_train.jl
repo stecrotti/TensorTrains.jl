@@ -73,7 +73,7 @@ function orthogonalize_right!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
 
     for t in length(C):-1:2
         U, λ, V = svd_trunc(M)
-        @cast Aᵗ[m, n, x] := V'[m, (n, x)] x:q
+        @cast Aᵗ[m, n, x] := V'[m, (n, x)] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
         Cᵗ⁻¹ = _reshape1(C[t-1])
         @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
@@ -98,7 +98,7 @@ function orthogonalize_left!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
 
     for t in 1:length(C)-1
         U, λ, V = svd_trunc(M)
-        @cast Aᵗ[m, n, x] := U[(m, x), n] x:q
+        @cast Aᵗ[m, n, x] := U[(m, x), n] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])
         Cᵗ⁺¹ = _reshape1(C[t+1])
         @tullio D[m, n, x] := λ[m] * V'[m, l] * Cᵗ⁺¹[l, n, x]
