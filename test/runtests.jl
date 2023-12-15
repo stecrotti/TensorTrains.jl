@@ -9,10 +9,13 @@ using Aqua
     Aqua.test_ambiguities(TensorTrains)
 end
 
+include("svd_trunc.jl")
 include("exact.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
+
+using TensorTrains.UniformTensorTrains
 include("uniform_tensor_train.jl")
-include("svd_trunc.jl")
+
 
 nothing

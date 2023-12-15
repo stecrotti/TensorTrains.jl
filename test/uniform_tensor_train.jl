@@ -1,6 +1,3 @@
-import TensorTrains: UniformTensorTrain, periodic_tensor_train,
-    symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
-
 @testset "Uniform Tensor Trains" begin
     rng = MersenneTwister(1)
     tensor = rand(rng, 4,4,2,3)
@@ -37,7 +34,7 @@ import TensorTrains: UniformTensorTrain, periodic_tensor_train,
         
         mA = marginals(A)
         mB = marginals(B)
-        @test all(mb ≈ only(mA) for mb in mB)
+        @test all(mb ≈ ma for (ma,mb) in zip(mA,mB))
 
         pA = twovar_marginals(A)
         pB = twovar_marginals(B)

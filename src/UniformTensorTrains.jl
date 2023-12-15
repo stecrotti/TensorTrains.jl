@@ -1,3 +1,14 @@
+module UniformTensorTrains
+
+using TensorTrains
+using LinearAlgebra
+import KrylovKit
+
+export AbstractUniformTensorTrain
+export UniformTensorTrain, InfiniteUniformTensorTrain
+export symmetrized_uniform_tensor_train, periodic_tensor_train
+
+
 """
     AbstractUniformTensorTrain{F,N} <: AbstractPeriodicTensorTrain{F,N}
 
@@ -67,7 +78,7 @@ function one_normalization(A::AbstractUniformTensorTrain{F,N}) where {F,N}
     return B
 end
 
-function normalization(A::UniformTensorTrain; B = one_normalization(A))
+function TensorTrains.normalization(A::UniformTensorTrain; B = one_normalization(A))
     L = length(A)
     return abs(tr(B^L))
 end
@@ -78,7 +89,7 @@ function LinearAlgebra.normalize!(A::UniformTensorTrain)
     return log(Z)
 end
 
-function marginals(A::UniformTensorTrain; B = one_normalization(A))
+function TensorTrains.marginals(A::UniformTensorTrain; B = one_normalization(A))
     L = length(A)
     C = B^(L-1)
     m = map(Iterators.product(axes(A.tensor)[3:end]...)) do x
@@ -87,19 +98,19 @@ function marginals(A::UniformTensorTrain; B = one_normalization(A))
     return [m / sum(m)]
 end
 
-function orthogonalize_left!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.orthogonalize_left!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
     error("Not implemented")
 end
 
-function orthogonalize_right!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.orthogonalize_right!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
     error("Not implemented")
 end
 
-function compress!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.compress!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
     error("Not implemented")
 end
 
-function _compose(f, ::UniformTensorTrain, ::UniformTensorTrain)
+function TensorTrains._compose(f, ::UniformTensorTrain, ::UniformTensorTrain)
     error("Not implemented")
 end
 
@@ -178,7 +189,7 @@ function _eigen(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     λ, l, r
 end
 
-function normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
+function TensorTrains.normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     λ, l, r = _eigen(A; B)
     return λ# * dot(l, r)
 end
@@ -198,10 +209,12 @@ function Base.:(+)(A::InfiniteUniformTensorTrain{F,NA}, B::InfiniteUniformTensor
     return InfiniteUniformTensorTrain(tensor)
 end
 
-function marginals(A::InfiniteUniformTensorTrain; B = one_normalization(A))
+function TensorTrains.marginals(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     _, l, r = _eigen(A; B)
     m = map(Iterators.product(axes(A.tensor)[3:end]...)) do x
         l' * (@view A.tensor[:,:,x...]) * r
     end
     return [m / sum(m)]
 end
+
+end # module
