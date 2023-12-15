@@ -13,8 +13,6 @@ using Random: AbstractRNG, GLOBAL_RNG
 using StatsBase: sample!, sample
 using StatsBase
 
-import KrylovKit
-
 export 
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
@@ -28,7 +26,9 @@ include("svd_trunc.jl")
 include("abstract_tensor_train.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
-include("uniform_tensor_train.jl")
+include("UniformTensorTrains.jl")
+
+using .UniformTensorTrains
 
 
 end # end module
