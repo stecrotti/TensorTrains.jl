@@ -34,7 +34,7 @@ struct TruncThresh{T} <: SVDTrunc
     ε :: T
 end
 function (svd_trunc::TruncThresh)(M::AbstractMatrix)
-    U, λ, V = svd(M)
+    U, λ, V = svd!(M)
     λ_norm = norm(λ)
     mprime = 1
     s = 0.0
@@ -70,7 +70,7 @@ struct TruncBond <: SVDTrunc
     mprime :: Int
 end
 function (svd_trunc::TruncBond)(M::AbstractMatrix)
-    U, λ, V = svd(M)
+    U, λ, V = svd!(M)
     mprime = min(length(λ), svd_trunc.mprime)
     _debug_svd(M, U, λ, V, mprime)
     U[:,1:mprime], λ[1:mprime], V[:,1:mprime]
@@ -93,7 +93,7 @@ struct TruncBondMax <: SVDTrunc
     TruncBondMax(mprime::Int) = new(mprime, [0.0])
 end
 function (svd_trunc::TruncBondMax)(M::AbstractMatrix)
-    U, λ, V = svd(M)
+    U, λ, V = svd!(M)
     mprime = min(length(λ), svd_trunc.mprime)
     _debug_svd(M, U, λ, V, mprime)
     err = sum(abs2, @view λ[mprime+1:end]; init=0.0) / sum(abs2, λ) |> sqrt
@@ -127,7 +127,7 @@ struct TruncBondThresh{T} <: SVDTrunc
     TruncBondThresh(mprime::Int, ε::T=0.0) where T = new{T}(mprime, ε)
 end
 function (svd_trunc::TruncBondThresh)(M::AbstractMatrix)
-    U, λ, V = svd(M)
+    U, λ, V = svd!(M)
     λ_norm = norm(λ)
     mprime = 1
     s = 0.0

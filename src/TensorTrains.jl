@@ -6,7 +6,7 @@ using Reexport
     length, isapprox, ==, +, -, show
 using Lazy: @forward
 using TensorCast: @cast, @reduce, TensorCast
-using LinearAlgebra: svd, norm, tr, I, Hermitian
+using LinearAlgebra: svd!, norm, tr, I, Hermitian
 using LinearAlgebra
 using Tullio: @tullio
 using Random: AbstractRNG, GLOBAL_RNG
