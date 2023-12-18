@@ -1,10 +1,14 @@
 using Documenter
 using TensorTrains
+using TensorTrains.UniformTensorTrains
 
 makedocs(
     sitename = "TensorTrains.jl",
     format = Documenter.HTML(),
-    modules = [TensorTrains],
+    modules = [
+        TensorTrains,
+        TensorTrains.UniformTensorTrains
+        ],
     pages = [
         "Home" => "index.md",
         "Guide" => "guide.md"
