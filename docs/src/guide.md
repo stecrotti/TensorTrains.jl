@@ -40,3 +40,13 @@ TruncBond
 TruncBondMax
 TruncBondThresh
 ```
+
+## Uniform Tensor Trains
+```@docs
+AbstractUniformTensorTrain
+UniformTensorTrain
+InfiniteUniformTensorTrain
+symmetrized_uniform_tensor_train
+periodic_tensor_train
+uniform_periodic_tt
+```
