@@ -62,31 +62,6 @@ function normalize_eachmatrix!(A::AbstractTensorTrain)
     c
 end
 
-function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractTensorTrain{F,N};
-    r = accumulate_R(A)) where {F<:Real,N}
-L = length(A)
-@assert length(x) == L
-@assert all(length(xᵗ) == N-2 for xᵗ in x)
-d = first(bond_dims(A))
-
-Q = Matrix(I, d, d)     # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
-for t in eachindex(A)
-    rᵗ⁺¹ = t == L ? Matrix(I, d, d) : r[t+1]
-    # collapse multivariate xᵗ into 1D vector, sample from it
-    Aᵗ = _reshape1(A[t])
-    @tullio QA[k,n,x] := Q[k,m] * Aᵗ[m,n,x]
-    @tullio p[x] := QA[k,n,x] * rᵗ⁺¹[n,k]
-    p ./= sum(p)
-    xᵗ = sample_noalloc(rng, p)
-    x[t] .= CartesianIndices(size(A[t])[3:end])[xᵗ] |> Tuple
-    # update prob
-    Q = Q * Aᵗ[:,:,xᵗ]
-end
-p = tr(Q) / tr(first(r))
-return x, p
-end
-
-
 Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
 Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
@@ -223,13 +198,48 @@ Compute the difference of two Tensor Trains. Matrix sizes are doubled
 """
 Base.:(-)(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(-, A, B)
 
+
+"""
+    sample!([rng], x, A::AbstractTensorTrain; r)
+
+Draw an exact sample from `A` and store the result in `x`.
+
+Optionally specify a random number generator `rng` as the first argument
+  (defaults to `Random.default_rng()`) and provide a pre-computed `r = accumulate_R(A)`.
+
+The output is `x,p`, the sampled sequence and its probability
+"""
+function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractTensorTrain{F,N};
+        r = accumulate_R(A)) where {F<:Real,N}
+    L = length(A)
+    @assert length(x) == L
+    @assert all(length(xᵗ) == N-2 for xᵗ in x)
+    d = first(bond_dims(A))
+
+    Q = Matrix(I, d, d)     # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
+    for t in eachindex(A)
+        rᵗ⁺¹ = t == L ? Matrix(I, d, d) : r[t+1]
+        # collapse multivariate xᵗ into 1D vector, sample from it
+        Aᵗ = _reshape1(A[t])
+        @tullio QA[k,n,x] := Q[k,m] * Aᵗ[m,n,x]
+        @tullio p[x] := QA[k,n,x] * rᵗ⁺¹[n,k]
+        p ./= sum(p)
+        xᵗ = sample_noalloc(rng, p)
+        x[t] .= CartesianIndices(size(A[t])[3:end])[xᵗ] |> Tuple
+        # update prob
+        Q = Q * Aᵗ[:,:,xᵗ]
+    end
+    p = tr(Q) / tr(first(r))
+    return x, p
+    end
+
 """
     sample([rng], A::AbstractTensorTrain; r)
 
 Draw an exact sample from `A`.
 
 Optionally specify a random number generator `rng` as the first argument
-  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
+  (defaults to `Random.default_rng()`) and provide a pre-computed `r = accumulate_R(A)`.
 
 The output is `x,p`, the sampled sequence and its probability
 """
@@ -239,41 +249,32 @@ function StatsBase.sample(rng::AbstractRNG, A::AbstractTensorTrain{F,N};
     sample!(rng, x, A; r)
 end
 function StatsBase.sample(A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample(GLOBAL_RNG, A; r)
+    sample(default_rng(), A; r)
 end
 
-"""
-    sample!([rng], x, A::AbstractTensorTrain; r)
-
-Draw an exact sample from `A` and store the result in `x`.
-
-Optionally specify a random number generator `rng` as the first argument
-  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
-
-The output is `x,p`, the sampled sequence and its probability
-"""
 function StatsBase.sample!(x, A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample!(GLOBAL_RNG, x, A; r)
+    sample!(default_rng(), x, A; r)
 end
 
 @doc raw"""
-    LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
+    LinearAlgebra.dot(ψ::AbstractTensorTrain, ϕ::AbstractTensorTrain)
 
-Compute the inner product between tensor trains `A` and `B`
+Compute the inner product between tensor trains ``\psi(x^1,x^2,\ldots,x^L)=A^1(x^1)A^2(x^2)\cdots A^L(x^L)`` and ``\phi(x^1,x^2,\ldots,x^L)=B^1(x^1)B^2(x^2)\cdots B^L(x^L)``
 
 ```math
-A\cdot B = \sum_{x^1,x^2,\ldots,x^L}A^1(x^1)A^2(x^2)\cdots A^L(x^L)B^1(x^1)B^2(x^2)\cdots B^L(x^L)
+\psi\cdot \phi = \sum_{x^1,x^2,\ldots,x^L} \psi^*(x^1,x^2,\ldots,x^L) \phi(x^1,x^2,\ldots,x^L)
 ```
+where ``^*`` stands for complex conjugate.
 """
-function LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
-    Aᴸ = _reshape1(A[end])
-    Bᴸ = _reshape1(B[end])
-    @tullio C[aᴸ,a¹,b¹,bᴸ] := Aᴸ[aᴸ,a¹,xᴸ] * Bᴸ[bᴸ,b¹,xᴸ]
+function LinearAlgebra.dot(ψ::AbstractTensorTrain, ϕ::AbstractTensorTrain)
+    ψᴸ = _reshape1(ψ[end])
+    ϕᴸ = _reshape1(ϕ[end])
+    @tullio C[aᴸ,a¹,b¹,bᴸ] := conj(ψᴸ[aᴸ,a¹,xᴸ]) * ϕᴸ[bᴸ,b¹,xᴸ]
 
-    for (Al, Bl) in Iterators.drop(Iterators.reverse(zip(A,B)), 1)
-        Aˡ = _reshape1(Al)
-        Bˡ = _reshape1(Bl)
-        @tullio Cnew[aˡ,a¹,b¹,bˡ] := Aˡ[aˡ,aˡ⁺¹,xˡ] * C[aˡ⁺¹,a¹,b¹,bˡ⁺¹] * Bˡ[bˡ,bˡ⁺¹,xˡ]
+    for (ψl, ϕl) in Iterators.drop(Iterators.reverse(zip(ψ,ϕ)), 1)
+        ψˡ = _reshape1(ψl)
+        ϕˡ = _reshape1(ϕl)
+        @tullio Cnew[aˡ,a¹,b¹,bˡ] := conj(ψˡ[aˡ,aˡ⁺¹,xˡ]) * C[aˡ⁺¹,a¹,b¹,bˡ⁺¹] * ϕˡ[bˡ,bˡ⁺¹,xˡ]
         C = Cnew
     end
 
@@ -281,39 +282,39 @@ function LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
 end
 
 @doc raw"""
-    LinearAlgebra.norm(A::AbstractTensorTrain)
+    LinearAlgebra.norm(ψ::AbstractTensorTrain)
 
-Compute the 2-norm (Frobenius norm) of tensor train `A`
+Compute the 2-norm (Frobenius norm) of tensor train `ψ`
 
 ```math
-\lVert A\rVert_2 = \sqrt{\sum_{x^1,x^2,\ldots,x^L}\left[A^1(x^1)A^2(x^2)\cdots A^L(x^L)\right]^2} = \sqrt{A\cdot A}
+\lVert ψ\rVert_2 = \sqrt{ψ\cdot ψ}
 ```
 """
-LinearAlgebra.norm(A::AbstractTensorTrain) = sqrt(dot(A, A))
+LinearAlgebra.norm(ψ::AbstractTensorTrain) = sqrt(dot(ψ, ψ))
 
 @doc raw"""
-    norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
+    norm2m(ψ::AbstractTensorTrain, ϕ::AbstractTensorTrain)
 
-Given two tensor trains `A,B`, compute `norm(A - B)^2` as
+Given two tensor trains `ψ,ϕ`, compute `norm(ψ - ϕ)^2` as
 
 ```math
-\lVert A-B\rVert_2^2 = \lVert A \rVert_2^2 + \lVert B \rVert_2^2 - 2A\cdot B
+\lVert ψ-ϕ\rVert_2^2 = \lVert ψ \rVert_2^2 + \lVert ϕ \rVert_2^2 - 2ψ\cdot ϕ
 ```
 """
-function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain) 
-    return norm(A)^2 + norm(B)^2 - 2*dot(A, B)
+function norm2m(ψ::AbstractTensorTrain, ϕ::AbstractTensorTrain) 
+    return norm(ψ)^2 + norm(ϕ)^2 - 2*dot(ψ, ϕ)
 end
 
 """
-    LinearAlgebra.normalize!(A::AbstractTensorTrain)
+    LinearAlgebra.normalize!(p::AbstractTensorTrain)
 
-Normalize `A` to a probability distribution
+Normalize `p` to a probability distribution
 """
-function LinearAlgebra.normalize!(A::AbstractTensorTrain)
-    c = normalize_eachmatrix!(A)
-    Z = normalization(A)
-    L = length(A)
-    for a in A
+function LinearAlgebra.normalize!(p::AbstractTensorTrain)
+    c = normalize_eachmatrix!(p)
+    Z = normalization(p)
+    L = length(p)
+    for a in p
         a ./= Z^(1/L)
     end
     c + log(Z)
