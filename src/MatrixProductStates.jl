@@ -25,7 +25,7 @@ TensorTrains.bond_dims(p::MatrixProductState) = bond_dims(p.ψ)
 
 TensorTrains.evaluate(p::MatrixProductState, X...) = abs2(evaluate(p.ψ, X...))
 
-id4(d::Integer) = [a==a¹ * b == b¹ for a in 1:d, a¹ in 1:d, b in 1:d, b¹ in 1:d]
+id4(d::Integer) = [a==a¹ && b==b¹ for a in 1:d, a¹ in 1:d, b in 1:d, b¹ in 1:d]
 
 function TensorTrains.accumulate_L(p::MatrixProductState)
     (; ψ) = p
@@ -34,6 +34,7 @@ function TensorTrains.accumulate_L(p::MatrixProductState)
     return map(_reshape1(Al) for Al in ψ) do Aˡ
         @tullio M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] := L[a¹,aˡ,b¹,bˡ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
         @tullio L[a¹,aˡ⁺¹,b¹,bˡ⁺¹] := M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
+        @assert L ≈ conj(permutedims(L, (3,4,1,2)))
         # restore hermiticity after possible numerical errors
         L .= (conj(permutedims(L, (3,4,1,2))) + L) / 2
     end
@@ -47,6 +48,7 @@ function TensorTrains.accumulate_R(p::MatrixProductState)
         @tullio M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] := R[aˡ⁺¹,aᴸ,bˡ⁺¹,bᴸ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
         @tullio R[aˡ,aᴸ,bˡ,bᴸ] := M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
         # restore hermiticity after possible numerical errors
+        @assert R ≈ conj(permutedims(R, (3,4,1,2)))
         R .= (conj(permutedims(R, (3,4,1,2))) + R) / 2
     end |> reverse
 end
@@ -91,6 +93,18 @@ function TensorTrains.marginals(p::MatrixProductState;
         pᵗ = real(pᵗ)  
         reshape(pᵗ, size(ψ[t])[3:end])
     end
+end
+
+function TensorTrains.orthogonalize_right!(p::MatrixProductState; svd_trunc=TruncThresh(1e-6))
+    orthogonalize_right!(p.ψ; svd_trunc)
+end
+
+function TensorTrains.orthogonalize_left!(p::MatrixProductState; svd_trunc=TruncThresh(1e-6))
+    orthogonalize_left!(p.ψ; svd_trunc)
+end
+
+function TensorTrains.compress!(p::MatrixProductState; svd_trunc=TruncThresh(1e-6))
+    compress!(p.ψ; svd_trunc)
 end
 
 """
