@@ -9,7 +9,7 @@ using TensorCast: @cast, @reduce, TensorCast
 using LinearAlgebra: svd, norm, tr, I, Hermitian
 using LinearAlgebra
 using Tullio: @tullio
-using Random: AbstractRNG, GLOBAL_RNG
+using Random: AbstractRNG, default_rng
 using StatsBase: sample!, sample
 using StatsBase
 
@@ -26,6 +26,7 @@ include("svd_trunc.jl")
 include("abstract_tensor_train.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
+include("MatrixProductStates.jl")
 
 
 end # end module

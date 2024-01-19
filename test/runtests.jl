@@ -12,5 +12,6 @@ include("exact.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
 include("svd_trunc.jl")
+include("MatrixProductStates.jl")
 
 nothing
