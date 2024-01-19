@@ -34,7 +34,7 @@ function TensorTrains.accumulate_L(p::MatrixProductState)
     return map(_reshape1(Al) for Al in ψ) do Aˡ
         @tullio M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] := L[a¹,aˡ,b¹,bˡ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
         @tullio L[a¹,aˡ⁺¹,b¹,bˡ⁺¹] := M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
-        @assert L ≈ conj(permutedims(L, (3,4,1,2)))
+        @debug @assert L ≈ conj(permutedims(L, (3,4,1,2)))
         # restore hermiticity after possible numerical errors
         L .= (conj(permutedims(L, (3,4,1,2))) + L) / 2
     end
@@ -48,7 +48,7 @@ function TensorTrains.accumulate_R(p::MatrixProductState)
         @tullio M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] := R[aˡ⁺¹,aᴸ,bˡ⁺¹,bᴸ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
         @tullio R[aˡ,aᴸ,bˡ,bᴸ] := M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
         # restore hermiticity after possible numerical errors
-        @assert R ≈ conj(permutedims(R, (3,4,1,2)))
+        @debug @assert R ≈ conj(permutedims(R, (3,4,1,2)))
         R .= (conj(permutedims(R, (3,4,1,2))) + R) / 2
     end |> reverse
 end

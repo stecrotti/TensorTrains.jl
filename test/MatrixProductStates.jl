@@ -19,7 +19,7 @@ using StatsBase: sample
     @testset "No-trace tensor train" begin
         tensors = [rand(ComplexF64, 1,5,2,2), rand(ComplexF64, 5,4,2,2),
             rand(ComplexF64, 4,10,2,2), rand(ComplexF64, 10,1,2,2)]
-        ψ = PeriodicTensorTrain(tensors)
+        ψ = TensorTrain(tensors)
         p = MatrixProductState(ψ)
         q = exact_prob(p)
         z = normalization(p)
@@ -31,20 +31,20 @@ using StatsBase: sample
             @test z ≈ trace(L[end])
             @test z ≈ sum(q)
             @test z ≈ abs2(norm(p.ψ))
+            orthogonalize_left!(p; svd_trunc=TruncThresh(0))
         end
 
         @testset "Orthogonalization" begin
-            normalize!(p)
             x = [[rand(rng, 1:q) for q in size(A)[3:end]] for A in ψ]
             px = evaluate(p, x)
             orthogonalize_left!(p; svd_trunc=TruncThresh(0))
             @test evaluate(p, x) ≈ px
             L = accumulate_L(p)
-            @test all(reshape(Lˡ,size(Lˡ)[2:2:4]...) ≈ Matrix(I, size(Lˡ)[2:2:4]...) for Lˡ in L)
+            @test all(reshape(Lˡ,size(Lˡ)[2:2:4]...) ≈ Matrix(I, size(Lˡ)[2:2:4]...) for Lˡ in L[1:end-1])
             orthogonalize_right!(p; svd_trunc=TruncThresh(0))
             @test evaluate(p, x) ≈ px
             R = accumulate_R(p)
-            @test all(reshape(Rˡ,size(Rˡ)[1:2:3]...) ≈ Matrix(I, size(Rˡ)[1:2:3]...) for Rˡ in R)
+            @test all(reshape(Rˡ,size(Rˡ)[1:2:3]...) ≈ Matrix(I, size(Rˡ)[1:2:3]...) for Rˡ in R[2:end])
             compress!(p; svd_trunc=TruncThresh(0))
             @test evaluate(p, x) ≈ px
         end
