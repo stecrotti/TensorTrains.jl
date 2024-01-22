@@ -34,8 +34,8 @@ function TensorTrains.accumulate_L(p::MatrixProductState)
     return map(_reshape1(Al) for Al in ψ) do Aˡ
         @tullio M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] := L[a¹,aˡ,b¹,bˡ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
         @tullio L[a¹,aˡ⁺¹,b¹,bˡ⁺¹] := M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
-        @debug @assert L ≈ conj(permutedims(L, (3,4,1,2)))
         # restore hermiticity after possible numerical errors
+        @debug @assert L ≈ conj(permutedims(L, (3,4,1,2)))
         L .= (conj(permutedims(L, (3,4,1,2))) + L) / 2
     end
 end
@@ -95,16 +95,16 @@ function TensorTrains.marginals(p::MatrixProductState;
     end
 end
 
-function TensorTrains.orthogonalize_right!(p::MatrixProductState; svd_trunc=TruncThresh(1e-6))
-    orthogonalize_right!(p.ψ; svd_trunc)
+function TensorTrains.orthogonalize_right!(p::MatrixProductState; kw...)
+    orthogonalize_right!(p.ψ; kw...)
 end
 
-function TensorTrains.orthogonalize_left!(p::MatrixProductState; svd_trunc=TruncThresh(1e-6))
-    orthogonalize_left!(p.ψ; svd_trunc)
+function TensorTrains.orthogonalize_left!(p::MatrixProductState; kw...)
+    orthogonalize_left!(p.ψ; kw...)
 end
 
-function TensorTrains.compress!(p::MatrixProductState; svd_trunc=TruncThresh(1e-6))
-    compress!(p.ψ; svd_trunc)
+function TensorTrains.compress!(p::MatrixProductState; kw...)
+    compress!(p.ψ; kw...)
 end
 
 """

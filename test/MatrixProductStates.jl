@@ -2,7 +2,8 @@ using TensorTrains.MatrixProductStates
 import TensorTrains.MatrixProductStates: trace
 import TensorTrains: accumulate_L, accumulate_R
 using StatsBase: sample
-
+using Tullio: @tullio
+using LinearAlgebra: I
 
 @testset "Matrix Product States" begin
 
@@ -31,7 +32,6 @@ using StatsBase: sample
             @test z ≈ trace(L[end])
             @test z ≈ sum(q)
             @test z ≈ abs2(norm(p.ψ))
-            orthogonalize_left!(p; svd_trunc=TruncThresh(0))
         end
 
         @testset "Orthogonalization" begin
@@ -47,6 +47,15 @@ using StatsBase: sample
             @test all(reshape(Rˡ,size(Rˡ)[1:2:3]...) ≈ Matrix(I, size(Rˡ)[1:2:3]...) for Rˡ in R[2:end])
             compress!(p; svd_trunc=TruncThresh(0))
             @test evaluate(p, x) ≈ px
+        end
+
+        @testset "Orthogonalization and normalization" begin
+            for l in eachindex(ψ)
+                orthogonalize_center!(ψ, l)
+                Aˡ = ψ[l]
+                @tullio zz = conj(Aˡ[m,n,x1,x2]) * Aˡ[m,n,x1,x2]
+                @test zz ≈ z
+            end
         end
 
         @testset "Sampling" begin
