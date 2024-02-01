@@ -30,7 +30,7 @@ include("tensor_train.jl")
 include("periodic_tensor_train.jl")
 include("UniformTensorTrains.jl")
 
-using .UniformTensorTrains
+# using .UniformTensorTrains
 
 
 end # end module
