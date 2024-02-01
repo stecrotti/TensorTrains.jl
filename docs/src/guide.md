@@ -9,8 +9,9 @@ PeriodicTensorTrain
 ## Functions
 ```@docs
 normalize_eachmatrix!
-uniform_tt
+tensor_train
 rand_tt
+periodic_tensor_train
 rand_periodic_tt
 bond_dims
 evaluate
