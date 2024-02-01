@@ -138,7 +138,7 @@
         @test z3 ≈ z1
     end
 
-    @testset "Uniform" begin
+    @testset "All 1's" begin
         svd_trunc = TruncBondThresh(20, 0.0)
         L = 5
         q = (2, 4)
