@@ -49,7 +49,7 @@ end
 
 Produce a `PeriodicTensorTrain` corresponding to `A`, with the matrix concretely repeated `length(A)` times
 """
-periodic_tensor_train(A::UniformTensorTrain) = PeriodicTensorTrain(fill(A.tensor, A.L))
+TensorTrains.periodic_tensor_train(A::UniformTensorTrain) = PeriodicTensorTrain(fill(A.tensor, A.L))
 
 Base.length(A::UniformTensorTrain) = A.L
 
