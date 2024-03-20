@@ -86,7 +86,7 @@ end
         L = 5
         q = (2, 4)
         d = 3
-        C = uniform_tt(d, L, q...)
+        C = flat_tt(d, L, q...)
         x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
         e1 = evaluate(C, x)
 
