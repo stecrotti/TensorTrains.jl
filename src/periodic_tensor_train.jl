@@ -23,8 +23,8 @@ end
     check_bond_dims, length, eachindex
 
 """
-    uniform_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    uniform_periodic_tt(d::Integer, L::Integer, q...)
+    flat_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
+    flat_periodic_tt(d::Integer, L::Integer, q...)
 
 Construct a Tensor Train with periodic boundary conditions full of 1's, by specifying either:
 - `bondsizes`: the size of each bond
@@ -32,11 +32,11 @@ Construct a Tensor Train with periodic boundary conditions full of 1's, by speci
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
-function uniform_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
+function flat_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
     tensors = [ones(bondsizes[t], bondsizes[mod1(t+1,length(bondsizes))], q...) for t in eachindex(bondsizes)]
     PeriodicTensorTrain(tensors)
 end
-uniform_periodic_tt(d::Integer, L::Integer, q...) = uniform_periodic_tt(fill(d, L-1), q...)
+flat_periodic_tt(d::Integer, L::Integer, q...) = flat_periodic_tt(fill(d, L-1), q...)
 
 """
     rand_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)

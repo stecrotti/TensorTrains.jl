@@ -28,8 +28,8 @@ end
 
   
 """
-    uniform_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    uniform_tt(d::Integer, L::Integer, q...)
+    flat_tt(bondsizes::AbstractVector{<:Integer}, q...)
+    flat_tt(d::Integer, L::Integer, q...)
 
 Construct a Tensor Train full of 1's, by specifying either:
 - `bondsizes`: the size of each bond
@@ -37,10 +37,10 @@ Construct a Tensor Train full of 1's, by specifying either:
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
-function uniform_tt(bondsizes::AbstractVector{<:Integer}, q...)
+function flat_tt(bondsizes::AbstractVector{<:Integer}, q...)
     TensorTrain([ones(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
 end
-uniform_tt(d::Integer, L::Integer, q...) = uniform_tt([1; fill(d, L-1); 1], q...)
+flat_tt(d::Integer, L::Integer, q...) = flat_tt([1; fill(d, L-1); 1], q...)
 
 """
     rand_tt(bondsizes::AbstractVector{<:Integer}, q...)
