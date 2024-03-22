@@ -1,12 +1,8 @@
 module TensorTrains
 
-using Reexport
-@reexport import Base:
-    eltype, getindex, iterate, firstindex, lastindex, setindex!, eachindex, 
-    length, isapprox, ==, +, -, show
 using Lazy: @forward
-using TensorCast: @cast, @reduce, TensorCast
-using LinearAlgebra: svd, norm, tr, I, Hermitian
+using TensorCast: @cast, TensorCast
+using LinearAlgebra: svd, norm, tr, I, dot, normalize!
 using LinearAlgebra
 using Tullio: @tullio
 using Random: AbstractRNG, GLOBAL_RNG
@@ -14,6 +10,7 @@ using StatsBase: sample!, sample
 using StatsBase
 
 export 
+    getindex, iterate, firstindex, lastindex, setindex!, eachindex, length, show,
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
     bond_dims, flat_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, compress!,
