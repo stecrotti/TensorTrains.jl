@@ -19,9 +19,7 @@ export
     marginals, twovar_marginals, lognormalization, normalization, normalize!, 
     dot, norm, norm2m,
     sample!, sample,
-    AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
-    AbstractUniformTensorTrain, UniformTensorTrain, periodic_tensor_train,
-    symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
+    AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt
 
 include("utils.jl")
 include("svd_trunc.jl")
