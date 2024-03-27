@@ -19,8 +19,9 @@ function PeriodicTensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N}
     return PeriodicTensorTrain{F,N}(tensors)
 end
 
-@forward PeriodicTensorTrain.tensors getindex, iterate, firstindex, lastindex, setindex!, 
-    check_bond_dims, length, eachindex
+@forward PeriodicTensorTrain.tensors Base.getindex, Base.iterate, Base.firstindex, 
+    Base.lastindex, Base.setindex!, Base.length, Base.eachindex, 
+    check_bond_dims
 
 """
     flat_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
