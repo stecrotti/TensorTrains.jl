@@ -4,9 +4,9 @@ using TensorTrains
 using LinearAlgebra
 import KrylovKit
 
-export AbstractUniformTensorTrain
-export UniformTensorTrain, InfiniteUniformTensorTrain
-export symmetrized_uniform_tensor_train, periodic_tensor_train
+export AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
+       AbstractUniformTensorTrain, UniformTensorTrain, periodic_tensor_train,
+       symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
 
 
 """
@@ -49,7 +49,7 @@ end
 
 Produce a `PeriodicTensorTrain` corresponding to `A`, with the matrix concretely repeated `length(A)` times
 """
-TensorTrains.periodic_tensor_train(A::UniformTensorTrain) = PeriodicTensorTrain(fill(A.tensor, A.L))
+periodic_tensor_train(A::UniformTensorTrain) = PeriodicTensorTrain(fill(A.tensor, A.L))
 
 Base.length(A::UniformTensorTrain) = A.L
 
