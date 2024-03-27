@@ -22,8 +22,9 @@ function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N}
 end
 
 
-@forward TensorTrain.tensors getindex, iterate, firstindex, lastindex, setindex!, 
-    check_bond_dims, length, eachindex
+@forward TensorTrain.tensors Base.getindex, Base.iterate, Base.firstindex, Base.lastindex,
+    Base.setindex!, Base.length, Base.eachindex,  
+    check_bond_dims
 
 
   
