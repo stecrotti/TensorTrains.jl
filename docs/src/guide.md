@@ -1,6 +1,7 @@
 ## Types
 ```@docs
 AbstractTensorTrain
+AbstractPeriodicTensorTrain
 TensorTrain
 PeriodicTensorTrain
 ```
@@ -8,16 +9,16 @@ PeriodicTensorTrain
 ## Functions
 ```@docs
 normalize_eachmatrix!
-uniform_tt
+tensor_train
 rand_tt
-uniform_periodic_tt
+periodic_tensor_train
 rand_periodic_tt
 bond_dims
 evaluate
 marginals
 twovar_marginals
 normalization
-normalize!(::TensorTrain)
+normalize!
 +
 -
 dot
@@ -37,4 +38,14 @@ TruncThresh
 TruncBond
 TruncBondMax
 TruncBondThresh
+```
+
+## Uniform Tensor Trains
+```@docs
+AbstractUniformTensorTrain
+UniformTensorTrain
+InfiniteUniformTensorTrain
+symmetrized_uniform_tensor_train
+periodic_tensor_train
+uniform_periodic_tt
 ```

@@ -16,13 +16,16 @@ export
     bond_dims, flat_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, compress!,
     marginals, twovar_marginals, normalization, normalize!, dot, norm, norm2m,
     sample!, sample,
-    PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt
+    AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt
 
 include("utils.jl")
 include("svd_trunc.jl")
 include("abstract_tensor_train.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
+include("UniformTensorTrains.jl")
+
+# using .UniformTensorTrains
 
 
 end # end module

@@ -1,12 +1,18 @@
 """
-    AbstractTensorTrain
+    AbstractTensorTrain{F<:Number, N}
 
 An abstract type representing a Tensor Train.
-It currently supports 2 subtypes [`TensorTrain`](@ref) and [`PeriodicTensorTrain`](@ref).
 """
 abstract type AbstractTensorTrain{F<:Number, N} end
 
 Base.eltype(::AbstractTensorTrain{F,N}) where {N,F} = F
+
+"""
+    AbstractPeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+
+An abstract type representing a Tensor Train with periodic boundary conditions.
+"""
+abstract type AbstractPeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N} end 
 
 
 """
@@ -91,10 +97,9 @@ Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.ten
 Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
 
-function accumulate_M(A::AbstractTensorTrain)
+function accumulate_M(A::AbstractTensorTrain{F}) where {F}
     L = length(A)
-
-    M = fill(zeros(0, 0), L, L)
+    M = fill(zeros(F, 0, 0), L, L)
 
     for u in 2:L
         Au = trace(A[u-1])
@@ -102,7 +107,7 @@ function accumulate_M(A::AbstractTensorTrain)
             M[t, u] = M[t, u-1] * Au
         end
         # initial condition
-        M[u-1, u] = Matrix(I, size(A[u],1), size(A[u],1))
+        M[u-1, u] = Matrix{F}(I, size(A[u],1), size(A[u],1))
     end
 
     return M
@@ -110,15 +115,15 @@ end
 
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
-function accumulate_L(A::AbstractTensorTrain)
-    L = Matrix(I, size(A[begin],1), size(A[begin],1))
+function accumulate_L(A::AbstractTensorTrain{F}) where {F}
+    L = Matrix{F}(I, size(A[begin],1), size(A[begin],1))
     map(trace(Atx) for Atx in A) do At
         L = L * At
     end
 end
 
-function accumulate_R(A::AbstractTensorTrain)
-    R = Matrix(I, size(A[end],2), size(A[end],2))
+function accumulate_R(A::AbstractTensorTrain{F}) where {F}
+    R = Matrix{F}(I, size(A[end],2), size(A[end],2))
     map(trace(Atx) for Atx in Iterators.reverse(A)) do At
         R = At * R
     end |> reverse

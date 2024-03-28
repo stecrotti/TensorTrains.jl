@@ -82,7 +82,7 @@ end
         @test e3 ≈ e1
     end
 
-    @testset "Uniform" begin
+    @testset "All 1's" begin
         L = 5
         q = (2, 4)
         d = 3

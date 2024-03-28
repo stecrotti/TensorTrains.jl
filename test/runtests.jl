@@ -1,6 +1,6 @@
 using TensorTrains
-using Random, Suppressor, InvertedIndices
 using Test
+using Random, Suppressor, InvertedIndices
 using Aqua
 
 @testset "Aqua" begin
@@ -8,9 +8,13 @@ using Aqua
     Aqua.test_ambiguities(TensorTrains)
 end
 
+include("svd_trunc.jl")
 include("exact.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
-include("svd_trunc.jl")
+
+using TensorTrains.UniformTensorTrains
+include("uniform_tensor_train.jl")
+
 
 nothing
