@@ -3,9 +3,12 @@ module UniformTensorTrains
 using ..TensorTrains
 using ..TensorTrains: _reshape1
 
-using LinearAlgebra
+using LinearAlgebra: LinearAlgebra, dot, tr
 using KrylovKit: eigsolve
 using TensorCast: TensorCast, @cast
+using TensorTrains: TensorTrains, AbstractPeriodicTensorTrain,
+                    AbstractTensorTrain, PeriodicTensorTrain, TruncThresh,
+                    flat_periodic_tt, normalization, rand_periodic_tt
 using Tullio: @tullio
 
 export AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
