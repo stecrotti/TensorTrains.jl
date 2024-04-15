@@ -1,14 +1,3 @@
-module UniformTensorTrains
-
-using TensorTrains
-using LinearAlgebra
-import KrylovKit
-
-export AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
-       AbstractUniformTensorTrain, UniformTensorTrain, periodic_tensor_train,
-       symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
-
-
 """
     AbstractUniformTensorTrain{F,N} <: AbstractPeriodicTensorTrain{F,N}
 
@@ -180,10 +169,11 @@ Base.:(==)(A::T, B::T) where {T<:InfiniteUniformTensorTrain} = isequal(A.tensor,
 Base.isapprox(A::T, B::T; kw...) where {T<:InfiniteUniformTensorTrain} = isapprox(A.tensor, B.tensor; kw...)
 
 function _eigen(A::InfiniteUniformTensorTrain; B = one_normalization(A))
-    d, R, _ = KrylovKit.eigsolve(B)
-    _, L, _ = KrylovKit.eigsolve(transpose(B))
+    d, R, _ = eigsolve(B)
+    _, L, _ = eigsolve(B')
     r = R[1]
     l = L[1]
+    # normalize such that <l|r>=1
     l ./= dot(l, r)
     λ = d[1]
     λ, l, r
@@ -216,5 +206,3 @@ function TensorTrains.marginals(A::InfiniteUniformTensorTrain; B = one_normaliza
     end
     return [m / sum(m)]
 end
-
-end # module
