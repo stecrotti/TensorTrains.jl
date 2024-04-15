@@ -5,6 +5,7 @@ using ..TensorTrains: _reshape1
 
 using LinearAlgebra
 using KrylovKit: eigsolve
+using TensorCast: TensorCast, @cast
 using Tullio: @tullio
 
 export AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,

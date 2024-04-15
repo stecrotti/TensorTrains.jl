@@ -48,8 +48,7 @@ end
 
 function leading_eig(G::AbstractTransferOperator)
     GG = collect(G)
-    # @cast B[(i,j),(k,l)] := GG[i,j,k,l]
-    B = reshape(GG, prod(size(GG)[1:2]), prod(size(GG)[3:4]))
+    @cast B[(i,j),(k,l)] := GG[i,j,k,l]
     valsR, vecsR = eigsolve(B)
     valsL, vecsL = eigsolve(B')
     valsR[1] ≈ valsL[1] || @warn "Leading eigenvalue for A and Aᵀ not equal, got $(valsR[1]) and $(valsL[1])"
