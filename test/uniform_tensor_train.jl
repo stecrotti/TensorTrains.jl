@@ -103,7 +103,7 @@ end
 
     G = transfer_operator(q, p)
 
-    (; l, r, λ) = leading_eig(transfer_operator(q, p))
+    λ, l, r = leading_eig(transfer_operator(q, p))
     @test l * G ≈ l * λ
     @test G * r ≈ λ * r
 

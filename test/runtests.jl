@@ -1,5 +1,6 @@
 using TensorTrains
 using TensorTrains.UniformTensorTrains
+using TensorTrains.UniformTensorTrains: transfer_operator, leading_eig
 using Random, Suppressor, InvertedIndices, LinearAlgebra
 using Test
 using Random, Suppressor, InvertedIndices
