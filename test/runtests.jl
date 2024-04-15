@@ -1,4 +1,5 @@
 using TensorTrains
+using TensorTrains.UniformTensorTrains
 using Random, Suppressor, InvertedIndices, LinearAlgebra
 using Test
 using Random, Suppressor, InvertedIndices
@@ -13,8 +14,6 @@ include("svd_trunc.jl")
 include("exact.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
-
-using TensorTrains.UniformTensorTrains
 include("uniform_tensor_train.jl")
 
 
