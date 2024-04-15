@@ -3,7 +3,7 @@ module TensorTrains
 using MKL
 using Lazy: @forward
 using TensorCast: @cast, TensorCast
-using LinearAlgebra: svd, norm, tr, I, dot, normalize!
+using LinearAlgebra: svd, norm, tr, I, Hermitian
 using LinearAlgebra
 using LogarithmicNumbers: Logarithmic
 using Tullio: @tullio
@@ -26,9 +26,6 @@ include("svd_trunc.jl")
 include("abstract_tensor_train.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
-include("UniformTensorTrains.jl")
-
-# using .UniformTensorTrains
-
+include("UniformTensorTrains/UniformTensorTrains.jl")
 
 end # end module
