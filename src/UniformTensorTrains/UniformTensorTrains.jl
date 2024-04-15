@@ -10,8 +10,7 @@ using Tullio: @tullio
 
 export AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
        AbstractUniformTensorTrain, UniformTensorTrain, periodic_tensor_train,
-       symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain,
-       transfer_operator, infinite_transfer_operator, leading_eig
+       symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain
 
 
 include("uniform_tensor_train.jl")
