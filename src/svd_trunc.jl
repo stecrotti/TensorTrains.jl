@@ -13,7 +13,7 @@ function _debug_svd(M, U, λ, V, mprime)
 end
 
 summary(::SVDTrunc) = error("Not implemented")
-show(io::IO, svd_trunc::SVDTrunc) = println(io, summary(svd_trunc))
+Base.show(io::IO, svd_trunc::SVDTrunc) = println(io, summary(svd_trunc))
 
 """
     TruncThresh{T} <: SVDTrunc
