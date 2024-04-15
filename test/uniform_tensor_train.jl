@@ -92,3 +92,21 @@ end
         @test isapprox(marginals(A+A), marginals(B+B); atol=1e-6)
     end
 end
+
+@testset "Transfer operator" begin
+    rng = MersenneTwister(0)
+    L = 6
+    A = rand(rng, 2,2,3,4)
+    M = rand(rng, 3,3,3,4)
+    q = UniformTensorTrain(A, L)
+    p = UniformTensorTrain(M, L)
+
+    G = transfer_operator(q, p)
+
+    (; l, r, λ) = leading_eig(transfer_operator(q, p))
+    @test l * G ≈ l * λ
+    @test G * r ≈ λ * r
+
+    r = InfiniteUniformTensorTrain(A)
+    @test dot(r, r) ≈ 1
+end
