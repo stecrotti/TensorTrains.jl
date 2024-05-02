@@ -32,14 +32,16 @@ end
     flat_tt(bondsizes::AbstractVector{<:Integer}, q...)
     flat_tt(d::Integer, L::Integer, q...)
 
-Construct a Tensor Train full of 1's, by specifying either:
+Construct a (normalized) Tensor Train filled with a constant, by specifying either:
 - `bondsizes`: the size of each bond
 - `d` a fixed size for all bonds, `L` the length
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
 function flat_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    TensorTrain([ones(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
+    L = length(bondsizes) - 1
+    x = 1 / (prod(bondsizes)^(1/L)*prod(q))
+    TensorTrain([fill(x, bondsizes[t], bondsizes[t+1], q...) for t in 1:L])
 end
 flat_tt(d::Integer, L::Integer, q...) = flat_tt([1; fill(d, L-1); 1], q...)
 

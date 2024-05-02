@@ -82,11 +82,11 @@ end
         @test e3 ≈ e1
     end
 
-    @testset "Uniform" begin
-        L = 5
+    @testset "Flat" begin
         q = (2, 4)
-        d = 3
-        C = flat_tt(d, L, q...)
+        bondsizes = [1, 3, 5, 2, 1]
+        C = flat_tt(bondsizes, q...)
+        @test normalization(C) ≈ 1
         x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
         e1 = evaluate(C, x)
 
