@@ -17,6 +17,14 @@
         @test evaluate(A + A, x) ≈ evaluate(B + B, x)
     end
 
+    @testset "Flat" begin
+        L = 5
+        bondsizes = rand(1:4, L)
+        q = (2,4,3)
+        C = flat_periodic_tt(bondsizes, q...)
+        @assert normalization(C) ≈ 1
+    end
+
     @testset "Random" begin
         svd_trunc = TruncBondThresh(20, 0.0)
         L = 5

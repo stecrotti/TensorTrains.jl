@@ -27,14 +27,15 @@ end
     flat_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
     flat_periodic_tt(d::Integer, L::Integer, q...)
 
-Construct a Tensor Train with periodic boundary conditions full of 1's, by specifying either:
+Construct a (normalized) Tensor Train with periodic boundary conditions filled with a constant, by specifying either:
 - `bondsizes`: the size of each bond
 - `d` a fixed size for all bonds, `L` the length
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
 function flat_periodic_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    tensors = [ones(bondsizes[t], bondsizes[mod1(t+1,length(bondsizes))], q...) for t in eachindex(bondsizes)]
+    x = 1 / (prod(bondsizes)^(1/length(bondsizes))*prod(q))
+    tensors = [fill(x, bondsizes[t], bondsizes[mod1(t+1,length(bondsizes))], q...) for t in eachindex(bondsizes)]
     PeriodicTensorTrain(tensors)
 end
 flat_periodic_tt(d::Integer, L::Integer, q...) = flat_periodic_tt(fill(d, L-1), q...)
