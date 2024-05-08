@@ -4,6 +4,7 @@ using Lazy: @forward
 using TensorCast: @cast, TensorCast
 using LinearAlgebra: svd, norm, tr, I, dot, normalize!
 using LinearAlgebra
+using LogarithmicNumbers: Logarithmic
 using Tullio: @tullio
 using Random: AbstractRNG, GLOBAL_RNG
 using StatsBase: sample!, sample
@@ -14,7 +15,8 @@ export
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
     bond_dims, flat_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, compress!,
-    marginals, twovar_marginals, normalization, normalize!, dot, norm, norm2m,
+    marginals, twovar_marginals, lognormalization, normalization, normalize!, 
+    dot, norm, norm2m,
     sample!, sample,
     PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt
 

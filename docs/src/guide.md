@@ -16,6 +16,7 @@ bond_dims
 evaluate
 marginals
 twovar_marginals
+lognormalization
 normalization
 normalize!(::TensorTrain)
 +

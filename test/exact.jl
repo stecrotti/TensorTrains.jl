@@ -1,3 +1,12 @@
+function exact_normalization(A::AbstractTensorTrain{F,N}) where {F,N}
+    qs = [size(Aˡ)[3:end] for Aˡ in A]
+    X = Iterators.product((1:prod(qˡ) for (Aˡ,qˡ) in zip(A,qs))...)
+    return sum(
+        evaluate(A, [Tuple(CartesianIndices(qs[l])[x[l]]) for l in eachindex(x)])
+            for x in X; init=0.0
+    )
+end
+
 function exact_prob(A::AbstractTensorTrain{F,N}) where {F,N}
     qs = [size(Aˡ)[3:end] for Aˡ in A]
     X = Iterators.product((1:prod(qˡ) for (Aˡ,qˡ) in zip(A,qs))...)

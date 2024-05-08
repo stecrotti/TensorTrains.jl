@@ -17,12 +17,46 @@
         @test evaluate(A + A, x) ≈ evaluate(B + B, x)
     end
 
+    @testset "Accumulators" begin
+        tensors = [rand(4,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,4,2,2)]
+        A = PeriodicTensorTrain(tensors)
+        l, = TensorTrains.accumulate_L(A; normalize=false)
+        r, = TensorTrains.accumulate_R(A; normalize=false)
+        m = TensorTrains.accumulate_M(A)
+        Z = float(normalization(A))
+        @test Z ≈ exact_normalization(A)
+        @test TensorTrains.accumulate_R(A)[2] ≈ Z
+        @test tr(l[end]) ≈ Z
+        @test tr(r[begin]) ≈ Z
+        @test tr(l[begin] * m[1,end] * r[end]) ≈ Z
+    end
+
+    @testset "Long tensor trains" begin
+        rng = MersenneTwister(0)
+        qs = (2, 2)
+        L = 500
+        A = rand_periodic_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
+        l, = TensorTrains.accumulate_L(A; normalize=false)
+        @test any(isinf, tr(l[end]))
+        @test !isinf(lognormalization(A))
+    end
+
+    @testset "Negative values" begin
+        rng = MersenneTwister(0)
+        qs = (2, 3)
+        L = 4
+        A = rand_periodic_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
+        A[1] .*= -1
+        Z = exact_normalization(A)
+        @test float(normalization(A)) ≈ Z
+    end
+
     @testset "Flat" begin
         L = 5
         bondsizes = rand(1:4, L)
         q = (2,4,3)
         C = flat_periodic_tt(bondsizes, q...)
-        @assert normalization(C) ≈ 1
+        @assert float(normalization(C)) ≈ 1
     end
 
     @testset "Random" begin
