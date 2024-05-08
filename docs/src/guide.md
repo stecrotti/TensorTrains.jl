@@ -8,14 +8,15 @@ PeriodicTensorTrain
 ## Functions
 ```@docs
 normalize_eachmatrix!
-uniform_tt
+flat_tt
 rand_tt
-uniform_periodic_tt
+flat_periodic_tt
 rand_periodic_tt
 bond_dims
 evaluate
 marginals
 twovar_marginals
+lognormalization
 normalization
 normalize!(::TensorTrain)
 +

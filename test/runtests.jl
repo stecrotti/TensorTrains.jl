@@ -1,5 +1,5 @@
 using TensorTrains
-using Random, Suppressor, InvertedIndices
+using Random, Suppressor, InvertedIndices, LinearAlgebra
 using Test
 using Aqua
 

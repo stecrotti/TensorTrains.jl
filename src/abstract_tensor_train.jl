@@ -62,30 +62,6 @@ function normalize_eachmatrix!(A::AbstractTensorTrain)
     c
 end
 
-function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractTensorTrain{F,N};
-    r = accumulate_R(A)) where {F<:Real,N}
-L = length(A)
-@assert length(x) == L
-@assert all(length(xᵗ) == N-2 for xᵗ in x)
-d = first(bond_dims(A))
-
-Q = Matrix(I, d, d)     # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
-for t in eachindex(A)
-    rᵗ⁺¹ = t == L ? Matrix(I, d, d) : r[t+1]
-    # collapse multivariate xᵗ into 1D vector, sample from it
-    Aᵗ = _reshape1(A[t])
-    @tullio QA[k,n,x] := Q[k,m] * Aᵗ[m,n,x]
-    @tullio p[x] := QA[k,n,x] * rᵗ⁺¹[n,k]
-    p ./= sum(p)
-    xᵗ = sample_noalloc(rng, p)
-    x[t] .= CartesianIndices(size(A[t])[3:end])[xᵗ] |> Tuple
-    # update prob
-    Q = Q * Aᵗ[:,:,xᵗ]
-end
-p = tr(Q) / tr(first(r))
-return x, p
-end
-
 
 Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
 Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
@@ -93,7 +69,6 @@ Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.ten
 
 function accumulate_M(A::AbstractTensorTrain)
     L = length(A)
-
     M = fill(zeros(0, 0), L, L)
 
     for u in 2:L
@@ -110,18 +85,34 @@ end
 
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
-function accumulate_L(A::AbstractTensorTrain)
-    L = Matrix(I, size(A[begin],1), size(A[begin],1))
-    map(trace(Atx) for Atx in A) do At
-        L = L * At
+function accumulate_L(A::AbstractTensorTrain; normalize=true)
+    Lt = Matrix(1.0I, size(A[begin],1), size(A[begin],1))
+    z = Logarithmic(1.0)
+    L = map(trace(Atx) for Atx in A) do At
+        nt = norm(At)
+        if !iszero(nt) && normalize
+            Lt ./= nt
+            z *= nt
+        end
+        Lt = Lt * At
     end
+    z *= tr(Lt)
+    return L, z
 end
 
-function accumulate_R(A::AbstractTensorTrain)
-    R = Matrix(I, size(A[end],2), size(A[end],2))
-    map(trace(Atx) for Atx in Iterators.reverse(A)) do At
-        R = At * R
+function accumulate_R(A::AbstractTensorTrain; normalize=true)
+    Rt = Matrix(1.0I, size(A[end],2), size(A[end],2))
+    z = Logarithmic(1.0)
+    R = map(trace(Atx) for Atx in Iterators.reverse(A)) do At
+        nt = norm(At)
+        if !iszero(nt) && normalize
+            Rt ./= nt
+            z *= nt
+        end
+        Rt = At * Rt
     end |> reverse
+    z *= tr(Rt)
+    return R, z
 end
 
 """
@@ -130,10 +121,10 @@ end
 Compute the marginal distributions ``p(x^l)`` at each site
 
 ### Optional arguments
-- `l = accumulate_L(A)`, `r = accumulate_R(A)` pre-computed partial normalizations
+- `l = accumulate_L(A)[1]`, `r = accumulate_R(A)[1]` pre-computed partial normalizations
 """
 function marginals(A::AbstractTensorTrain{F,N};
-    l = accumulate_L(A), r = accumulate_R(A)) where {F<:Real,N}
+    l = accumulate_L(A)[1], r = accumulate_R(A)[1]) where {F<:Real,N}
 
     map(eachindex(A)) do t 
         Aᵗ = _reshape1(A[t])
@@ -141,7 +132,6 @@ function marginals(A::AbstractTensorTrain{F,N};
         L = t - 1 ≥ 1 ? l[t-1] : Matrix(I, size(A[begin],1), size(A[begin],1))
         @tullio lA[a¹,aᵗ⁺¹,x] := L[a¹,aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x]
         @tullio pᵗ[x] := lA[a¹,aᵗ⁺¹,x] * R[aᵗ⁺¹,a¹]
-        #@reduce pᵗ[x] := sum(a¹,aᵗ,aᵗ⁺¹) lᵗ⁻¹[a¹,aᵗ] * Aᵗ[aᵗ,aᵗ⁺¹,x] * rᵗ⁺¹[aᵗ⁺¹,a¹]  
         pᵗ ./= sum(pᵗ)
         reshape(pᵗ, size(A[t])[3:end])
     end
@@ -153,11 +143,11 @@ end
 Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
 
 ### Optional arguments
-- `l = accumulate_L(A)`, `r = accumulate_R(A)`, `M = accumulate_M(A)` pre-computed partial normalizations
+- `l = accumulate_L(A)[1]`, `r = accumulate_R(A)[1]`, `M = accumulate_M(A)` pre-computed partial normalizations
 - `maxdist = length(A)`: compute marginals only at distance `maxdist`: ``|l-m|\\le maxdist``
 """
 function twovar_marginals(A::AbstractTensorTrain{F,N};
-    l = accumulate_L(A), r = accumulate_R(A), M = accumulate_M(A),
+    l = accumulate_L(A)[1], r = accumulate_R(A)[1], M = accumulate_M(A),
     maxdist = length(A)-1) where {F<:Real,N}
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
     b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...) 
@@ -174,11 +164,6 @@ function twovar_marginals(A::AbstractTensorTrain{F,N};
             @tullio rlAt[aᵘ⁺¹, aᵗ⁺¹, xᵗ] := rl[aᵘ⁺¹,aᵗ] * Aᵗ[aᵗ, aᵗ⁺¹, xᵗ]
             @tullio rlAtMtu[aᵘ⁺¹,xᵗ,aᵘ] := rlAt[aᵘ⁺¹, aᵗ⁺¹, xᵗ] * Mᵗᵘ[aᵗ⁺¹, aᵘ]
             @tullio bᵗᵘ[xᵗ, xᵘ] := rlAtMtu[aᵘ⁺¹,xᵗ,aᵘ] * Aᵘ[aᵘ, aᵘ⁺¹, xᵘ]
-
-            #@tullio bᵗᵘ[xᵗ, xᵘ] :=
-            #lᵗ⁻¹[a¹,aᵗ] * Aᵗ[aᵗ, aᵗ⁺¹, xᵗ] * Mᵗᵘ[aᵗ⁺¹, aᵘ] * 
-            #Aᵘ[aᵘ, aᵘ⁺¹, xᵘ] * rᵘ⁺¹[aᵘ⁺¹,a¹]
-
             bᵗᵘ ./= sum(bᵗᵘ)
             b[t,u] = reshape(bᵗᵘ, qs)
         end
@@ -187,16 +172,22 @@ function twovar_marginals(A::AbstractTensorTrain{F,N};
 end
 
 """
-    normalization(A::AbstractTensorTrain; l, r)
+    lognormalization(A::AbstractTensorTrain)
+
+Compute the natural logarithm of the normalization ``\\log Z=\\log \\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``.
+Throws an error if the normalization is negative.
+"""
+function lognormalization(A::AbstractTensorTrain)
+    return log(normalization(A))
+end
+
+"""
+    normalization(A::AbstractTensorTrain)
 
 Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``
 """
-function normalization(A::AbstractTensorTrain; l = accumulate_L(A))
-    z = tr(l[end])
-    @debug let r = accumulate_R(A)
-        @assert tr(r[begin]) ≈ z "z=$z, got $(tr(r[begin])), A=$A"  # sanity check
-    end
-    z
+function normalization(A::AbstractTensorTrain)
+    return accumulate_L(A; normalize=true)[2]
 end
 
 """
@@ -229,17 +220,17 @@ Base.:(-)(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(-, A, B)
 Draw an exact sample from `A`.
 
 Optionally specify a random number generator `rng` as the first argument
-  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
+  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `rz = accumulate_R(A)`.
 
-The output is `x,p`, the sampled sequence and its probability
+The output is `x, p`, the sampled sequence and its probability
 """
 function StatsBase.sample(rng::AbstractRNG, A::AbstractTensorTrain{F,N};
-        r = accumulate_R(A)) where {F<:Real,N}
+        rz = accumulate_R(A)) where {F<:Real,N}
     x = [zeros(Int, N-2) for Aᵗ in A]
-    sample!(rng, x, A; r)
+    sample!(rng, x, A; rz)
 end
-function StatsBase.sample(A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample(GLOBAL_RNG, A; r)
+function StatsBase.sample(A::AbstractTensorTrain{F,N}; rz = accumulate_R(A)) where {F<:Real,N}
+    sample(GLOBAL_RNG, A; rz)
 end
 
 """
@@ -248,12 +239,36 @@ end
 Draw an exact sample from `A` and store the result in `x`.
 
 Optionally specify a random number generator `rng` as the first argument
-  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `r = accumulate_R(A)`.
+  (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `rz = accumulate_R(A)`.
 
-The output is `x,p`, the sampled sequence and its probability
+The output is `x, p`, the sampled sequence and its probability
 """
-function StatsBase.sample!(x, A::AbstractTensorTrain{F,N}; r = accumulate_R(A)) where {F<:Real,N}
-    sample!(GLOBAL_RNG, x, A; r)
+function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractTensorTrain{F,N};
+        rz = accumulate_R(A)) where {F<:Real,N}
+    r, z = rz
+    L = length(A)
+    @assert length(x) == L
+    @assert all(length(xᵗ) == N-2 for xᵗ in x)
+    d = first(bond_dims(A))
+
+    Q = Matrix(I, d, d)     # stores product of the first `t` matrices, evaluated at the sampled `x¹,...,xᵗ`
+    for t in eachindex(A)
+        rᵗ⁺¹ = t == L ? Matrix(I, d, d) : r[t+1]
+        # collapse multivariate xᵗ into 1D vector, sample from it
+        Aᵗ = _reshape1(A[t])
+        @tullio QA[k,n,x] := Q[k,m] * Aᵗ[m,n,x]
+        @tullio p[x] := QA[k,n,x] * rᵗ⁺¹[n,k]
+        p ./= sum(p)
+        xᵗ = sample_noalloc(rng, p)
+        x[t] .= CartesianIndices(size(A[t])[3:end])[xᵗ] |> Tuple
+        # update prob
+        Q = Q * Aᵗ[:,:,xᵗ]
+    end
+    p = tr(Q) / z
+    return x, p
+end
+function StatsBase.sample!(x, A::AbstractTensorTrain{F,N}; rz = accumulate_R(A)) where {F<:Real,N}
+    sample!(GLOBAL_RNG, x, A; rz)
 end
 
 @doc raw"""

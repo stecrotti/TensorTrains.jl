@@ -86,7 +86,7 @@ end
         q = (2, 4)
         bondsizes = [1, 3, 5, 2, 1]
         C = flat_tt(bondsizes, q...)
-        @test normalization(C) ≈ 1
+        @test float(normalization(C)) ≈ 1
         x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
         e1 = evaluate(C, x)
 
@@ -102,12 +102,35 @@ end
     @testset "Accumulators" begin
         tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
         A = TensorTrain(tensors)
-        l = TensorTrains.accumulate_L(A)
-        r = TensorTrains.accumulate_R(A)
+        l, = TensorTrains.accumulate_L(A; normalize=false)
+        r, = TensorTrains.accumulate_R(A; normalize=false)
         m = TensorTrains.accumulate_M(A)
-        Z = only(l[end])
+        Z = float(normalization(A))
+        @test Z ≈ exact_normalization(A)
+        @test TensorTrains.accumulate_R(A)[2] ≈ Z
+        @test only(l[end]) ≈ Z
         @test only(r[begin]) ≈ Z
         @test only(l[begin] * m[1,end] * r[end]) ≈ Z
+    end
+
+    @testset "Long tensor trains" begin
+        rng = MersenneTwister(0)
+        qs = (2, 2)
+        L = 500
+        A = rand_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
+        l, = TensorTrains.accumulate_L(A; normalize=false)
+        @test any(isinf, only(l[end]))
+        @test !isinf(lognormalization(A))
+    end
+
+    @testset "Negative values" begin
+        rng = MersenneTwister(0)
+        qs = (2, 4)
+        L = 4
+        A = rand_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
+        A[1] .*= -1
+        Z = exact_normalization(A)
+        @test float(normalization(A)) ≈ Z
     end
 
     @testset "Sum of TTs" begin
