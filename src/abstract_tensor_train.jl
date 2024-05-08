@@ -335,7 +335,7 @@ function LinearAlgebra.normalize!(A::AbstractTensorTrain)
     absZ = abs(normalization(A))
     L = length(A)
     for a in A
-        a ./= absZ^(1/L)
+        a ./= exp(1/L * log(absZ))
     end
     c + log(absZ)
 end
