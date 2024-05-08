@@ -131,6 +131,11 @@ end
         A[1] .*= -1
         Z = exact_normalization(A)
         @test float(normalization(A)) ≈ Z
+        @test Z < 0
+
+        @testset "Attempt sampling from tensor train with negative values" begin
+            @test_throws ErrorException sample(A)
+        end
     end
 
     @testset "Sum of TTs" begin

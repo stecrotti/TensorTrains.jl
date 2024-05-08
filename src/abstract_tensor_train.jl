@@ -217,8 +217,9 @@ Base.:(-)(A::AbstractTensorTrain, B::AbstractTensorTrain) = _compose(-, A, B)
 """
     sample([rng], A::AbstractTensorTrain; r)
 
-Draw an exact sample from `A`.
-
+Draw an exact sample from `A` interpreted as a probability distribution.
+`A` doesn't need to be normalized, however error will be raised if it is found to take negative values.
+    
 Optionally specify a random number generator `rng` as the first argument
   (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `rz = accumulate_R(A)`.
 
@@ -236,7 +237,8 @@ end
 """
     sample!([rng], x, A::AbstractTensorTrain; r)
 
-Draw an exact sample from `A` and store the result in `x`.
+Draw an exact sample from `A` interpreted as a probability distribution and store the result in `x`.
+`A` doesn't need to be normalized, however error will be raised if it is found to take negative values.
 
 Optionally specify a random number generator `rng` as the first argument
   (defaults to `Random.GLOBAL_RNG`) and provide a pre-computed `rz = accumulate_R(A)`.
@@ -258,6 +260,9 @@ function StatsBase.sample!(rng::AbstractRNG, x, A::AbstractTensorTrain{F,N};
         Aᵗ = _reshape1(A[t])
         @tullio QA[k,n,x] := Q[k,m] * Aᵗ[m,n,x]
         @tullio p[x] := QA[k,n,x] * rᵗ⁺¹[n,k]
+        if any(<(0), p)
+            error("Cannot sample from a tensor train with negative values")
+        end
         p ./= sum(p)
         xᵗ = sample_noalloc(rng, p)
         x[t] .= CartesianIndices(size(A[t])[3:end])[xᵗ] |> Tuple
@@ -326,10 +331,10 @@ Normalize `A` to a probability distribution
 """
 function LinearAlgebra.normalize!(A::AbstractTensorTrain)
     c = normalize_eachmatrix!(A)
-    Z = normalization(A)
+    absZ = abs(normalization(A))
     L = length(A)
     for a in A
-        a ./= Z^(1/L)
+        a ./= absZ^(1/L)
     end
-    c + log(Z)
+    c + log(absZ)
 end
