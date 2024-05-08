@@ -121,6 +121,8 @@ end
         l, = TensorTrains.accumulate_L(A; normalize=false)
         @test any(isinf, only(l[end]))
         @test !isinf(lognormalization(A))
+        normalize!(A)
+        @test float(normalization(A)) ≈ 1
     end
 
     @testset "Negative values" begin
