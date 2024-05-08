@@ -89,7 +89,7 @@ function accumulate_L(A::AbstractTensorTrain; normalize=true)
     Lt = Matrix(1.0I, size(A[begin],1), size(A[begin],1))
     z = Logarithmic(1.0)
     L = map(trace(Atx) for Atx in A) do At
-        nt = norm(At)
+        nt = maximum(abs, At)
         if !iszero(nt) && normalize
             Lt ./= nt
             z *= nt
@@ -104,7 +104,7 @@ function accumulate_R(A::AbstractTensorTrain; normalize=true)
     Rt = Matrix(1.0I, size(A[end],2), size(A[end],2))
     z = Logarithmic(1.0)
     R = map(trace(Atx) for Atx in Iterators.reverse(A)) do At
-        nt = norm(At)
+        nt = maximum(abs, At)
         if !iszero(nt) && normalize
             Rt ./= nt
             z *= nt
@@ -334,8 +334,12 @@ function LinearAlgebra.normalize!(A::AbstractTensorTrain)
     c = normalize_eachmatrix!(A)
     absZ = abs(normalization(A))
     L = length(A)
-    for a in A
-        a ./= exp(1/L * log(absZ))
+    x = exp(1/L * log(absZ))
+    if x != 0
+        for a in A
+            a ./= x
+        end
+        c += log(absZ)
     end
-    c + log(absZ)
+    return c
 end

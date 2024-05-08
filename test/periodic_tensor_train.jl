@@ -34,11 +34,22 @@
     @testset "Long tensor trains" begin
         rng = MersenneTwister(0)
         qs = (2, 2)
-        L = 500
+        L = 300
+
+        # overflow
         A = rand_periodic_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
         l, = TensorTrains.accumulate_L(A; normalize=false)
-        @test any(isinf, tr(l[end]))
+        @test any(isinf, only(l[end]))
         @test !isinf(lognormalization(A))
+        normalize!(A)
+        @test float(normalization(A)) ≈ 1
+
+        # underflow
+        A = rand_periodic_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
+        A.tensors .*= 1e-50
+        l, = TensorTrains.accumulate_L(A; normalize=false)
+        @test any(iszero, only(l[end]))
+        @test !iszero(lognormalization(A))
         normalize!(A)
         @test float(normalization(A)) ≈ 1
     end
