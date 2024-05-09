@@ -44,44 +44,8 @@ Example:
 """
 evaluate(A::AbstractTensorTrain, X...) = tr(prod(@view a[:, :, x...] for (a,x) in zip(A, X...)))
 
-"""
-    normalize_eachmatrix!(A::AbstractTensorTrain)
-
-Divide each matrix by its maximum (absolute) element and return the sum of the logs of the individual normalizations.
-This is used to keep the entries from exploding during computations
-"""
-function normalize_eachmatrix!(A::AbstractTensorTrain)
-    c = 0.0
-    for m in A
-        mm = maximum(abs, m)
-        if !any(isnan, mm) && !any(isinf, mm)
-            m ./= mm
-            c += log(mm)
-        end
-    end
-    c
-end
-
-
 Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
 Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
-
-
-function accumulate_M(A::AbstractTensorTrain)
-    L = length(A)
-    M = fill(zeros(0, 0), L, L)
-
-    for u in 2:L
-        Au = trace(A[u-1])
-        for t in 1:u-2
-            M[t, u] = M[t, u-1] * Au
-        end
-        # initial condition
-        M[u-1, u] = Matrix(I, size(A[u],1), size(A[u],1))
-    end
-
-    return M
-end
 
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
@@ -114,6 +78,80 @@ function accumulate_R(A::AbstractTensorTrain; normalize=true)
     z *= tr(Rt)
     return R, z
 end
+
+function accumulate_M(A::AbstractTensorTrain)
+    L = length(A)
+    M = fill(zeros(0, 0), L, L)
+
+    for u in 2:L
+        Au = trace(A[u-1])
+        for t in 1:u-2
+            M[t, u] = M[t, u-1] * Au
+        end
+        # initial condition
+        M[u-1, u] = Matrix(I, size(A[u],1), size(A[u],1))
+    end
+
+    return M
+end
+
+"""
+    lognormalization(A::AbstractTensorTrain)
+
+Compute the natural logarithm of the normalization ``\\log Z=\\log \\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``.
+Throws an error if the normalization is negative.
+"""
+function lognormalization(A::AbstractTensorTrain)
+    return log(normalization(A))
+end
+
+"""
+    normalization(A::AbstractTensorTrain)
+
+Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)`` and return it as a `Logarithmic`, which stores the sign and the logarithm of the absolute value (see the docs of LogarithmicNumbers.jl https://github.com/cjdoris/LogarithmicNumbers.jl?tab=readme-ov-file#documentation)
+"""
+function normalization(A::AbstractTensorTrain)
+    return accumulate_L(A; normalize=true)[2]
+end
+
+"""
+    normalize_eachmatrix!(A::AbstractTensorTrain)
+
+Divide each matrix by its maximum (absolute) element and return the sum of the logs of the individual normalizations.
+This is used to keep the entries from exploding during computations
+"""
+function normalize_eachmatrix!(A::AbstractTensorTrain)
+    c = 0.0
+    for m in A
+        mm = maximum(abs, m)
+        if !any(isnan, mm) && !any(isinf, mm)
+            m ./= mm
+            c += log(mm)
+        end
+    end
+    c
+end
+
+"""
+    LinearAlgebra.normalize!(A::AbstractTensorTrain)
+
+Compute the normalization of ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)`` (see [`normalization`](@ref)) and rescale the tensors in `A` such that, after this call, ``|Z|=1``.
+Return the natural logarithm of the absolute normalization ``\\log|Z|``
+"""
+function LinearAlgebra.normalize!(A::AbstractTensorTrain)
+    c = normalize_eachmatrix!(A)
+    absZ = abs(normalization(A))
+    L = length(A)
+    x = exp(1/L * log(absZ))
+    if x != 0
+        for a in A
+            a ./= x
+        end
+        c += log(absZ)
+    end
+    return c
+end
+
 
 """
     marginals(A::AbstractTensorTrain; l, r)
@@ -169,25 +207,6 @@ function twovar_marginals(A::AbstractTensorTrain{F,N};
         end
     end
     b
-end
-
-"""
-    lognormalization(A::AbstractTensorTrain)
-
-Compute the natural logarithm of the normalization ``\\log Z=\\log \\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``.
-Throws an error if the normalization is negative.
-"""
-function lognormalization(A::AbstractTensorTrain)
-    return log(normalization(A))
-end
-
-"""
-    normalization(A::AbstractTensorTrain)
-
-Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)``
-"""
-function normalization(A::AbstractTensorTrain)
-    return accumulate_L(A; normalize=true)[2]
 end
 
 """
@@ -322,24 +341,4 @@ Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 """
 function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain) 
     return norm(A)^2 + norm(B)^2 - 2*dot(A, B)
-end
-
-"""
-    LinearAlgebra.normalize!(A::AbstractTensorTrain)
-
-Compute the normalization of ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L)`` (see [`normalization`](@ref)) and rescale the tensors in `A` such that, after this call, ``|Z|=1``.
-Return the natural logarithm of the absolute normalization ``\\log|Z|``
-"""
-function LinearAlgebra.normalize!(A::AbstractTensorTrain)
-    c = normalize_eachmatrix!(A)
-    absZ = abs(normalization(A))
-    L = length(A)
-    x = exp(1/L * log(absZ))
-    if x != 0
-        for a in A
-            a ./= x
-        end
-        c += log(absZ)
-    end
-    return c
 end
