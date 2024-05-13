@@ -124,7 +124,7 @@ function normalize_eachmatrix!(A::AbstractTensorTrain)
     c = 0.0
     for m in A
         mm = maximum(abs, m)
-        if !any(isnan, mm) && !any(isinf, mm)
+        if !isnan(mm) && !isinf(mm) && !iszero(mm)
             m ./= mm
             c += log(mm)
         end
