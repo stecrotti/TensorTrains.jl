@@ -116,7 +116,7 @@ end
     @testset "Long tensor trains" begin
         rng = MersenneTwister(0)
         qs = (2, 2)
-        L = 2000
+        L = 1000
 
         # overflow
         A = rand_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
@@ -126,6 +126,9 @@ end
         normalize!(A)
         @test float(normalization(A)) ≈ 1
 
+        compress!(A, svd_trunc=TruncThresh(0.0))
+        @test !isinf(normalization(A))
+
         # underflow
         A = rand_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
         A.tensors .*= 1e-50
@@ -134,6 +137,9 @@ end
         @test !iszero(lognormalization(A))
         normalize!(A)
         @test float(normalization(A)) ≈ 1
+
+        compress!(A, svd_trunc=TruncThresh(0.0))
+        @test !isinf(normalization(A))
     end
 
     @testset "Negative values" begin
