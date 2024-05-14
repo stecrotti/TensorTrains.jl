@@ -5,18 +5,19 @@ A type for representing a Tensor Train with periodic boundary conditions
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+mutable struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
+    z::Logarithmic{F}
 
-    function PeriodicTensorTrain{F,N}(tensors::Vector{Array{F,N}}) where {F<:Number, N}
+    function PeriodicTensorTrain{F,N}(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         check_bond_dims(tensors) ||
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
-        return new{F,N}(tensors)
+        return new{F,N}(tensors, z)
     end
 end
-function PeriodicTensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N} 
-    return PeriodicTensorTrain{F,N}(tensors)
+function PeriodicTensorTrain(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
+    return PeriodicTensorTrain{F,N}(tensors; z)
 end
 
 @forward PeriodicTensorTrain.tensors Base.getindex, Base.iterate, Base.firstindex, 
@@ -77,7 +78,7 @@ end
 PeriodicTensorTrain(A::TensorTrain) = PeriodicTensorTrain(A.tensors)
 
 
-function orthogonalize_right!(C::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6))
+function orthogonalize_right!(C::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
     C⁰ = _reshape1(C[begin])
     q = size(C⁰, 3)
     @cast M[m, (n, x)] := C⁰[m, n, x]
@@ -87,8 +88,14 @@ function orthogonalize_right!(C::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6
     Cᵗ⁻¹ = _reshape1(C[end])
     @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
     @cast M[m, (n, x)] := D[m, n, x]
+    c = Logarithmic(one(F))
 
     for t in length(C):-1:2
+        mt = maximum(abs, M)
+        if !isnan(mt) && !isinf(mt) && !iszero(mt)
+            M ./= mt
+            c *= mt
+        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
@@ -97,19 +104,24 @@ function orthogonalize_right!(C::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6
         @cast M[m, (n, x)] := D[m, n, x]
     end
     C[begin] = _reshapeas(D, C[begin])
-
-    @assert check_bond_dims(C.tensors)
-
+    C.z /= c
     return C
 end
 
-function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6))
+function orthogonalize_left!(A::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
     A⁰ = _reshape1(A[begin])
     q = size(A⁰, 3)
     @cast M[(m, x), n] |= A⁰[m, n, x]
     D = fill(1.0,1,1,1)  # initialize
+    c = Logarithmic(one(F))
+
 
     for t in 1:length(A)-1
+        mt = maximum(abs, M)
+        if !isnan(mt) && !isinf(mt) && !iszero(mt)
+            M ./= mt
+            c *= mt
+        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x ∈ 1:q
         A[t] = _reshapeas(Aᵗ, A[t])
@@ -123,6 +135,6 @@ function orthogonalize_left!(A::PeriodicTensorTrain; svd_trunc=TruncThresh(1e-6)
     A⁰ = _reshape1(A[begin])
     @tullio D[m, n, x] := λ[m] * V'[m, l] * A⁰[l, n, x]
     A[begin] = _reshapeas(D,  A[begin])
-
+    A.z /= c
     return A
 end
