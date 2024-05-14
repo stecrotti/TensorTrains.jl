@@ -122,7 +122,7 @@ end
     @testset "Long tensor trains" begin
         rng = MersenneTwister(0)
         qs = (2, 2)
-        L = 2000
+        L = 10000
 
         # overflow
         A = rand_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
