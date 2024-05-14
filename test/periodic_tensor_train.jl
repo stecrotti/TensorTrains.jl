@@ -34,7 +34,7 @@
     @testset "Long tensor trains" begin
         rng = MersenneTwister(0)
         qs = (2, 2)
-        L = 1000
+        L = 2000
 
         # overflow
         A = rand_periodic_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
@@ -91,14 +91,19 @@
         C = rand_periodic_tt(d, L, q...)
         x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
         e1 = evaluate(C, x)
+        z1 = float(normalization(C))
 
         orthogonalize_right!(C; svd_trunc)
         e2 = evaluate(C, x)
+        z2 = float(normalization(C))
         @test e2 ≈ e1
+        @test z2 ≈ z1
 
         orthogonalize_left!(C; svd_trunc)
         e3 = evaluate(C, x)
+        z3 = float(normalization(C))
         @test e3 ≈ e1
+        @test z3 ≈ z1
     end
 
     @testset "Uniform" begin

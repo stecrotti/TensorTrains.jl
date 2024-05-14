@@ -5,27 +5,27 @@ A type for representing a Tensor Train
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-struct TensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+mutable struct TensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
+    z::Logarithmic{F}
 
-    function TensorTrain{F,N}(tensors::Vector{Array{F,N}}) where {F<:Number, N}
+    function TensorTrain{F,N}(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensors[1],1) == size(tensors[end],2) == 1 ||
             throw(ArgumentError("First matrix must have 1 row, last matrix must have 1 column"))
         check_bond_dims(tensors) ||
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
-        return new{F,N}(tensors)
+        return new{F,N}(tensors, z)
     end
 end
-function TensorTrain(tensors::Vector{Array{F,N}}) where {F<:Number, N} 
-    return TensorTrain{F,N}(tensors)
+function TensorTrain(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
+    return TensorTrain{F,N}(tensors; z)
 end
 
 
 @forward TensorTrain.tensors Base.getindex, Base.iterate, Base.firstindex, Base.lastindex,
     Base.setindex!, Base.length, Base.eachindex,  
     check_bond_dims
-
 
   
 """
@@ -68,13 +68,19 @@ Bring `A` to right-orthogonal form by means of SVD decompositions.
 
 Optionally perform truncations by passing a `SVDTrunc`.
 """
-function orthogonalize_right!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
+function orthogonalize_right!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
     Cᵀ = _reshape1(C[end])
     q = size(Cᵀ, 3)
     @cast M[m, (n, x)] := Cᵀ[m, n, x]
     D = fill(1.0,1,1,1)
+    c = Logarithmic(one(F))
 
     for t in length(C):-1:2
+        mt = maximum(abs, M)
+        if !isnan(mt) && !isinf(mt) && !iszero(mt)
+            M ./= mt
+            c *= mt
+        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
@@ -83,6 +89,7 @@ function orthogonalize_right!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
         @cast M[m, (n, x)] := D[m, n, x]
     end
     C[begin] = _reshapeas(D, C[begin])
+    C.z /= c
     return C
 end
 
@@ -93,13 +100,19 @@ Bring `A` to left-orthogonal form by means of SVD decompositions.
 
 Optionally perform truncations by passing a `SVDTrunc`.
 """
-function orthogonalize_left!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
+function orthogonalize_left!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
     C⁰ = _reshape1(C[begin])
     q = size(C⁰, 3)
     @cast M[(m, x), n] |= C⁰[m, n, x]
     D = fill(1.0,1,1,1)
+    c = Logarithmic(one(F))
 
     for t in 1:length(C)-1
+        mt = maximum(abs, M)
+        if !isnan(mt) && !isinf(mt) && !iszero(mt)
+            M ./= mt
+            c *= mt
+        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])
@@ -108,6 +121,7 @@ function orthogonalize_left!(C::TensorTrain; svd_trunc=TruncThresh(1e-6))
         @cast M[(m, x), n] |= D[m, n, x]
     end
     C[end] = _reshapeas(D, C[end])
+    C.z /= c
     return C
 end
 
@@ -119,7 +133,7 @@ function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
         sa = size(Aᵗ); sb = size(Bᵗ)
         if t == 1
-            Cᵗ = [ hcat(Aᵗ[:,:,x...], f(Bᵗ[:,:,x...])) 
+            Cᵗ = [ hcat(float(A.z) * Aᵗ[:,:,x...], float(B.z) * f(Bᵗ[:,:,x...])) 
                 for x in Iterators.product(axes(Aᵗ)[3:end]...)]
             reshape( reduce(hcat, Cᵗ), 1, sa[2]+sb[2], size(Aᵗ)[3:end]...)
         elseif t == lastindex(A)

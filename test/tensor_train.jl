@@ -21,6 +21,8 @@ end
     @testset "single variable" begin
         tensors = [rand(1,3,2), rand(3,4,2), rand(4,10,2), rand(10,1,2)]
         C = TensorTrain(tensors)
+        C.z = 12.3
+        z1 = float(normalization(C))
 
         @test bond_dims(C) == [1,3,4,10]
         @test eltype(C) == eltype(1.0)
@@ -30,11 +32,15 @@ end
 
         orthogonalize_right!(C; svd_trunc)
         e2 = evaluate(C, x)
+        z2 = float(normalization(C))
         @test e2 ≈ e1
+        @test z2 ≈ z1
 
         orthogonalize_left!(C; svd_trunc)
         e3 = evaluate(C, x)
+        z3 = float(normalization(C))
         @test e3 ≈ e1
+        @test z3 ≈ z1
 
         e4 = evaluate(C, only.(x))
         @test e4 ≈ e1
@@ -116,7 +122,7 @@ end
     @testset "Long tensor trains" begin
         rng = MersenneTwister(0)
         qs = (2, 2)
-        L = 1000
+        L = 2000
 
         # overflow
         A = rand_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
