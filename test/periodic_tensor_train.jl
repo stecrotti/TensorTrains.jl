@@ -75,6 +75,21 @@
         end
     end
 
+
+    @testset "Normalize eachmatrix" begin
+        rng = MersenneTwister(0)
+        qs = (2, 4)
+        L = 4
+        A = rand_periodic_tt( [1; rand(rng, 10:15, L-1); 1], qs... )
+        A.z = -100 * rand(rng)
+        x, p = sample(rng, A)
+        e = evaluate(A, x)
+        z = normalization(A)
+        normalize_eachmatrix!(A)
+        @test evaluate(A, x) ≈ e
+        @test float(normalization(A)) ≈ float(z)
+    end
+
     @testset "Flat" begin
         L = 5
         bondsizes = rand(1:4, L)
