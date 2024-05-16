@@ -1,7 +1,7 @@
 name = "TensorTrains"
 uuid = "89893e69-996d-40b1-ba32-8ff5f34c0dd5"
 authors = ["stecrotti <stefano.crotti@polito.it>", "abraunst <alfredo.braunstein@polito.it"]
-version = "0.9.1"
+version = "0.10.0"
 
 [deps]
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
