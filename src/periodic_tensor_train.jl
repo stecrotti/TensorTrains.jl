@@ -91,16 +91,16 @@ function orthogonalize_right!(C::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(1
     c = Logarithmic(one(F))
 
     for t in length(C):-1:2
-        mt = maximum(abs, M)
-        if !isnan(mt) && !isinf(mt) && !iszero(mt)
-            M ./= mt
-            c *= mt
-        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
         Cᵗ⁻¹ = _reshape1(C[t-1])
         @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
+        m = maximum(abs, D)
+        if !isnan(m) && !isinf(m) && !iszero(m)
+            D ./= m
+            c *= m
+        end
         @cast M[m, (n, x)] := D[m, n, x]
     end
     C[begin] = _reshapeas(D, C[begin])
@@ -115,18 +115,17 @@ function orthogonalize_left!(A::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(1e
     D = fill(1.0,1,1,1)  # initialize
     c = Logarithmic(one(F))
 
-
     for t in 1:length(A)-1
-        mt = maximum(abs, M)
-        if !isnan(mt) && !isinf(mt) && !iszero(mt)
-            M ./= mt
-            c *= mt
-        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x ∈ 1:q
         A[t] = _reshapeas(Aᵗ, A[t])
         Aᵗ⁺¹ = _reshape1(A[t+1])
         @tullio D[m, n, x] := λ[m] * V'[m, l] * Aᵗ⁺¹[l, n, x]
+        m = maximum(abs, D)
+        if !isnan(m) && !isinf(m) && !iszero(m)
+            D ./= m
+            c *= m
+        end
         @cast M[(m, x), n] |= D[m, n, x]
     end
     U, λ, V = svd_trunc(M)

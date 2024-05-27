@@ -76,16 +76,16 @@ function orthogonalize_right!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) wh
     c = Logarithmic(one(F))
 
     for t in length(C):-1:2
-        mt = maximum(abs, M)
-        if !isnan(mt) && !isinf(mt) && !iszero(mt)
-            M ./= mt
-            c *= mt
-        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
         Cᵗ⁻¹ = _reshape1(C[t-1])
         @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
+        m = maximum(abs, D)
+        if !isnan(m) && !isinf(m) && !iszero(m)
+            D ./= m
+            c *= m
+        end
         @cast M[m, (n, x)] := D[m, n, x]
     end
     C[begin] = _reshapeas(D, C[begin])
@@ -108,16 +108,16 @@ function orthogonalize_left!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) whe
     c = Logarithmic(one(F))
 
     for t in 1:length(C)-1
-        mt = maximum(abs, M)
-        if !isnan(mt) && !isinf(mt) && !iszero(mt)
-            M ./= mt
-            c *= mt
-        end
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])
         Cᵗ⁺¹ = _reshape1(C[t+1])
         @tullio D[m, n, x] := λ[m] * V'[m, l] * Cᵗ⁺¹[l, n, x]
+        m = maximum(abs, D)
+        if !isnan(m) && !isinf(m) && !iszero(m)
+            D ./= m
+            c *= m
+        end
         @cast M[(m, x), n] |= D[m, n, x]
     end
     C[end] = _reshapeas(D, C[end])

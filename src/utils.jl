@@ -14,6 +14,6 @@ function sample_noalloc(rng::AbstractRNG, w)
         i += 1
         cw > t && return i
     end
-    @assert false
+    @assert false "$w"
 end
 sample_noalloc(w) = sample_noalloc(GLOBAL_RNG, w)
