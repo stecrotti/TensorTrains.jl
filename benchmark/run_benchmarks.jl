@@ -1,7 +1,7 @@
 using PkgBenchmark, Dates
 
 # adjust these two with the desired commits/branchs
-target = "trace"
+target = "HEAD"
 baseline = "main"
 
 bench_target = benchmarkpkg("TensorTrains", target)
