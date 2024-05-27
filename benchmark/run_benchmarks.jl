@@ -1,6 +1,6 @@
 using PkgBenchmark, Dates
 
-# adjust these two with the desired commits/branchs
+# adjust these two with the desired commits/branches
 target = "HEAD"
 baseline = "main"
 
