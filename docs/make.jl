@@ -12,7 +12,8 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Guide" => "guide.md"
-    ]
+    ],
+    checkdocs=:exports  # doesn't complain if a documented method is not included in the docs, if it's not exported
 )
 
 deploydocs(
