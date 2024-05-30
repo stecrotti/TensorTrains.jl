@@ -58,9 +58,9 @@ Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.ten
 
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
-function accumulate_L(A::AbstractTensorTrain; normalize=true)
-    Lt = Matrix(1.0I, size(A[begin],1), size(A[begin],1))
-    z = Logarithmic(1.0)
+function accumulate_L(A::AbstractTensorTrain{F}; normalize=true) where {F}
+    Lt = Matrix(one(F)*I, size(A[begin],1), size(A[begin],1))
+    z = Logarithmic(one(F))
     L = map(trace(Atx) for Atx in A) do At
         nt = maximum(abs, Lt)
         if !iszero(nt) && normalize
@@ -73,9 +73,9 @@ function accumulate_L(A::AbstractTensorTrain; normalize=true)
     return L, z
 end
 
-function accumulate_R(A::AbstractTensorTrain; normalize=true)
-    Rt = Matrix(1.0I, size(A[end],2), size(A[end],2))
-    z = Logarithmic(1.0)
+function accumulate_R(A::AbstractTensorTrain{F}; normalize=true) where {F}
+    Rt = Matrix(one(F)*I, size(A[end],2), size(A[end],2))
+    z = Logarithmic(one(F))
     R = map(trace(Atx) for Atx in Iterators.reverse(A)) do At
         nt = maximum(abs, Rt)
         if !iszero(nt) && normalize
