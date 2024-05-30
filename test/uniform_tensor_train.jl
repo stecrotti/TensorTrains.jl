@@ -15,7 +15,7 @@
     @testset "Normalization" begin
         AA = deepcopy(A)
         normalize!(AA)
-        @test normalization(AA) ≈ 1
+        @test float(normalization(AA)) ≈ 1
     end
 
     @testset "Concrete uniform TT" begin
