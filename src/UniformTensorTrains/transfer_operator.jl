@@ -95,5 +95,5 @@ function LinearAlgebra.dot(q::InfiniteUniformTensorTrain, p::InfiniteUniformTens
     λG, = leading_eig(G)
     λq, = leading_eig(Eq)
     λp, = leading_eig(Ep)
-    return λG / sqrt(abs(λp * λq))
+    return λG / sqrt(λp * λq)
 end
