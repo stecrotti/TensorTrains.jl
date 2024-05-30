@@ -17,20 +17,22 @@ A type for representing a tensor train with periodic boundary conditions, all ma
 ## FIELDS
 - `tensor` only one is stored
 - `L` the length of the tensor train
+- `z` a re-scaling constant
 """
-struct UniformTensorTrain{F<:Number, N} <: AbstractUniformTensorTrain{F,N}
+mutable struct UniformTensorTrain{F<:Number, N} <: AbstractUniformTensorTrain{F,N}
     tensor::Array{F,N}
     L :: Int
+    z :: Logarithmic{F}
 
-    function UniformTensorTrain{F,N}(tensor::Array{F,N}, L::Integer) where {F<:Number, N}
+    function UniformTensorTrain{F,N}(tensor::Array{F,N}, L::Integer; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensor,1) == size(tensor,2) || throw(ArgumentError("Matrix must be square"))
         L > 0 || throw(ArgumentError("Length `L` must be positive, got $L"))
-        return new{F,N}(tensor, Int(L))
+        return new{F,N}(tensor, Int(L), z)
     end
 end
-function UniformTensorTrain(tensor::Array{F,N}, L::Integer) where {F<:Number, N} 
-    return UniformTensorTrain{F,N}(tensor, L)
+function UniformTensorTrain(tensor::Array{F,N}, L::Integer; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
+    return UniformTensorTrain{F,N}(tensor, L; z)
 end
 
 """
@@ -69,12 +71,13 @@ end
 
 function TensorTrains.normalization(A::UniformTensorTrain; B = one_normalization(A))
     L = length(A)
-    return abs(tr(B^L))
+    return abs(tr(B^L)) / A.z
 end
 
 function LinearAlgebra.normalize!(A::UniformTensorTrain)
     Z = normalization(A)
     A.tensor ./= Z^(1/length(A))
+    A.z = 1
     return log(Z)
 end
 
@@ -108,7 +111,7 @@ function Base.:(+)(A::UniformTensorTrain{F,NA}, B::UniformTensorTrain{F,NB}) whe
     L = length(A)
     @assert length(B) == L
     sa = size(A.tensor); sb = size(B.tensor)
-    C = [ [A.tensor[:,:,x...] zeros(sa[1],sb[2]); zeros(sb[1],sa[2]) B.tensor[:,:,x...]] 
+    C = [ [A.tensor[:,:,x...]/float(A.z) zeros(sa[1],sb[2]); zeros(sb[1],sa[2]) B.tensor[:,:,x...]]/float(B.z) 
                 for x in Iterators.product(axes(A.tensor)[3:end]...)]
     tensor = reshape( reduce(hcat, C), (sa .+ sb)[1:2]..., size(A.tensor)[3:end]...)
     return UniformTensorTrain(tensor, L)
