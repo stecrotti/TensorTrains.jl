@@ -180,8 +180,8 @@ function _eigen(A::InfiniteUniformTensorTrain; B = one_normalization(A))
 end
 
 function TensorTrains.normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
-    λ, l, r = _eigen(A; B)
-    return λ# * dot(l, r)
+    λ, = _eigen(A; B)
+    return λ
 end
 
 function LinearAlgebra.normalize!(A::InfiniteUniformTensorTrain)
