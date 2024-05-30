@@ -91,6 +91,12 @@ end
     @testset "Plus" begin
         @test isapprox(marginals(A+A), marginals(B+B); atol=1e-6)
     end
+
+    @testset "Marginals" begin
+        marg = only(marginals(A))
+        two_marg = only(twovar_marginals(A))
+        @test vec(sum(two_marg, dims=1)) ≈ vec(sum(two_marg, dims=2)) ≈ marg
+    end
 end
 
 @testset "Transfer operator" begin
