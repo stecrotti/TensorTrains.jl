@@ -205,21 +205,19 @@ end
 function TensorTrains.marginals(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     _, l, r = _eigen(A; B)
     iter = Iterators.product(axes(A.tensor)[3:end]...)
-    nstates = length(iter)
     m = map(iter) do x
         l' * (@view A.tensor[:,:,x...]) * r
     end
     m ./= sum(m)
-    return [reshape(m, nstates)]
+    return [m]
 end
 
 function TensorTrains.twovar_marginals(A::InfiniteUniformTensorTrain{F}; B = one_normalization(A)) where F
     _, l, r = _eigen(A; B)
     iter = Iterators.product(axes(A.tensor)[3:end]...)
-    nstates = length(iter)
     m = map(Iterators.product(iter, iter)) do (x1, x2)
         l' * (@views A.tensor[:,:,x1...] * A.tensor[:,:,x2...]) * r
     end
     m ./= sum(m)
-    return [reshape(m, nstates, nstates)]
+    return [m]
 end
