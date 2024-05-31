@@ -95,7 +95,9 @@ end
     @testset "Marginals" begin
         marg = only(marginals(A))
         two_marg = only(twovar_marginals(A))
-        @test vec(sum(two_marg, dims=1)) ≈ vec(sum(two_marg, dims=2)) ≈ marg
+        N = ndims(two_marg)
+        N2 = N ÷ 2
+        @test sum(two_marg, dims=N2+1:N)[:,:,1,1] ≈ sum(two_marg, dims=1:N2)[1,1,:,:] ≈ marg
     end
 end
 
