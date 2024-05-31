@@ -3,6 +3,7 @@
     tensor = rand(rng, 4,4,2,3)
     L = 5
     A = UniformTensorTrain(tensor, L)
+    A.z = rand(rng)
 
     @testset "Basics" begin
         @test bond_dims(A) == fill(4, L)
@@ -21,8 +22,8 @@
     @testset "Concrete uniform TT" begin
         B = periodic_tensor_train(A)
         x = sample(rng, B)[1]
-        @test evaluate(A,x) == evaluate(B, x)
-        @test evaluate(A + A,x) ≈ 2 * evaluate(A, x)
+        @test evaluate(A, x) == evaluate(B, x)
+        @test evaluate(A + A, x) ≈ 2 * evaluate(A, x)
 
         @test normalization(A) ≈ normalization(B)
         @test norm(A) ≈ norm(B)
@@ -70,6 +71,7 @@ end
     rng = MersenneTwister(1)
     tensor = rand(rng, 4,4,2,3)
     A = InfiniteUniformTensorTrain(tensor)
+    A.z = 3.5
     tensor2 = rand(rng, 3,3,2,3)
     C = InfiniteUniformTensorTrain(tensor2)
     B = UniformTensorTrain(tensor, 100)
@@ -78,10 +80,10 @@ end
     @testset "Normalization" begin
         B = deepcopy(A)
         normalize!(B)
-        @test normalization(B) ≈ 1
-        T = 50
-        C = UniformTensorTrain(tensor, T)
-        @test isapprox(T*log(normalization(A)), log(normalization(C)))
+        @test float(normalization(B)) ≈ 1
+        T = 20
+        C = UniformTensorTrain(tensor, T; z = (A.z)^T)
+        @test isapprox(normalization(A)^T, float(normalization(C)))
     end
 
     @testset "Marginals" begin
@@ -107,7 +109,9 @@ end
     A = rand(rng, 2,2,3,4)
     M = rand(rng, 3,3,3,4)
     q = UniformTensorTrain(A, L)
+    q.z = 2.1
     p = UniformTensorTrain(M, L)
+    p.z = 0.5
 
     G = transfer_operator(q, p)
 
