@@ -44,10 +44,10 @@ end
 TransferOperator(G::HomogeneousTransferOperator) = convert(TransferOperator, G)
 
 function transfer_operator(q::AbstractUniformTensorTrain, p::AbstractUniformTensorTrain)
-    return TransferOperator(_reshape1(q.tensor), _reshape1(p.tensor))
+    return TransferOperator(_reshape1(q.tensor) / float(q.z), _reshape1(p.tensor) / float(p.z))
 end
 function transfer_operator(q::AbstractUniformTensorTrain)
-    return HomogeneousTransferOperator(_reshape1(q.tensor))
+    return HomogeneousTransferOperator(_reshape1(q.tensor) / float(q.z))
 end
 
 function Base.collect(G::AbstractTransferOperator)
