@@ -219,9 +219,19 @@ end
 
 Compress `A` by means of SVD decompositions + truncations
 """
-function compress!(A::AbstractTensorTrain; svd_trunc=TruncThresh(1e-6))
-    orthogonalize_right!(A, svd_trunc=TruncThresh(0.0))
-    orthogonalize_left!(A; svd_trunc)
+function compress!(A::AbstractTensorTrain; svd_trunc=TruncThresh(1e-6),
+        is_orthogonal::Symbol=:none)
+    if is_orthogonal == :none
+        orthogonalize_right!(A; svd_trunc=TruncThresh(0.0))
+        orthogonalize_left!(A; svd_trunc)
+    elseif is_orthogonal == :left
+        orthogonalize_right!(A; svd_trunc)
+    elseif is_orthogonal == :right
+        orthogonalize_left!(A; svd_trunc)
+    else
+        throw(ArgumentError("Keyword `is_orthogonal` only supports: :none, :left, :right, got :$is_orthogonal"))
+    end
+    return A
 end
 
 """
