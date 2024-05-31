@@ -40,7 +40,7 @@ end
 
 Produce a `PeriodicTensorTrain` corresponding to `A`, with the matrix concretely repeated `length(A)` times
 """
-periodic_tensor_train(A::UniformTensorTrain) = PeriodicTensorTrain(fill(A.tensor, A.L))
+periodic_tensor_train(A::UniformTensorTrain) = PeriodicTensorTrain(fill(A.tensor, A.L); z = A.z)
 
 Base.length(A::UniformTensorTrain) = A.L
 
@@ -71,14 +71,16 @@ end
 
 function TensorTrains.normalization(A::UniformTensorTrain; B = one_normalization(A))
     L = length(A)
-    return abs(tr(B^L)) / A.z
+    return tr(B^L) / A.z
 end
 
 function LinearAlgebra.normalize!(A::UniformTensorTrain)
-    Z = normalization(A)
-    A.tensor ./= Z^(1/length(A))
+    L = length(A)
+    Z = abs(tr(one_normalization(A)^L))
+    A.tensor ./= Z^(1/L)
+    logz = log(Z / A.z)
     A.z = 1
-    return log(Z)
+    return logz
 end
 
 function TensorTrains.marginals(A::UniformTensorTrain; B = one_normalization(A))
@@ -111,9 +113,9 @@ function Base.:(+)(A::UniformTensorTrain{F,NA}, B::UniformTensorTrain{F,NB}) whe
     L = length(A)
     @assert length(B) == L
     sa = size(A.tensor); sb = size(B.tensor)
-    C = [ [A.tensor[:,:,x...]/float(A.z) zeros(sa[1],sb[2]); zeros(sb[1],sa[2]) B.tensor[:,:,x...]]/float(B.z) 
+    C = [ [A.tensor[:,:,x...]/float(A.z^(1/L)) zeros(sa[1],sb[2]); zeros(sb[1],sa[2]) B.tensor[:,:,x...]/float(B.z^(1/L))]
                 for x in Iterators.product(axes(A.tensor)[3:end]...)]
-    tensor = reshape( reduce(hcat, C), (sa .+ sb)[1:2]..., size(A.tensor)[3:end]...)
+    tensor = reshape( reduce(hcat, C), (sa .+ sb)[1:2]..., size(A.tensor)[3:end]... )
     return UniformTensorTrain(tensor, L)
 end
 
@@ -142,7 +144,7 @@ function symmetrized_uniform_tensor_train(A::AbstractTensorTrain)
             tensor[:,c+1:c+coldims[i],x...] .= circshift(tensor[:,c+1:c+coldims[i],x...], (-rowdims[1],0))
         end
     end
-    return UniformTensorTrain(tensor, length(A))
+    return UniformTensorTrain(tensor, length(A); z = A.z)
 end
 
 """
@@ -154,18 +156,20 @@ A type for representing an infinite tensor train with periodic boundary conditio
 
 ## FIELDS
 - `tensor` only one is stored
+- `z` a re-scaling constant
 """
-struct InfiniteUniformTensorTrain{F<:Number, N} <: AbstractUniformTensorTrain{F,N}
+mutable struct InfiniteUniformTensorTrain{F<:Number, N} <: AbstractUniformTensorTrain{F,N}
     tensor::Array{F,N}
+    z :: Logarithmic{F}
 
-    function InfiniteUniformTensorTrain{F,N}(tensor::Array{F,N}) where {F<:Number, N}
+    function InfiniteUniformTensorTrain{F,N}(tensor::Array{F,N}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensor,1) == size(tensor,2) || throw(ArgumentError("Matrix must be square"))
-        return new{F,N}(tensor)
+        return new{F,N}(tensor, z)
     end
 end
-function InfiniteUniformTensorTrain(tensor::Array{F,N}) where {F<:Number, N} 
-    return InfiniteUniformTensorTrain{F,N}(tensor)
+function InfiniteUniformTensorTrain(tensor::Array{F,N}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
+    return InfiniteUniformTensorTrain{F,N}(tensor; z)
 end
 
 Base.:(==)(A::T, B::T) where {T<:InfiniteUniformTensorTrain} = isequal(A.tensor, B.tensor)
@@ -184,19 +188,23 @@ end
 
 function TensorTrains.normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     λ, = _eigen(A; B)
-    return λ
+    return λ / A.z
 end
 
 function LinearAlgebra.normalize!(A::InfiniteUniformTensorTrain)
-    Z = abs(normalization(A))
+    B = one_normalization(A)
+    λ, = _eigen(A; B)
+    Z = abs(λ)
     A.tensor ./= Z
-    return log(Z)
+    logz = log(Z / A.z)
+    A.z = 1
+    return logz
 end
 
 function Base.:(+)(A::InfiniteUniformTensorTrain{F,NA}, B::InfiniteUniformTensorTrain{F,NB}) where {F,NA,NB}
     NA == NB || throw(ArgumentError("Tensor Trains must have the same number of variables, got $NA and $NB"))
     sa = size(A.tensor); sb = size(B.tensor)
-    C = [ [A.tensor[:,:,x...] zeros(sa[1],sb[2]); zeros(sb[1],sa[2]) B.tensor[:,:,x...]] 
+    C = [ [A.tensor[:,:,x...] zeros(sa[1],sb[2])/float(A.z); zeros(sb[1],sa[2]) B.tensor[:,:,x...]/float(B.z)] 
                 for x in Iterators.product(axes(A.tensor)[3:end]...)]
     tensor = reshape( reduce(hcat, C), (sa .+ sb)[1:2]..., size(A.tensor)[3:end]...)
     return InfiniteUniformTensorTrain(tensor)
