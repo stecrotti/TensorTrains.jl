@@ -31,6 +31,23 @@
         @test tr(l[begin] * m[1,end] * r[end]) ≈ Z
     end
 
+    @testset "Compression" begin
+        tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
+        A = PeriodicTensorTrain(tensors)
+        x, = sample(A)
+        B = deepcopy(A)
+        C = deepcopy(A)
+        svd_trunc = TruncThresh(1e-2)
+        compress!(A; svd_trunc)
+        orthogonalize_right!(B; svd_trunc = TruncThresh(0.0))
+        compress!(B; svd_trunc, is_orthogonal=:right)
+        orthogonalize_left!(C; svd_trunc = TruncThresh(0.0))
+        compress!(C; svd_trunc, is_orthogonal=:left)
+        @test evaluate(A, x) ≈ evaluate(B, x) ≈ evaluate(C, x)
+        @test_throws ArgumentError compress!(A; is_orthogonal=:something)
+    end
+
+
     @testset "Long tensor trains" begin
         rng = MersenneTwister(0)
         qs = (2, 2)
