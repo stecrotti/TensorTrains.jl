@@ -78,7 +78,7 @@ end
 PeriodicTensorTrain(A::TensorTrain) = PeriodicTensorTrain(A.tensors)
 
 
-function orthogonalize_right!(C::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
+function orthogonalize_right!(C::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(0.0)) where F
     C⁰ = _reshape1(C[begin])
     q = size(C⁰, 3)
     @cast M[m, (n, x)] := C⁰[m, n, x]
@@ -108,7 +108,7 @@ function orthogonalize_right!(C::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(1
     return C
 end
 
-function orthogonalize_left!(A::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
+function orthogonalize_left!(A::PeriodicTensorTrain{F}; svd_trunc=TruncThresh(0.0)) where F
     A⁰ = _reshape1(A[begin])
     q = size(A⁰, 3)
     @cast M[(m, x), n] |= A⁰[m, n, x]
