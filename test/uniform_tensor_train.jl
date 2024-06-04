@@ -72,14 +72,14 @@ end
     tensor = rand(rng, 4,4,2,3)
     A = InfiniteUniformTensorTrain(tensor)
     A.z = 3.5
-    tensor2 = rand(rng, 3,3,2,3)
-    C = InfiniteUniformTensorTrain(tensor2)
+    C = rand_infinite_uniform_tt(3, q)
     B = UniformTensorTrain(tensor, 100)
-    D = UniformTensorTrain(tensor2, 100)
+    D = UniformTensorTrain(C.tensor, 100)
 
     @testset "Normalization" begin
         B = deepcopy(A)
         normalize!(B)
+        normalize_eachmatrix!(B)
         @test float(normalization(B)) ≈ 1
         T = 20
         C = UniformTensorTrain(tensor, T; z = (A.z)^T)
@@ -119,6 +119,6 @@ end
     @test l * G ≈ l * λ
     @test G * r ≈ λ * r
 
-    r = InfiniteUniformTensorTrain(A)
+    r = flat_infinite_uniform_tt(2, 3, 4)
     @test dot(r, r) ≈ 1
 end

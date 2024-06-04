@@ -4,7 +4,7 @@
 An abstract type for representing tensor trains with periodic boundary conditions and all matrices equal
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
-    """
+"""
 abstract type AbstractUniformTensorTrain{F,N} <: AbstractPeriodicTensorTrain{F,N} end
 
 """
@@ -172,6 +172,16 @@ function InfiniteUniformTensorTrain(tensor::Array{F,N}; z::Logarithmic{F}=Logari
     return InfiniteUniformTensorTrain{F,N}(tensor; z)
 end
 
+function flat_infinite_uniform_tt(d::Integer, q...)
+    x = 1 / (d * prod(q))
+    tensor = fill(x, d, d, q...)
+    return InfiniteUniformTensorTrain(tensor)
+end
+function rand_infinite_uniform_tt(d::Integer, q...)
+    tensor = rand(d, d, q...)
+    return InfiniteUniformTensorTrain(tensor)
+end
+
 Base.:(==)(A::T, B::T) where {T<:InfiniteUniformTensorTrain} = isequal(A.tensor, B.tensor)
 Base.isapprox(A::T, B::T; kw...) where {T<:InfiniteUniformTensorTrain} = isapprox(A.tensor, B.tensor; kw...)
 
@@ -228,4 +238,15 @@ function TensorTrains.twovar_marginals(A::InfiniteUniformTensorTrain{F}; B = one
     end
     m ./= sum(m)
     return [m]
+end
+
+function TensorTrains.normalize_eachmatrix!(A::InfiniteUniformTensorTrain{F}) where {F}
+    c = Logarithmic(one(F))
+    mm = maximum(abs, A.tensor)
+    if !isnan(mm) && !isinf(mm) && !iszero(mm)
+        A.tensor ./= mm
+        c *= mm
+    end
+    A.z /= c
+    return nothing
 end
