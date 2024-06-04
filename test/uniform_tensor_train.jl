@@ -60,7 +60,7 @@
         @test_throws ArgumentError (A[3] = rand(rng, 4,4,2,3))
         @test_throws "Not implemented" orthogonalize_left!(A)
         @test_throws "Not implemented" orthogonalize_right!(A)
-        @test_throws "Not implemented" compress!(A)
+        @test_warn "Compressing a uniform Tensor Train: I'm not doing anyhing (yet)" compress!(A)
         tensor = rand(rng, 4,4,2,3)
         B = UniformTensorTrain(tensor, L)
         @test_throws "Not implemented" A - B
