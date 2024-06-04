@@ -92,19 +92,19 @@ function TensorTrains.marginals(A::UniformTensorTrain; B = one_normalization(A))
     return [m / sum(m)]
 end
 
-function TensorTrains.orthogonalize_left!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.orthogonalize_left!(::AbstractUniformTensorTrain; svd_trunc = TruncThresh(0.0))
     error("Not implemented")
 end
 
-function TensorTrains.orthogonalize_right!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.orthogonalize_right!(::AbstractUniformTensorTrain; svd_trunc = TruncThresh(0.0))
     error("Not implemented")
 end
 
-function TensorTrains.compress!(::UniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.compress!(::AbstractUniformTensorTrain; svd_trunc = TruncThresh(0.0))
     error("Not implemented")
 end
 
-function TensorTrains._compose(f, ::UniformTensorTrain, ::UniformTensorTrain)
+function TensorTrains._compose(f, ::AbstractUniformTensorTrain, ::AbstractUniformTensorTrain)
     error("Not implemented")
 end
 
