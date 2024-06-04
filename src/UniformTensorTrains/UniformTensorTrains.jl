@@ -14,7 +14,9 @@ using LogarithmicNumbers: Logarithmic
 
 export AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
        AbstractUniformTensorTrain, UniformTensorTrain, periodic_tensor_train,
-       symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain, dot
+       symmetrized_uniform_tensor_train, InfiniteUniformTensorTrain,
+       flat_infinite_uniform_tt, rand_infinite_uniform_tt,
+       dot
 
 
 include("uniform_tensor_train.jl")
