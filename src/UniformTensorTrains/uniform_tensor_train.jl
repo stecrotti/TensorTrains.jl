@@ -92,16 +92,17 @@ function TensorTrains.marginals(A::UniformTensorTrain; B = one_normalization(A))
     return [m / sum(m)]
 end
 
-function TensorTrains.orthogonalize_left!(::AbstractUniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.orthogonalize_left!(::AbstractUniformTensorTrain; kw...)
     error("Not implemented")
 end
 
-function TensorTrains.orthogonalize_right!(::AbstractUniformTensorTrain; svd_trunc = TruncThresh(0.0))
+function TensorTrains.orthogonalize_right!(::AbstractUniformTensorTrain; kw...)
     error("Not implemented")
 end
 
-function TensorTrains.compress!(::AbstractUniformTensorTrain; svd_trunc = TruncThresh(0.0))
-    error("Not implemented")
+function TensorTrains.compress!(A::AbstractUniformTensorTrain; kw...)
+    @warn "Compressing a uniform Tensor Train: I'm not doing anyhing (yet)"
+    return A
 end
 
 function TensorTrains._compose(f, ::AbstractUniformTensorTrain, ::AbstractUniformTensorTrain)
@@ -170,6 +171,12 @@ mutable struct InfiniteUniformTensorTrain{F<:Number, N} <: AbstractUniformTensor
 end
 function InfiniteUniformTensorTrain(tensor::Array{F,N}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
     return InfiniteUniformTensorTrain{F,N}(tensor; z)
+end
+
+Base.length(::InfiniteUniformTensorTrain) = 1
+function Base.getindex(A::InfiniteUniformTensorTrain, i)
+    @assert i == 1
+    return A.tensor
 end
 
 function flat_infinite_uniform_tt(d::Integer, q...)
