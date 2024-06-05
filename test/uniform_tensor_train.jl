@@ -76,6 +76,11 @@ end
     B = UniformTensorTrain(tensor, 100)
     D = UniformTensorTrain(C.tensor, 100)
 
+    @testset "Base" begin
+        @test A[1] === A.tensor
+        @test length(A) == 1
+    end
+
     @testset "Normalization" begin
         B = deepcopy(A)
         normalize!(B)
