@@ -77,6 +77,7 @@ function (svd_trunc::TruncBond)(M::AbstractMatrix)
 end
 
 summary(svd_trunc::TruncBond) = "SVD truncation to bond size m'="*string(svd_trunc.mprime)
+summary_compact(svd_trunc::SVDTrunc) = summary(svd_trunc)
 
 """
     TruncBondMax{T} <: SVDTrunc
@@ -105,8 +106,6 @@ function summary(svd_trunc::TruncBondMax)
     "SVD truncation to bond size m'="*string(svd_trunc.mprime)*
         ". Max error "*string(only(svd_trunc.maxerr))
 end
-
-summary_compact(svd_trunc::SVDTrunc) = summary(svd_trunc)
 
 function summary_compact(svd_trunc::Union{TruncBond,TruncBondMax}) 
     ("SVD Matrix size", string(svd_trunc.mprime))
