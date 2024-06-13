@@ -1,6 +1,7 @@
 ## Types
 ```@docs
 AbstractTensorTrain
+AbstractPeriodicTensorTrain
 TensorTrain
 PeriodicTensorTrain
 ```
@@ -18,7 +19,7 @@ marginals
 twovar_marginals
 lognormalization
 normalization
-normalize!(::TensorTrain)
+normalize!
 +
 -
 dot
@@ -38,4 +39,13 @@ TruncThresh
 TruncBond
 TruncBondMax
 TruncBondThresh
+```
+
+## Uniform Tensor Trains
+```@docs
+AbstractUniformTensorTrain
+UniformTensorTrain
+InfiniteUniformTensorTrain
+symmetrized_uniform_tensor_train
+periodic_tensor_train
 ```

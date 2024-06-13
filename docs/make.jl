@@ -1,14 +1,19 @@
 using Documenter
 using TensorTrains
+using TensorTrains.UniformTensorTrains
 
 makedocs(
     sitename = "TensorTrains.jl",
     format = Documenter.HTML(),
-    modules = [TensorTrains],
+    modules = [
+        TensorTrains,
+        TensorTrains.UniformTensorTrains
+        ],
     pages = [
         "Home" => "index.md",
         "Guide" => "guide.md"
-    ]
+    ],
+    checkdocs=:exports  # doesn't complain if a documented method is not included in the docs, if it's not exported
 )
 
 deploydocs(
