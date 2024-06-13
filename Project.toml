@@ -1,7 +1,7 @@
 name = "TensorTrains"
 uuid = "89893e69-996d-40b1-ba32-8ff5f34c0dd5"
 authors = ["stecrotti <stefano.crotti@polito.it>", "abraunst <alfredo.braunstein@polito.it"]
-version = "0.10.2"
+version = "0.11.0"
 
 [deps]
 KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
