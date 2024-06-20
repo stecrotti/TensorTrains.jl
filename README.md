@@ -100,4 +100,4 @@ pnew = evaluate(A, xy)
 ## Related packages
 - [TensorTrains.jl](https://github.com/mbachmayr/TensorTrains.jl): conceived for the application of Tensor Train decomposition to elliptic PDEs, does not cover anything related to probability
 - [Tensor-Train-Julia](https://github.com/msdupuy/Tensor-Train-Julia): less lightweight, mostly designed for quantum applications, still WIP
-- [Itensors.jl](https://github.com/ITensor/ITensors.jl): a full-fledged Tensor Network library, mostly designed for quantum applications. Interface is more intuitive, but likely less efficient if all you need to do is simple operations on 1D Tensor Networks (e.g. tensors are `mutable` structs)
+- [Itensors.jl](https://github.com/ITensor/ITensors.jl): a full-fledged Tensor Network library, mostly designed for quantum applications. Interface is more intuitive, but likely less efficient if all you need to do is simple operations on 1D Tensor Networks
