@@ -1,5 +1,6 @@
 module TensorTrains
 
+using MKL
 using Lazy: @forward
 using TensorCast: @cast, TensorCast
 using LinearAlgebra: svd, norm, tr, I, dot, normalize!
