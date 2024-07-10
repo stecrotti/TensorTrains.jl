@@ -13,7 +13,7 @@
         @test evaluate(A, x) ≈ evaluate(B, x)
         @test marginals(A) ≈ marginals(B)
         @test twovar_marginals(A) ≈ twovar_marginals(B)
-        @test normalization(A) ≈ normalization(B)
+        @test float(normalization(A)) ≈ float(normalization(B))
         @test evaluate(A + A, x) ≈ evaluate(B + B, x)
     end
 
