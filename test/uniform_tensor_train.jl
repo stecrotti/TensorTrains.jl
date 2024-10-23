@@ -101,7 +101,11 @@ end
 
     @testset "Marginals" begin
         marg = only(marginals(A))
-        two_marg = only(twovar_marginals(A))
+        @test_throws DomainError twovar_marginals(A; maxdist=-2)
+        tv = twovar_marginals(A; maxdist=3)
+        @test tv[1,2] == tv[2,3] == tv[3,4]
+        @test tv[1,3] == tv[2,4]
+        two_marg = tv[1,2]
         N = ndims(two_marg)
         N2 = N ÷ 2
         @test sum(two_marg, dims=N2+1:N)[:,:,1,1] ≈ sum(two_marg, dims=1:N2)[1,1,:,:] ≈ marg
