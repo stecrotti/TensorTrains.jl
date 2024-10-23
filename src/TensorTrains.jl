@@ -3,7 +3,7 @@ module TensorTrains
 using MKL
 using Lazy: @forward
 using TensorCast: @cast, TensorCast
-using LinearAlgebra: svd, norm, tr, I, dot, normalize!
+using LinearAlgebra: svd, norm, tr, I, Hermitian
 using LinearAlgebra
 using LogarithmicNumbers: Logarithmic
 using Tullio: @tullio
@@ -19,13 +19,13 @@ export
     marginals, twovar_marginals, lognormalization, normalization, normalize!, 
     dot, norm, norm2m,
     sample!, sample,
-    PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt
+    AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt
 
 include("utils.jl")
 include("svd_trunc.jl")
 include("abstract_tensor_train.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
-
+include("UniformTensorTrains/UniformTensorTrains.jl")
 
 end # end module

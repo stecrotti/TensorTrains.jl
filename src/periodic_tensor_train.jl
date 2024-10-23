@@ -1,11 +1,11 @@
 """
-    PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+    PeriodicTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
 
 A type for representing a Tensor Train with periodic boundary conditions
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-mutable struct PeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
+mutable struct PeriodicTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
     tensors::Vector{Array{F,N}}
     z::Logarithmic{F}
 
@@ -58,8 +58,8 @@ rand_periodic_tt(d::Integer, L::Integer, q...) = rand_periodic_tt(fill(d, L-1), 
 
 
 function _compose(f, A::PeriodicTensorTrain{F,NA}, B::PeriodicTensorTrain{F,NB}) where {F,NA,NB}
-    @assert NA == NB
-    @assert length(A) == length(B)
+    NA == NB || throw(ArgumentError("Tensor Trains must have the same number of variables, got $NA and $NB"))
+    length(A) == length(B) || throw(ArgumentError("Tensor Trains must have the same length, got $(length(A)) and $(length(B))"))
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
         sa = size(Aᵗ); sb = size(Bᵗ)
         if t == 1
