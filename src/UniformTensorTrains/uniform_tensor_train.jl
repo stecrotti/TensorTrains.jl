@@ -237,14 +237,28 @@ function TensorTrains.marginals(A::InfiniteUniformTensorTrain; B = one_normaliza
     return [m]
 end
 
-function TensorTrains.twovar_marginals(A::InfiniteUniformTensorTrain{F}; B = one_normalization(A)) where F
+# to be consistent with the finite-T version, this returns a `maxdist+1`x`maxdist+1` matrix `m` where `m[t,t+Δt]` is the marginal at distance `Δt` for all `t`
+function TensorTrains.twovar_marginals(A::InfiniteUniformTensorTrain{F,N}; 
+        maxdist::Integer=1, B = one_normalization(A)) where {F,N}
+    maxdist > -1 || throw(DomainError("maxdist must be non-negative, got $maxdist"))
     _, l, r = _eigen(A; B)
-    iter = Iterators.product(axes(A.tensor)[3:end]...)
-    m = map(Iterators.product(iter, iter)) do (x1, x2)
-        l' * (@views A.tensor[:,:,x1...] * A.tensor[:,:,x2...]) * r
+    m = Array{F,2*(N-2)}[zeros(F, zeros(Int, 2*(N-2))...) 
+        for _ in 1:maxdist+1, _ in 1:maxdist+1]
+    M = Matrix(1.0I, size(A.tensor, 1), size(A.tensor, 1))
+    Aᵗ = _reshape1(A.tensor)
+    for Δt in 1:maxdist
+        @tullio lAt[aᵗ, xᵗ] := l[bᵗ] * Aᵗ[bᵗ,aᵗ,xᵗ]
+        @tullio lAtM[bᵗ,xᵗ] := lAt[aᵗ, xᵗ] * M[aᵗ,bᵗ]
+        @tullio lAtMAu[cᵗ,xᵗ,xᵘ] := lAtM[bᵗ,xᵗ] * Aᵗ[bᵗ,cᵗ,xᵘ]
+        @tullio b[xᵗ, xᵘ] := lAtMAu[cᵗ,xᵗ,xᵘ] * r[cᵗ]
+        b ./= sum(b)
+        bᵗᵘ = reshape(real(b), (size(A.tensor)[3:end]..., size(A.tensor)[3:end]...)...)
+        for t in 1:(maxdist + 1 - Δt)
+            m[t,t+Δt] = bᵗᵘ        
+        end
+        M = M * B
     end
-    m ./= sum(m)
-    return [m]
+    return m
 end
 
 function TensorTrains.normalize_eachmatrix!(A::InfiniteUniformTensorTrain{F}) where {F}

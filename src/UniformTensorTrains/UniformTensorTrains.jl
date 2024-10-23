@@ -3,7 +3,7 @@ module UniformTensorTrains
 using ..TensorTrains
 using ..TensorTrains: _reshape1
 
-using LinearAlgebra: LinearAlgebra, dot, tr
+using LinearAlgebra: LinearAlgebra, dot, tr, I
 using KrylovKit: eigsolve
 using TensorCast: TensorCast, @cast
 using TensorTrains: TensorTrains, AbstractPeriodicTensorTrain,
