@@ -1,14 +1,14 @@
 module UniformTensorTrains
 
 using ..TensorTrains
-using ..TensorTrains: _reshape1
+using ..TensorTrains: TensorTrains, AbstractPeriodicTensorTrain,
+                    AbstractTensorTrain, PeriodicTensorTrain, TruncThresh,
+                    flat_periodic_tt, normalization, rand_periodic_tt,
+                    _reshape1
 
 using LinearAlgebra: LinearAlgebra, dot, tr, I
 using KrylovKit: eigsolve
 using TensorCast: TensorCast, @cast
-using TensorTrains: TensorTrains, AbstractPeriodicTensorTrain,
-                    AbstractTensorTrain, PeriodicTensorTrain, TruncThresh,
-                    flat_periodic_tt, normalization, rand_periodic_tt
 using Tullio: @tullio
 using LogarithmicNumbers: Logarithmic
 
