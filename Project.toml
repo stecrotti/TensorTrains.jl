@@ -15,7 +15,7 @@ TensorCast = "02d47bb6-7ce6-556a-be16-bb1710789e2b"
 Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
 [compat]
-KrylovKit = "0.6"
+KrylovKit = "0.6, 0.7, 0.8"
 Lazy = "0.15"
 LinearAlgebra = "1.8"
 LogarithmicNumbers = "1.4"
