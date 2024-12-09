@@ -1,6 +1,5 @@
 using Documenter
 using TensorTrains
-using TensorTrains.UniformTensorTrains
 
 makedocs(
     sitename = "TensorTrains.jl",
