@@ -46,26 +46,12 @@ function truncate_vumps(A::Array{F,3}, d;
 end
 
 function compress!(A::InfiniteUniformTensorTrain; svd_trunc::TruncVUMPS=TruncVUMPS(4),
-        is_orthogonal::Symbol=:none, init = rand_infinite_uniform_tt(svd_trunc.d, size(A.tensor)[3:end]...))
+        is_orthogonal::Symbol=:none, init=rand_infinite_uniform_tt(svd_trunc.d, size(A.tensor)[3:end]...))
     (; d, maxiter, tol) = svd_trunc
     qs = size(A.tensor)[3:end]
     B = reshape(A.tensor, size(A.tensor)[1:2]..., prod(qs))
     Bperm = permutedims(B, (1,3,2))
-    # reduce or expand `init` to match bond dimension `svd_trunc.d`
-    s = size(init.tensor)
-    init_resized = if s[1] != svd_trunc.d
-        init_ = InfiniteUniformTensorTrain(zeros(svd_trunc.d, svd_trunc.d, size(A.tensor)[3:end]...))
-        init_.tensor[1:s[1],1:s[2],fill(:,length(qs))...] = init.tensor
-        init_
-    else
-        init
-    end
-    @debug begin
-        if size(permutedims(_reshape1(init_resized.tensor), (1,3,2))) != size(rand(svd_trunc.d, prod(size(A.tensor)[3:end]), svd_trunc.d))
-            @show size(permutedims(_reshape1(init_resized.tensor), (1,3,2))) size(rand(svd_trunc.d, prod(size(A.tensor)[3:end]), svd_trunc.d))
-        end
-    end
-    Btruncperm, = truncate_vumps(Bperm, d; maxiter, tol, init = permutedims(_reshape1(init_resized.tensor), (1,3,2)))
+    Btruncperm, = truncate_vumps(Bperm, d; maxiter, tol, init = permutedims(_reshape1(init.tensor), (1,3,2)))
     Btrunc = permutedims(Btruncperm, (1,3,2))
     A.tensor = reshape(Btrunc, size(Btrunc)[1:2]..., qs...)
     return A
