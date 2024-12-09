@@ -1,5 +1,7 @@
 @testset "PeriodicTensorTrain" begin
 
+    rng = MersenneTwister(0)
+
     @testset "TensorTrain as a subcase" begin
         tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
         A = TensorTrain(tensors)
@@ -32,7 +34,8 @@
     end
 
     @testset "Compression" begin
-        tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
+        tensors = [rand(rng, 1,3,2,2), rand(rng, 3,4,2,2), rand(rng, 4,10,2,2), 
+            rand(rng, 10,1,2,2)]
         A = PeriodicTensorTrain(tensors)
         x, = sample(A)
         B = deepcopy(A)
