@@ -38,6 +38,6 @@ include("periodic_tensor_train.jl")
 # Uniform Tensor Trains
 include("UniformTensorTrains/uniform_tensor_train.jl")
 include("UniformTensorTrains/transfer_operator.jl")
-include("UniformTensorTrains/vumps_trunc.jl")
+include("UniformTensorTrains/trunc_vumps.jl")
 
 end # end module

@@ -40,11 +40,16 @@ symmetrized_uniform_tensor_train
 periodic_tensor_train
 ```
 
-## SVD Truncators
+## Truncators
 ```@docs
 SVDTrunc
 TruncThresh
 TruncBond
 TruncBondMax
 TruncBondThresh
+```
+
+### Infinite Tensor Trains
+```@docs
+TruncVUMPS
 ```
