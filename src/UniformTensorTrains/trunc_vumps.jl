@@ -32,6 +32,9 @@ function truncate_vumps(A::Array{F,3}, d;
     @assert size(A, 3) == m
     t = TensorMap(A,(ℝ^m ⊗ ℝ^Q), ℝ^m) # the same but as a type digestible by MPSKit.jl
     ψ₀ = InfiniteMPS([t])
+    if m ≤ d
+        return reshape(A, m, Q, m), 1.0, ψ₀
+    end
     II = DenseMPO([add_util_leg(id(storagetype(site_type(ψ₀)), physicalspace(ψ₀, i)))
         for i in 1:length(ψ₀)])
     alg = VUMPS(; maxiter, verbosity=0, kw_vumps...) # variational approximation algorithm
