@@ -69,7 +69,7 @@ function one_normalization(A::AbstractUniformTensorTrain{F,N}) where {F,N}
     return B
 end
 
-function TensorTrains.normalization(A::UniformTensorTrain; B = one_normalization(A))
+function normalization(A::UniformTensorTrain; B = one_normalization(A))
     L = length(A)
     return tr(B^L) / A.z
 end
@@ -83,7 +83,7 @@ function LinearAlgebra.normalize!(A::UniformTensorTrain)
     return logz
 end
 
-function TensorTrains.marginals(A::UniformTensorTrain; B = one_normalization(A))
+function marginals(A::UniformTensorTrain; B = one_normalization(A))
     L = length(A)
     C = B^(L-1)
     m = map(Iterators.product(axes(A.tensor)[3:end]...)) do x
@@ -92,20 +92,20 @@ function TensorTrains.marginals(A::UniformTensorTrain; B = one_normalization(A))
     return [m / sum(m)]
 end
 
-function TensorTrains.orthogonalize_left!(::AbstractUniformTensorTrain; kw...)
+function orthogonalize_left!(::AbstractUniformTensorTrain; kw...)
     error("Not implemented")
 end
 
-function TensorTrains.orthogonalize_right!(::AbstractUniformTensorTrain; kw...)
+function orthogonalize_right!(::AbstractUniformTensorTrain; kw...)
     error("Not implemented")
 end
 
-function TensorTrains.compress!(A::AbstractUniformTensorTrain; kw...)
+function compress!(A::AbstractUniformTensorTrain; kw...)
     @warn "Compressing a uniform Tensor Train: I'm not doing anyhing (yet)"
     return A
 end
 
-function TensorTrains._compose(f, ::AbstractUniformTensorTrain, ::AbstractUniformTensorTrain)
+function _compose(f, ::AbstractUniformTensorTrain, ::AbstractUniformTensorTrain)
     error("Not implemented")
 end
 
@@ -203,7 +203,7 @@ function _eigen(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     λ, l, r
 end
 
-function TensorTrains.normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
+function normalization(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     λ, = _eigen(A; B)
     return λ / A.z
 end
@@ -227,7 +227,7 @@ function Base.:(+)(A::InfiniteUniformTensorTrain{F,NA}, B::InfiniteUniformTensor
     return InfiniteUniformTensorTrain(tensor)
 end
 
-function TensorTrains.marginals(A::InfiniteUniformTensorTrain; B = one_normalization(A))
+function marginals(A::InfiniteUniformTensorTrain; B = one_normalization(A))
     _, l, r = _eigen(A; B)
     iter = Iterators.product(axes(A.tensor)[3:end]...)
     m = map(iter) do x
@@ -238,7 +238,7 @@ function TensorTrains.marginals(A::InfiniteUniformTensorTrain; B = one_normaliza
 end
 
 # to be consistent with the finite-T version, this returns a `maxdist+1`x`maxdist+1` matrix `m` where `m[t,t+Δt]` is the marginal at distance `Δt` for all `t`
-function TensorTrains.twovar_marginals(A::InfiniteUniformTensorTrain{F,N}; 
+function twovar_marginals(A::InfiniteUniformTensorTrain{F,N}; 
         maxdist::Integer=1, B = one_normalization(A)) where {F,N}
     maxdist > -1 || throw(DomainError("maxdist must be non-negative, got $maxdist"))
     _, l, r = _eigen(A; B)
@@ -261,7 +261,7 @@ function TensorTrains.twovar_marginals(A::InfiniteUniformTensorTrain{F,N};
     return m
 end
 
-function TensorTrains.normalize_eachmatrix!(A::InfiniteUniformTensorTrain{F}) where {F}
+function normalize_eachmatrix!(A::InfiniteUniformTensorTrain{F}) where {F}
     c = Logarithmic(one(F))
     mm = maximum(abs, A.tensor)
     if !isnan(mm) && !isinf(mm) && !iszero(mm)

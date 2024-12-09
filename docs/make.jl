@@ -7,7 +7,6 @@ makedocs(
     format = Documenter.HTML(),
     modules = [
         TensorTrains,
-        TensorTrains.UniformTensorTrains
         ],
     pages = [
         "Home" => "index.md",
