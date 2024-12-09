@@ -31,6 +31,14 @@ orthogonalize_right!
 orthogonalize_left!
 compress!
 ```
+### Uniform Tensor Trains
+```@docs
+AbstractUniformTensorTrain
+UniformTensorTrain
+InfiniteUniformTensorTrain
+symmetrized_uniform_tensor_train
+periodic_tensor_train
+```
 
 ## SVD Truncators
 ```@docs
@@ -39,13 +47,4 @@ TruncThresh
 TruncBond
 TruncBondMax
 TruncBondThresh
-```
-
-## Uniform Tensor Trains
-```@docs
-AbstractUniformTensorTrain
-UniformTensorTrain
-InfiniteUniformTensorTrain
-symmetrized_uniform_tensor_train
-periodic_tensor_train
 ```
