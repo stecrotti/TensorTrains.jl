@@ -100,11 +100,6 @@ function orthogonalize_right!(::AbstractUniformTensorTrain; kw...)
     error("Not implemented")
 end
 
-function compress!(A::AbstractUniformTensorTrain; kw...)
-    @warn "Compressing a uniform Tensor Train: I'm not doing anyhing (yet)"
-    return A
-end
-
 function _compose(f, ::AbstractUniformTensorTrain, ::AbstractUniformTensorTrain)
     error("Not implemented")
 end

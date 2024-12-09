@@ -60,7 +60,6 @@
         @test_throws ArgumentError (A[3] = rand(rng, 4,4,2,3))
         @test_throws "Not implemented" orthogonalize_left!(A)
         @test_throws "Not implemented" orthogonalize_right!(A)
-        @test_warn "Compressing a uniform Tensor Train: I'm not doing anyhing (yet)" compress!(A)
         tensor = rand(rng, 4,4,2,3)
         B = UniformTensorTrain(tensor, L)
         @test_throws "Not implemented" A - B
@@ -130,4 +129,16 @@ end
 
     r = flat_infinite_uniform_tt(2, 3, 4)
     @test dot(r, r) ≈ 1
+end
+
+@testset "VUMPS truncations" begin
+    rng = MersenneTwister(0)
+    A = rand(rng, 10,10,3,4)
+    p = InfiniteUniformTensorTrain(A)
+    q = deepcopy(p)
+    compress!(p; svd_trunc=TruncVUMPS(8))
+    @test size(p.tensor)[1:2] == (8, 8)
+    marg = real(only(marginals(q)))
+    marg_compressed = real(only(marginals(p)))
+    @test isapprox(marg, marg_compressed, atol=1e-5)
 end
