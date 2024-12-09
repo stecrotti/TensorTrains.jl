@@ -138,7 +138,7 @@ end
     q = deepcopy(p)
     svd_trunc = TruncVUMPS(8)
     @suppress @show svd_trunc
-    compress!(p; svd_trunc, init=rand_infinite_uniform_tt(10, 3, 4))
+    compress!(p; svd_trunc)
     @test size(p.tensor)[1:2] == (8, 8)
     marg = real(only(marginals(q)))
     marg_compressed = real(only(marginals(p)))
