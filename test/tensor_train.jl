@@ -3,6 +3,8 @@ svd_trunc = TruncThresh(0.0)
     @show svd_trunc
 end
 
+rng = MersenneTwister(0)
+
 @testset "TensorTrain" begin
 
     @testset "basics" begin
@@ -120,7 +122,8 @@ end
     end
 
     @testset "Compression" begin
-        tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
+        tensors = [rand(rng, 1,3,2,2), rand(rng, 3,4,2,2), rand(rng, 4,10,2,2), 
+            rand(rng, 10,1,2,2)]
         A = TensorTrain(tensors)
         x, = sample(A)
         B = deepcopy(A)
@@ -136,7 +139,6 @@ end
     end
 
     @testset "Long tensor trains" begin
-        rng = MersenneTwister(0)
         qs = (2, 2)
         L = 10000
 
