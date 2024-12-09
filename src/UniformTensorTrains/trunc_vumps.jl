@@ -46,11 +46,12 @@ function truncate_vumps(A::Array{F,3}, d;
 end
 
 function compress!(A::InfiniteUniformTensorTrain; svd_trunc::TruncVUMPS=TruncVUMPS(4),
-        is_orthogonal::Symbol=:none, init=rand_infinite_uniform_tt(svd_trunc.d, size(A.tensor)[3:end]...))
+        is_orthogonal::Symbol=:none)
     (; d, maxiter, tol) = svd_trunc
     qs = size(A.tensor)[3:end]
     B = reshape(A.tensor, size(A.tensor)[1:2]..., prod(qs))
     Bperm = permutedims(B, (1,3,2))
+    init = rand_infinite_uniform_tt(svd_trunc.d, size(A.tensor)[3:end]...)
     Btruncperm, = truncate_vumps(Bperm, d; maxiter, tol, init = permutedims(_reshape1(init.tensor), (1,3,2)))
     Btrunc = permutedims(Btruncperm, (1,3,2))
     A.tensor = reshape(Btrunc, size(Btrunc)[1:2]..., qs...)
