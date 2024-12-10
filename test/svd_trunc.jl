@@ -22,3 +22,12 @@ end
         @test norm2m(A, B) < (L*ε)^2
     end
 end
+
+@testset "TruncVUMPS" begin
+    p = flat_infinite_uniform_tt(10, 2, 4)
+    q = deepcopy(p)
+    compress!(p; svd_trunc=TruncVUMPS(12))
+    @test p == q
+    compress!(p; svd_trunc=TruncVUMPS(9))
+    @test isapprox(real(only(marginals(p))), real(only(marginals(q))), atol=1e-5)
+end
