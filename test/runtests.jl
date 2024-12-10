@@ -2,7 +2,6 @@ using TensorTrains
 using TensorTrains: transfer_operator, leading_eig
 using Random, Suppressor, InvertedIndices, LinearAlgebra
 using Test
-using Random, Suppressor, InvertedIndices
 using Aqua
 
 @testset "Aqua" begin
