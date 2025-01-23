@@ -5,20 +5,20 @@ A type for representing a Tensor Train
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-mutable struct TensorTrain{F<:Number, N} <: AbstractTensorTrain{F,N}
-    tensors::Vector{Array{F,N}}
+mutable struct TensorTrain{F<:Number, N, T} <: AbstractTensorTrain{F,N}
+    tensors::Vector{T}
     z::Logarithmic{F}
 
-    function TensorTrain{F,N}(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
-        N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
+    function TensorTrain{F,N}(tensors::Vector{T}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N, T <: AbstractArray{F,N}}
+        N > 2 || throw(ArgumentError("Tensors should have at least 3 indices: 2 virtual and 1 physical"))
         size(tensors[1],1) == size(tensors[end],2) == 1 ||
             throw(ArgumentError("First matrix must have 1 row, last matrix must have 1 column"))
         check_bond_dims(tensors) ||
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
-        return new{F,N}(tensors, z)
+        return new{F,N,T}(tensors, z)
     end
 end
-function TensorTrain(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
+function TensorTrain(tensors::Vector{<:AbstractArray{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
     return TensorTrain{F,N}(tensors; z)
 end
 
