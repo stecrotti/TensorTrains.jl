@@ -11,6 +11,7 @@ using StatsBase: StatsBase, sample!, sample
 using TensorCast: @cast, TensorCast
 using TensorKit: TensorMap, ⊗, ℝ, id, storagetype
 using Tullio: @tullio
+using OffsetArrays
 
 export 
     getindex, iterate, firstindex, lastindex, setindex!, eachindex, length, show,

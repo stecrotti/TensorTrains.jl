@@ -20,10 +20,12 @@ abstract type AbstractPeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F
 
 Return a vector with the dimensions of the virtual bonds
 """
-bond_dims(A::AbstractTensorTrain) = [size(A[t], 1) for t in 1:lastindex(A)]
-
-function check_bond_dims(tensors::Vector{<:Array})
+bond_dims(A::AbstractTensorTrain) = [size(a, 1) for a in A]
+###
+function check_bond_dims(tensors::AbstractVector{T}) where {T<:AbstractArray}
     for t in 1:lastindex(tensors)
+        firstindex(tensors[t],1) == firstindex(tensors[t],2) == 1 || 
+            throw(ArgumentError("first two indices must start at 1"))
         dᵗ = size(tensors[t],2)
         dᵗ⁺¹ = size(tensors[mod1(t+1, length(tensors))],1)
         if dᵗ != dᵗ⁺¹
@@ -328,13 +330,12 @@ A\cdot B = \sum_{x^1,x^2,\ldots,x^L}A^1(x^1)A^2(x^2)\cdots A^L(x^L)B^1(x^1)B^2(x
 function LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
     Aᴸ = _reshape1(A[end])
     Bᴸ = _reshape1(B[end])
-    @tullio C[aᴸ,a¹,b¹,bᴸ] := Aᴸ[aᴸ,a¹,xᴸ] * Bᴸ[bᴸ,b¹,xᴸ]
+    @tullio C[aᴸ,a¹,b¹,bᴸ] := Aᴸ[aᴸ,a¹,xᴸ] * conj(Bᴸ[bᴸ,b¹,xᴸ])
 
     for (Al, Bl) in Iterators.drop(Iterators.reverse(zip(A,B)), 1)
         Aˡ = _reshape1(Al)
         Bˡ = _reshape1(Bl)
-        @tullio Cnew[aˡ,a¹,b¹,bˡ] := Aˡ[aˡ,aˡ⁺¹,xˡ] * C[aˡ⁺¹,a¹,b¹,bˡ⁺¹] * Bˡ[bˡ,bˡ⁺¹,xˡ]
-        C = Cnew
+        C = @tullio _[aˡ,a¹,b¹,bˡ] := Aˡ[aˡ,aˡ⁺¹,xˡ] * C[aˡ⁺¹,a¹,b¹,bˡ⁺¹] * conj(Bˡ[bˡ,bˡ⁺¹,xˡ])
     end
 
     @tullio d = C[a¹,a¹,b¹,b¹]
@@ -362,5 +363,5 @@ Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 ```
 """
 function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain) 
-    return norm(A)^2 + norm(B)^2 - 2*dot(A, B)
+    return norm(A)^2 + norm(B)^2 - 2*real(dot(A, B))
 end

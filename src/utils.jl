@@ -1,5 +1,6 @@
 _reshape1(x) = reshape(x, size(x,1), size(x,2), prod(size(x)[3:end])...)
 _reshapeas(x,y) = reshape(x, size(x,1), size(x,2), size(y)[3:end]...)
+_reshapeas(x,y::OffsetArray) = reshape(x, size(x,1), size(x,2), axes(y)[3:end]...)
 
 # SAMPLING
 # sample an index `i` of `w` with probability prop to `w[i]`

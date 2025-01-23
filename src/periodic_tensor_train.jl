@@ -5,19 +5,19 @@ A type for representing a Tensor Train with periodic boundary conditions
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-mutable struct PeriodicTensorTrain{F<:Number, N} <: AbstractPeriodicTensorTrain{F,N}
-    tensors::Vector{Array{F,N}}
+mutable struct PeriodicTensorTrain{F<:Number, N, T} <: AbstractPeriodicTensorTrain{F,N}
+    tensors::Vector{T}
     z::Logarithmic{F}
 
-    function PeriodicTensorTrain{F,N}(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
+    function PeriodicTensorTrain{F,N,T}(tensors::Vector{T}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N, T<:AbstractArray{F,N}}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         check_bond_dims(tensors) ||
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
-        return new{F,N}(tensors, z)
+        return new{F,N,T}(tensors, z)
     end
 end
-function PeriodicTensorTrain(tensors::Vector{Array{F,N}}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
-    return PeriodicTensorTrain{F,N}(tensors; z)
+function PeriodicTensorTrain(tensors::Vector{T}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N, T<:AbstractArray{F,N}} 
+    return PeriodicTensorTrain{F,N,T}(tensors; z)
 end
 
 @forward PeriodicTensorTrain.tensors Base.getindex, Base.iterate, Base.firstindex, 
