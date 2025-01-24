@@ -154,17 +154,22 @@ A type for representing an infinite tensor train with periodic boundary conditio
 - `tensor` only one is stored
 - `z` a re-scaling constant
 """
-mutable struct InfiniteUniformTensorTrain{F<:Number, N, Z} <: AbstractUniformTensorTrain{F,N}
-    tensor::Array{F,N}
+mutable struct InfiniteUniformTensorTrain{F<:Number, N, T, Z} <: AbstractUniformTensorTrain{F,N}
+    tensor::T
     z :: Z
 
-    function InfiniteUniformTensorTrain{F,N}(tensor::Array{F,N}; z::Z=Logarithmic(one(F))) where {F<:Number, N, Z}
+    function InfiniteUniformTensorTrain{F,N}(tensor::T; z::Z=Logarithmic(one(F))) where {F<:Number, N, T <: AbstractArray{F,N}, Z}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensor,1) == size(tensor,2) || throw(ArgumentError("Matrix must be square"))
-        return new{F,N,Z}(tensor, z)
+        return new{F,N,T,Z}(tensor, z)
     end
 end
-function InfiniteUniformTensorTrain(tensor::Array{F,N}; z=Logarithmic(one(F))) where {F<:Number, N} 
+
+function InfiniteUniformTensorTrain{F,N,T,Z}(tensor; z::Z=Logarithmic(one(F))) where {F<:Number, N, T, Z}
+    return InfiniteUniformTensorTrain{F,N}(tensor; z)
+end
+
+function InfiniteUniformTensorTrain(tensor::Array{F,N}; z=Logarithmic(one(F))) where {F<:Number, N}
     return InfiniteUniformTensorTrain{F,N}(tensor; z)
 end
 

@@ -15,6 +15,8 @@ mutable struct PeriodicTensorTrain{F<:Number, N, T, Z} <: AbstractPeriodicTensor
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
         return new{F,N,T,Z}(tensors, z)
     end
+
+    PeriodicTensorTrain{F,N,T,Z}(tensors; z::Z=Logarithmic(one(F))) where {F,N,T,Z} = PeriodicTensorTrain{F,N}(tensors; z)
 end
 function PeriodicTensorTrain(tensors::Vector{T}; z=Logarithmic(one(F))) where {F<:Number, N, T<:AbstractArray{F,N}} 
     return PeriodicTensorTrain{F,N}(tensors; z)
