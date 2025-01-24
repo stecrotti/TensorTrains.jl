@@ -5,17 +5,17 @@ A type for representing a Tensor Train
 - `F` is the type of the matrix entries
 - `N` is the number of indices of each tensor (2 virtual ones + `N-2` physical ones)
 """
-mutable struct TensorTrain{F<:Number, N, T, L} <: AbstractTensorTrain{F,N}
+mutable struct TensorTrain{F<:Number, N, T, Z} <: AbstractTensorTrain{F,N}
     tensors::Vector{T}
-    z::L
+    z::Z
 
-    function TensorTrain{F,N}(tensors::Vector{T}; z::L=Logarithmic(one(F))) where {F<:Number, N, T <: AbstractArray{F,N}, L}
+    function TensorTrain{F,N}(tensors::Vector{T}; z::Z=Logarithmic(one(F))) where {F<:Number, N, T <: AbstractArray{F,N}, Z}
         N > 2 || throw(ArgumentError("Tensors should have at least 3 indices: 2 virtual and 1 physical"))
         size(tensors[1],1) == size(tensors[end],2) == 1 ||
             throw(ArgumentError("First matrix must have 1 row, last matrix must have 1 column"))
         check_bond_dims(tensors) ||
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
-        return new{F,N,T,L}(tensors, z)
+        return new{F,N,T,Z}(tensors, z)
     end
 end
 function TensorTrain(tensors::Vector{<:AbstractArray{F,N}}; z=Logarithmic(one(F))) where {F<:Number, N} 
