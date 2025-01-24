@@ -119,7 +119,7 @@ rng = MersenneTwister(0)
         q = (2, 4)
         bondsizes = [1, 3, 5, 2, 1]
         C = flat_tt(bondsizes, q...)
-        @test float(normalization(C)) ≈ 1
+        @test normalization(C) ≈ prod(bondsizes)*prod(q)^length(C)
         x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
         e1 = evaluate(C, x)
 
