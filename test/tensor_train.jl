@@ -1,3 +1,5 @@
+using OffsetArrays
+
 svd_trunc = TruncThresh(0.0)
 @suppress begin
     @show svd_trunc
@@ -18,6 +20,29 @@ rng = MersenneTwister(0)
     @testset "Bond dimensions" begin
         tensors = [rand(1,4,2,2), rand(3,5,2,2)]
         @test TensorTrains.check_bond_dims(tensors) == false
+    end
+
+    @testset "Offsets" begin
+        f(i,j) = rand(i,j,5)
+        tensors = [f(1,5), f(5,6), f(6,2), f(2,1)]
+        A = TensorTrain(tensors)
+        tensors2 = [OffsetArray(t, axes(t,1), axes(t,2), -2:2) for t in tensors]
+        B = TensorTrain(tensors2)
+        @test normalization(A) == normalization(B)
+        x = rand(-2:2, 4)
+        C = deepcopy(B)
+        compress!(B)
+        @test evaluate(C,x) ≈ evaluate(B,x)
+    end
+
+    @testset "Complex" begin
+        f(i,j) = rand(ComplexF64, i, j, 5)
+        tensors = [f(1,5), f(5,6), f(6,2), f(2,1)]
+        A = TensorTrain(tensors)
+        B = deepcopy(A)
+        compress!(A)
+        x = rand(1:5, 4)
+        @test evaluate(A,x) ≈ evaluate(B,x)
     end
 
     @testset "single variable" begin
