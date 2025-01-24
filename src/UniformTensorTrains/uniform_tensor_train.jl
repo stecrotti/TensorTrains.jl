@@ -19,19 +19,19 @@ A type for representing a tensor train with periodic boundary conditions, all ma
 - `L` the length of the tensor train
 - `z` a re-scaling constant
 """
-mutable struct UniformTensorTrain{F<:Number, N} <: AbstractUniformTensorTrain{F,N}
-    tensor::Array{F,N}
+mutable struct UniformTensorTrain{F<:Number, N, T, Z} <: AbstractUniformTensorTrain{F,N}
+    tensor::T
     L :: Int
-    z :: Logarithmic{F}
+    z :: Z
 
-    function UniformTensorTrain{F,N}(tensor::Array{F,N}, L::Integer; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
+    function UniformTensorTrain{F,N}(tensor::T, L::Integer; z::Z=Logarithmic(one(F))) where {F<:Number, N, T <: AbstractArray{F,N}, Z}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensor,1) == size(tensor,2) || throw(ArgumentError("Matrix must be square"))
         L > 0 || throw(ArgumentError("Length `L` must be positive, got $L"))
-        return new{F,N}(tensor, Int(L), z)
+        return new{F,N,T,Z}(tensor, Int(L), z)
     end
 end
-function UniformTensorTrain(tensor::Array{F,N}, L::Integer; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
+function UniformTensorTrain(tensor::AbstractArray{F,N}, L::Integer; z::Z=Logarithmic(one(F))) where {F<:Number, N, Z}
     return UniformTensorTrain{F,N}(tensor, L; z)
 end
 
@@ -154,17 +154,17 @@ A type for representing an infinite tensor train with periodic boundary conditio
 - `tensor` only one is stored
 - `z` a re-scaling constant
 """
-mutable struct InfiniteUniformTensorTrain{F<:Number, N} <: AbstractUniformTensorTrain{F,N}
+mutable struct InfiniteUniformTensorTrain{F<:Number, N, Z} <: AbstractUniformTensorTrain{F,N}
     tensor::Array{F,N}
-    z :: Logarithmic{F}
+    z :: Z
 
-    function InfiniteUniformTensorTrain{F,N}(tensor::Array{F,N}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N}
+    function InfiniteUniformTensorTrain{F,N}(tensor::Array{F,N}; z::Z=Logarithmic(one(F))) where {F<:Number, N, Z}
         N > 2 || throw(ArgumentError("Tensors shold have at least 3 indices: 2 virtual and 1 physical"))
         size(tensor,1) == size(tensor,2) || throw(ArgumentError("Matrix must be square"))
-        return new{F,N}(tensor, z)
+        return new{F,N,Z}(tensor, z)
     end
 end
-function InfiniteUniformTensorTrain(tensor::Array{F,N}; z::Logarithmic{F}=Logarithmic(one(F))) where {F<:Number, N} 
+function InfiniteUniformTensorTrain(tensor::Array{F,N}; z=Logarithmic(one(F))) where {F<:Number, N} 
     return InfiniteUniformTensorTrain{F,N}(tensor; z)
 end
 
