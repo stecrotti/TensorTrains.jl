@@ -17,6 +17,7 @@ mutable struct TensorTrain{F<:Number, N, T, Z} <: AbstractTensorTrain{F,N}
             throw(ArgumentError("Matrix indices for matrix product non compatible"))
         return new{F,N,T,Z}(tensors, z)
     end
+    TensorTrain{F,N,T,Z}(tensors; z::Z=Logarithmic(one(F))) where {F,N,T,Z} = TensorTrain{F,N}(tensors; z)
 end
 function TensorTrain(tensors::Vector{<:AbstractArray{F,N}}; z=Logarithmic(one(F))) where {F<:Number, N} 
     return TensorTrain{F,N}(tensors; z)
@@ -24,10 +25,10 @@ end
 
 
 @forward TensorTrain.tensors Base.getindex, Base.iterate, Base.firstindex, Base.lastindex,
-    Base.setindex!, Base.length, Base.eachindex,  
+    Base.setindex!, Base.length, Base.eachindex,
     check_bond_dims
 
-  
+
 """
     flat_tt([T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
     flat_tt([T = Float64], d::Integer, L::Integer, q...)
