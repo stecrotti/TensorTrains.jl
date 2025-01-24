@@ -29,36 +29,45 @@ end
 
   
 """
-    flat_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    flat_tt(d::Integer, L::Integer, q...)
+    flat_tt([T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
+    flat_tt([T = Float64], d::Integer, L::Integer, q...)
 
-Construct a (normalized) Tensor Train filled with a constant, by specifying either:
+Construct a (normalized) Tensor Train filled with `one(T)`, by specifying either:
 - `bondsizes`: the size of each bond
 - `d` a fixed size for all bonds, `L` the length
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
-function flat_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    L = length(bondsizes) - 1
-    x = 1 / (prod(bondsizes)^(1/L)*prod(q))
-    TensorTrain([fill(x, bondsizes[t], bondsizes[t+1], q...) for t in 1:L])
+function flat_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T<:Number
+    TensorTrain([fill(one(T), bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
 end
+
+flat_tt(bondsizes::AbstractVector{<:Integer}, q...) = flat_tt(Float64, bondsizes, q...)
+
 flat_tt(d::Integer, L::Integer, q...) = flat_tt([1; fill(d, L-1); 1], q...)
 
-"""
-    rand_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    rand_tt(d::Integer, L::Integer, q...)
 
-Construct a Tensor Train with entries random in [0,1], by specifying either:
+"""
+    rand_tt([T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
+    rand_tt([T = Float64], d::Integer, L::Integer, q...)
+
+Construct a Tensor Train with `rand(T)` entries, by specifying either:
 - `bondsizes`: the size of each bond
 - `d` a fixed size for all bonds, `L` the length
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
-function rand_tt(bondsizes::AbstractVector{<:Integer}, q...)
-    TensorTrain([rand(bondsizes[t], bondsizes[t+1], q...) for t in 1:length(bondsizes)-1])
+function rand_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
+    A = flat_tt(T, bondsizes, q...)
+    foreach(a->(a .= rand.()), A)
+    A
 end
-rand_tt(d::Integer, L::Integer, q...) = rand_tt([1; fill(d, L-1); 1], q...)
+
+rand_tt(bondsizes::AbstractVector{<:Integer}, q...) = rand_tt(Float64, bondsizes, q...)
+
+rand_tt(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = rand_tt(T, [1; fill(d, L-1); 1], q...)
+
+rand_tt(d::Integer, L::Integer, q...) = rand_tt(Float64, d, L, q...)
 
 
 """
