@@ -227,7 +227,20 @@ rng = MersenneTwister(0)
                 L = 6
                 A = rand_tt( [1; rand(1:7, L-1); 1], qs... )
                 B = rand_tt( [1; rand(1:7, L-1); 1], qs... )
-                x = [rand(1:q[1],N) for _ in 1:L]
+                x = [rand(1:q,N) for _ in 1:L]
+                @test evaluate(A, x) + evaluate(B, x) ≈ evaluate(A+B, x)
+            end
+        end
+    end
+
+    @testset "Sum of TTs with offsets" begin
+        for N in 1:3
+            for q in 1:3
+                qs = fill(-q:q, N)
+                L = 6
+                A = rand_tt( [1; rand(1:7, L-1); 1], qs... )
+                B = rand_tt( [1; rand(1:7, L-1); 1], qs... )
+                x = [rand(-q:q,N) for _ in 1:L]
                 @test evaluate(A, x) + evaluate(B, x) ≈ evaluate(A+B, x)
             end
         end
