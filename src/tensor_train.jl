@@ -138,24 +138,24 @@ end
 
 # used to do stuff like `A+B` with `A,B` tensor trains
 function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
-    NA == NB || throw(ArgumentError("Tensor Trains must have the same number of variables, got $NA and $NB"))
+    axes(A[1])[3:end] == axes(B[1])[3:end] || throw(ArgumentError("Tensor Trains must have the types of physical indices, got $(axes(A[1])[3:end]) and $(axes(B[1])[3:end])"))
     length(A) == length(B) || throw(ArgumentError("Tensor Trains must have the same length, got $(length(A)) and $(length(B))"))
+    z = max(A.z, B.z)
+    za, zb = float(A.z/z), f(float(B.z/z))
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
-        sa = size(Aᵗ); sb = size(Bᵗ)
-        if t == 1
-            Cᵗ = [ hcat(float(A.z) * Aᵗ[:,:,x...], float(B.z) * f(Bᵗ[:,:,x...])) 
-                for x in Iterators.product(axes(Aᵗ)[3:end]...)]
-            reshape( reduce(hcat, Cᵗ), 1, sa[2]+sb[2], size(Aᵗ)[3:end]...)
+        At, Bt = _reshape1(Aᵗ), _reshape1(Bᵗ)
+        X = axes(At,3)
+        @views if t == firstindex(A)
+            Cᵗ = [[za*At[:,:,x] zb*Bt[:,:,x]] for x in X]
         elseif t == lastindex(A)
-            Cᵗ = [ vcat(Aᵗ[:,:,x...], Bᵗ[:,:,x...]) 
-                for x in Iterators.product(axes(Aᵗ)[3:end]...)]
-            reshape( reduce(hcat, Cᵗ), sa[1]+sb[1], 1, size(Aᵗ)[3:end]...)
+            Cᵗ = [[At[:,:,x]; Bt[:,:,x]] for x in X]
         else
-            Cᵗ = [ [Aᵗ[:,:,x...] zeros(sa[1],sb[2]); zeros(sb[1],sa[2]) Bᵗ[:,:,x...]] 
-                for x in Iterators.product(axes(Aᵗ)[3:end]...)]
-            reshape( reduce(hcat, Cᵗ), (sa .+ sb)[1:2]..., size(Aᵗ)[3:end]...)
+            Cᵗ = [[At[:,:,x] 0I; 0I Bt[:,:,x]] for x in X]
         end
+        _reshapeas((@tullio _[i,j,x] := Cᵗ[x][i,j]), Aᵗ)
     end
-    TensorTrain(tensors)
+    C = TensorTrain(tensors)
+    C.z = z
+    C
 end
 
