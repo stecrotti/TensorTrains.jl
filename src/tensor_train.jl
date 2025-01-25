@@ -150,7 +150,8 @@ function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
         elseif t == lastindex(A)
             Cᵗ = [[At[:,:,x]; Bt[:,:,x]] for x in X]
         else
-            Cᵗ = [[At[:,:,x] 0I; 0I Bt[:,:,x]] for x in X]
+            sa, sb = size(At),size(Bt)
+            Cᵗ = [[At[:,:,x] zeros(sa[1],sb[2]); zeros(sb[1],sa[2]) Bt[:,:,x]] for x in X]
         end
         _reshapeas((@tullio _[i,j,x] := Cᵗ[x][i,j]), Aᵗ)
     end
