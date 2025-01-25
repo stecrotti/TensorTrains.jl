@@ -56,7 +56,6 @@ function evaluate(A::AbstractTensorTrain, X...)
 end
 
 Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
-Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
@@ -364,4 +363,9 @@ Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 """
 function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain) 
     return norm(A)^2 + norm(B)^2 - 2*real(dot(A, B))
+end
+
+function Base.isapprox(A::AbstractTensorTrain, B::AbstractTensorTrain; atol::Real=0, rtol::Real=1e-6)
+    na, nb = norm(A), norm(B)
+    na^2 + nb^2 - 2real(dot(A,B)) <= max(atol, rtol*max(na, nb))^2
 end
