@@ -338,7 +338,7 @@ function LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
     end
 
     @tullio d = C[a¹,a¹,b¹,b¹]
-    return d / float(A.z * B.z)
+    return d / float(A.z * conj(B.z)) # B.z should be real, but let's be safe here
 end
 
 @doc raw"""
@@ -361,7 +361,7 @@ Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 \lVert A-B\rVert_2^2 = \lVert A \rVert_2^2 + \lVert B \rVert_2^2 - 2A\cdot B
 ```
 """
-function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain) 
+function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
     return norm(A)^2 + norm(B)^2 - 2*real(dot(A, B))
 end
 

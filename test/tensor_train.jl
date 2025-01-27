@@ -253,7 +253,7 @@ rng = MersenneTwister(0)
                 L = 6
                 A = rand_tt( [1; rand(1:7, L-1); 1], qs... )
                 B = rand_tt( [1; rand(1:7, L-1); 1], qs... )
-                @test (A + B) - B ≈ A
+                @test isapprox((A + B) - B,  A; rtol=1e-4)
 
                 C = deepcopy(A)
                 C.z /= 2
