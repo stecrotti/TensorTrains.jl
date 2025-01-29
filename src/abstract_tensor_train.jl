@@ -56,7 +56,6 @@ function evaluate(A::AbstractTensorTrain, X...)
 end
 
 Base.:(==)(A::T, B::T) where {T<:AbstractTensorTrain} = isequal(A.tensors, B.tensors)
-Base.isapprox(A::T, B::T; kw...) where {T<:AbstractTensorTrain} = isapprox(A.tensors, B.tensors; kw...)
 
 trace(At) = @tullio _[aᵗ,aᵗ⁺¹] := _reshape1(At)[aᵗ,aᵗ⁺¹,x]
 
@@ -339,7 +338,7 @@ function LinearAlgebra.dot(A::AbstractTensorTrain, B::AbstractTensorTrain)
     end
 
     @tullio d = C[a¹,a¹,b¹,b¹]
-    return d / float(A.z * B.z)
+    return d / float(A.z * conj(B.z)) # B.z should be real, but let's be safe here
 end
 
 @doc raw"""
@@ -362,6 +361,11 @@ Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 \lVert A-B\rVert_2^2 = \lVert A \rVert_2^2 + \lVert B \rVert_2^2 - 2A\cdot B
 ```
 """
-function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain) 
+function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
     return norm(A)^2 + norm(B)^2 - 2*real(dot(A, B))
+end
+
+function Base.isapprox(A::AbstractTensorTrain, B::AbstractTensorTrain; atol::Real=0, rtol::Real=1e-6)
+    na, nb = norm(A), norm(B)
+    na^2 + nb^2 - 2real(dot(A,B)) <= max(atol, rtol*max(na, nb))^2
 end

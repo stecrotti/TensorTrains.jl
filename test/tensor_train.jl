@@ -246,6 +246,23 @@ rng = MersenneTwister(0)
         end
     end
 
+    @testset "Approx and sum of TTs" begin
+        for N in 1:3
+            for q in 1:3
+                qs = fill(q, N)
+                L = 6
+                A = rand_tt( [1; rand(1:7, L-1); 1], qs... )
+                B = rand_tt( [1; rand(1:7, L-1); 1], qs... )
+                @test isapprox((A + B) - B,  A; rtol=1e-4)
+
+                C = deepcopy(A)
+                C.z /= 2
+                @test C ≈ A + A
+            end
+        end
+    end
+
+
     @testset "Difference of TTs" begin
         rng = MersenneTwister(0)
         L = 4
