@@ -17,7 +17,8 @@ export
     getindex, iterate, firstindex, lastindex, setindex!, eachindex, length, show,
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
-    bond_dims, flat_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, compress!,
+    bond_dims, flat_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, orthogonalize_center!,
+    compress!,
     marginals, twovar_marginals, lognormalization, normalization,  
     dot, norm, norm2m,
     sample!, sample,
@@ -40,5 +41,8 @@ include("periodic_tensor_train.jl")
 include("UniformTensorTrains/uniform_tensor_train.jl")
 include("UniformTensorTrains/transfer_operator.jl")
 include("UniformTensorTrains/trunc_vumps.jl")
+
+# Matrix Product States
+include("MatrixProductStates.jl")
 
 end # end module
