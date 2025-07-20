@@ -72,20 +72,26 @@ rand_tt(d::Integer, L::Integer, q...) = rand_tt(Float64, d, L, q...)
 
 
 """
-    orthogonalize_right!(A::AbstractTensorTrain; svd_trunc::SVDTrunc)
+    orthogonalize_right!(A::AbstractTensorTrain; svd_trunc::SVDTrunc, indices)
 
 Bring `A` to right-orthogonal form by means of SVD decompositions.
 
 Optionally perform truncations by passing a `SVDTrunc`.
+Optionally pass a range of indices to perform the orthogonalizations only on those.
 """
-function orthogonalize_right!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
+function orthogonalize_right!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6),
+    indices=2:lastindex(C)) where F
+
+    isempty(indices) && return C
+    issorted(indices) || throw(ArgumentError("Indices must be sorted"))
+    all(id ∈ 2:lastindex(C) for id in extrema(indices)) || throw(ArgumentError("Indices not compatible with tensor train positions $(eachindex(C)): got $indices")) 
     Cᵀ = _reshape1(C[end])
     q = size(Cᵀ, 3)
     @cast M[m, (n, x)] := Cᵀ[m, n, x]
     D = fill(1.0,1,1,1)
     c = Logarithmic(one(F))
 
-    for t in length(C):-1:2
+    for t in Iterators.reverse(indices)
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])     
@@ -98,26 +104,33 @@ function orthogonalize_right!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) wh
         end
         @cast M[m, (n, x)] := D[m, n, x]
     end
-    C[begin] = _reshapeas(D, C[begin])
+    C[first(indices)-1] = _reshapeas(D, C[first(indices)-1])
     C.z /= c
     return C
 end
 
+
 """
-    orthogonalize_left!(A::AbstractTensorTrain; svd_trunc::SVDTrunc)
+    orthogonalize_left!(A::AbstractTensorTrain; svd_trunc::SVDTrunc, indices::UnitRange)
 
 Bring `A` to left-orthogonal form by means of SVD decompositions.
 
 Optionally perform truncations by passing a `SVDTrunc`.
+Optionally pass a range of indices to perform the orthogonalizations only on those.
 """
-function orthogonalize_left!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) where F
+function orthogonalize_left!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6),
+    indices=1:lastindex(C)-1) where F
+
+    isempty(indices) && return C
+    issorted(indices) || throw(ArgumentError("Indices must be sorted"))
+    all(id ∈ 1:lastindex(C)-1 for id in extrema(indices)) || throw(ArgumentError("Indices not compatible with tensor train positions $(eachindex(C)): got $indices")) 
     C⁰ = _reshape1(C[begin])
     q = size(C⁰, 3)
     @cast M[(m, x), n] |= C⁰[m, n, x]
     D = fill(1.0,1,1,1)
     c = Logarithmic(one(F))
 
-    for t in 1:length(C)-1
+    for t in indices
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := U[(m, x), n] x ∈ 1:q
         C[t] = _reshapeas(Aᵗ, C[t])
@@ -130,9 +143,14 @@ function orthogonalize_left!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6)) whe
         end
         @cast M[(m, x), n] |= D[m, n, x]
     end
-    C[end] = _reshapeas(D, C[end])
+    C[last(indices)+1] = _reshapeas(D, C[last(indices)+1])
     C.z /= c
     return C
+end
+
+function orthogonalize_center!(C::TensorTrain, l::Integer; svd_trunc=TruncThresh(1e-6))
+    orthogonalize_left!(C; svd_trunc, indices = 1:l-1)
+    orthogonalize_right!(C; svd_trunc, indices = l+1:length(C))
 end
 
 
