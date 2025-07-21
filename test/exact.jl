@@ -47,3 +47,11 @@ function exact_dot(A::AbstractTensorTrain{F,N}, B::AbstractTensorTrain{F,N};
         pA = exact_prob(A), pB = exact_prob(B)) where {F,N}
     dot(pA, pB)
 end
+
+function exact_prob(p::TensorTrains.MatrixProductStates.MPS)
+    qs = [size(Aˡ)[3:end] for Aˡ in p]
+    X = Iterators.product((1:prod(qˡ) for (Aˡ,qˡ) in zip(p,qs))...)
+    map(X) do x
+        evaluate(p, [Tuple(CartesianIndices(qs[l])[x[l]]) for l in eachindex(x)])
+    end
+end
