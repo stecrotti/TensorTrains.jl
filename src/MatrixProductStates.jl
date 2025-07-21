@@ -7,9 +7,28 @@ using Tullio: @tullio
 using Random: AbstractRNG, default_rng
 using StatsBase
 using LinearAlgebra: I, tr
+using LogarithmicNumbers: Logarithmic
 
 export MPS
 
+"""
+    MPS{T<:AbstractTensorTrain}
+
+With a little abuse of nomenclature, a type for representing a probability distribution whose value is the square module of the value of the contained tensor train.
+
+# FIELDS
+- `ψ`: an `AbstractTensorTrain`
+
+Example:
+```@example
+    L = 3
+    q = (2, 3)
+    ψ = rand_tt(4, L, q...)
+    p = MPS(ψ)
+    X = [[rand(1:qi) for qi in q] for l in 1:L]
+    evaluate(p, X), abs2(evaluate(ψ, X))    # are the same
+```
+"""
 struct MPS{T<:AbstractTensorTrain}
     ψ :: T
 end
@@ -23,61 +42,108 @@ Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
 
 TensorTrains.bond_dims(p::MPS) = bond_dims(p.ψ)
 
+"""
+    evaluate(p::PMS, X...)
+
+Return the value of `p` for input `X`.
+If `ψ` is the tensor train wrapped by `p`, then the output is ``\\lvert\\psi (X)\\rvert^2``
+"""
 TensorTrains.evaluate(p::MPS, X...) = abs2(evaluate(p.ψ, X...))
 
 id4(d::Integer) = [a==a¹ && b==b¹ for a in 1:d, a¹ in 1:d, b in 1:d, b¹ in 1:d]
 
-function TensorTrains.accumulate_L(p::MPS)
+function TensorTrains.accumulate_L(p::MPS{<:AbstractTensorTrain{F}}; normalize=true) where {F}
     (; ψ) = p
     d = size(ψ[begin], 1)
-    L = id4(d)
-    return map(_reshape1(Al) for Al in ψ) do Aˡ
-        @tullio M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] := L[a¹,aˡ,b¹,bˡ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
-        @tullio L[a¹,aˡ⁺¹,b¹,bˡ⁺¹] := M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
+    Ll = id4(d)
+    z = Logarithmic(one(F))
+    L = map(_reshape1(Al) for Al in ψ) do Aˡ
+        nl = maximum(abs, Ll)
+        if !iszero(nl) && normalize
+            Ll ./= nl
+            z *= nl
+        end
+        @tullio M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] := Ll[a¹,aˡ,b¹,bˡ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
+        @tullio Ll[a¹,aˡ⁺¹,b¹,bˡ⁺¹] := M[a¹,b¹,aˡ⁺¹,bˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
         # restore hermiticity after possible numerical errors
-        @debug @assert L ≈ conj(permutedims(L, (3,4,1,2)))
-        L .= (conj(permutedims(L, (3,4,1,2))) + L) / 2
+        @debug @assert Ll ≈ conj(permutedims(Ll, (3,4,1,2)))
+        Ll .= (conj(permutedims(Ll, (3,4,1,2))) + Ll) / 2
     end
+    z *= trace(Ll)
+    @debug @assert real(z) ≈ z
+    return L, real(z)
 end
 
-function TensorTrains.accumulate_R(p::MPS)
+function TensorTrains.accumulate_R(p::MPS{<:AbstractTensorTrain{F}}; normalize=true) where {F}
     (; ψ) = p
     d = size(ψ[end], 2)
-    R = id4(d)
-    return map(_reshape1(Al) for Al in Iterators.reverse(ψ)) do Aˡ
-        @tullio M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] := R[aˡ⁺¹,aᴸ,bˡ⁺¹,bᴸ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
-        @tullio R[aˡ,aᴸ,bˡ,bᴸ] := M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
+    Rl = id4(d)
+    z = Logarithmic(one(F))
+    R = map(_reshape1(Al) for Al in Iterators.reverse(ψ)) do Aˡ
+        nl = maximum(abs, Rl)
+        if !iszero(nl) && normalize
+            Rl ./= nl
+            z *= nl
+        end
+        @tullio M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] := Rl[aˡ⁺¹,aᴸ,bˡ⁺¹,bᴸ] * conj(Aˡ[aˡ,aˡ⁺¹,xˡ])
+        @tullio Rl[aˡ,aᴸ,bˡ,bᴸ] := M[bˡ⁺¹,aᴸ,bᴸ,aˡ,xˡ] * Aˡ[bˡ,bˡ⁺¹,xˡ]
         # restore hermiticity after possible numerical errors
-        @debug @assert R ≈ conj(permutedims(R, (3,4,1,2)))
-        R .= (conj(permutedims(R, (3,4,1,2))) + R) / 2
+        @debug @assert Rl ≈ conj(permutedims(Rl, (3,4,1,2)))
+        Rl .= (conj(permutedims(Rl, (3,4,1,2))) + Rl) / 2
     end |> reverse
+    z *= trace(Rl)
+    @debug @assert real(z) ≈ z
+    return R, real(z)
 end
 
 function trace(A::Array{T,4}) where T
     @tullio t = A[a,a,b,b]
 end
 
-function TensorTrains.normalization(p::MPS; l = accumulate_L(p))
-    lᴸ = l[end]
-    @tullio z = lᴸ[a,a,b,b]
-    @debug let r = accumulate_R(p)
-        zr = trace(rfirst(r))
+"""
+    normalization(p::MPS)
+
+Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} \\lvert A^1(x^1)\\cdots A^L(x^L)\\rvert ^2`` and return it as a `Logarithmic`, which stores the sign and the logarithm of the absolute value (see the docs of LogarithmicNumbers.jl https://github.com/cjdoris/LogarithmicNumbers.jl?tab=readme-ov-file#documentation)
+"""
+function TensorTrains.normalization(p::MPS)
+    l, z = accumulate_L(p)
+    @debug let r, zr = accumulate_R(p)
         @assert zr ≈ z "z=$z, got $zr, p=$p"  # sanity check
     end
-    z
+    return z / abs2(p.ψ.z)
 end
 
+"""
+    normalize!(p::MPS)
+
+Compute the normalization of ``Z=\\sum_{x^1,\\ldots,x^L} \\lvert A^1(x^1)\\cdots A^L(x^L)\\rvert ^2`` (see [`normalization`](@ref)) and rescale the tensors in `p` such that, after this call, ``|Z|^2=1``.
+Return the natural logarithm of the absolute normalization ``\\log|Z|``
+"""
 function TensorTrains.normalize!(p::MPS)
-    Z = normalization(p)
+    Z = accumulate_L(p)[2]
+    absZ = sqrt(abs2(Z))    # just abs fails for complex numbers (see https://github.com/cjdoris/LogarithmicNumbers.jl/issues/23)
     L = length(p)
-    for a in p
-        a ./= Z^(1/2L)
+    x = exp(1/L * log(sqrt(absZ)))
+    if x != 0
+        for a in p.ψ
+            a ./= x
+        end
     end
-    log(Z)
+    logz = log(absZ / p.ψ.z)
+    p.ψ.z = 1
+    return logz
 end
 
+"""
+    marginals(p::MPS; l, r)
+
+Compute the marginal distributions ``p(x^l)`` at each site
+
+### Optional arguments
+- `l = accumulate_L(A)[1]`, `r = accumulate_R(A)[1]` pre-computed partial normalizations
+"""
 function TensorTrains.marginals(p::MPS;
-    l = accumulate_L(p), r = accumulate_R(p))
+    l = accumulate_L(p)[1], r = accumulate_R(p)[1])
     (; ψ) = p
     d = size(ψ[begin], 1)
 
@@ -118,7 +184,8 @@ Optionally specify a random number generator `rng` as the first argument
 The output is `x,q`, the sampled sequence and its probability
 """
 function TensorTrains.sample!(rng::AbstractRNG, x, p::MPS{<:AbstractTensorTrain{F,N}};
-        r = accumulate_R(p)) where {F<:Number,N}
+        rz = accumulate_R(p)) where {F<:Number,N}
+    r, z = rz
     L = length(p)
     @assert length(x) == L
     @assert all(length(xᵗ) == N-2 for xᵗ in x)
@@ -140,7 +207,7 @@ function TensorTrains.sample!(rng::AbstractRNG, x, p::MPS{<:AbstractTensorTrain{
         # update prob
         Q = QA[:,:,xˡ]
     end
-    q = abs2(tr(Q)) / trace(first(r))
+    q = abs2(tr(Q)) / z #trace(first(r))
     return x, q
 end
 
@@ -155,16 +222,16 @@ Optionally specify a random number generator `rng` as the first argument
 The output is `x,q`, the sampled sequence and its probability
 """
 function StatsBase.sample(rng::AbstractRNG, p::MPS{<:AbstractTensorTrain{F,N}};
-        r = accumulate_R(p)) where {F<:Number,N}
+        rz = accumulate_R(p)) where {F<:Number,N}
     x = [zeros(Int, N-2) for Aᵗ in p]
-    sample!(rng, x, p; r)
+    sample!(rng, x, p; rz)
 end
-function StatsBase.sample(p::MPS; r = accumulate_R(p))
-    sample(default_rng(), p; r)
+function StatsBase.sample(p::MPS; rz = accumulate_R(p))
+    sample(default_rng(), p; rz)
 end
 
-function StatsBase.sample!(x, p::MPS; r = accumulate_R(p))
-    sample!(default_rng(), x, p; r)
+function StatsBase.sample!(x, p::MPS; rz = accumulate_R(p))
+    sample!(default_rng(), x, p; rz)
 end
 
 end # module

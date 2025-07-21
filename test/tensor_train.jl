@@ -1,4 +1,6 @@
 using OffsetArrays
+using Tullio
+using TensorTrains: _reshape1
 
 function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
     idxs = Iterators.product([1:d for d in size(A)]...)
@@ -68,6 +70,8 @@ rng = MersenneTwister(0)
         compress!(A)
         x = rand(1:5, 4)
         @test evaluate(A,x) ≈ evaluate(B,x)
+        normalize!(A)
+        @test float(abs2(normalization(A))) ≈ 1
     end
 
     @testset "single variable" begin
@@ -185,6 +189,9 @@ rng = MersenneTwister(0)
         orthogonalize_center!(B, central_idx; svd_trunc = TruncBond(3))
         @test all(is_left_canonical, B[begin:begin+central_idx-2])
         @test all(is_right_canonical, B[begin+central_idx:end])
+        z = normalization(B)
+        orthogonalize_center!(B, central_idx; svd_trunc = TruncThresh(0))
+        @test float(normalization(B)) ≈ float(z)
     end
 
     @testset "Compression" begin
