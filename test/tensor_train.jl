@@ -15,25 +15,6 @@ function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
     return true
 end
 
-function is_left_canonical(A; atol=1e-10)
-    A_resh = _reshape1(A)
-    @tullio AA[i,j] := conj(A_resh[k,i,x]) * A_resh[k,j,x]
-    return is_approx_identity(AA; atol)
-end
-
-function is_right_canonical(A; atol=1e-10)
-    A_resh = _reshape1(A)
-    @tullio AA[i,j] := A_resh[i,k,x] * conj(A_resh[j,k,x])
-    return is_approx_identity(AA; atol)
-end
-
-function is_canonical(A, central_idx; atol=1e-10)
-    f_l(x) = is_left_canonical(x; atol)
-    f_r(x) = is_right_canonical(x; atol)
-    return all(f_l, A[begin:begin+central_idx-2]) &&
-        all(f_r, A[begin+central_idx:end])
-end
-
 svd_trunc = TruncThresh(0.0)
 @suppress begin
     @show svd_trunc
@@ -378,23 +359,26 @@ rng = MersenneTwister(0)
     @testset "Derivatives" begin
         L = 3; N = 2; q = 2; qs = fill(q, N)
         A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
+        A.z = 2
         X, _ = sample(A)
 
-        l = 1
-        Al = A[l]
-        Xl = X[l]
-        maxi, maxj, _ = size(Al)
-        gA_numeric = map(Iterators.product(1:maxi, 1:maxj)) do (i,j)
-            function f(a)
-                A_cp = deepcopy(A)
-                A_cp[l][i,j,Xl...] = a
-                return evaluate(A_cp, X)
-            end
+        for l in eachindex(X)
+            Al = A[l]
+            Xl = X[l]
+            maxi, maxj, _ = size(Al)
+            
             ε = 1e-8 * one(eltype(Al))
-            a = Al[i,j,Xl...]
-            float((f(a+ε) - f(a)) / ε)
+            gA_numeric = map(Iterators.product(1:maxi, 1:maxj)) do (i,j)
+                function f(a)
+                    A_cp = deepcopy(A)
+                    A_cp[l][i,j,Xl...] = a
+                    return evaluate(A_cp, X)
+                end
+                a = Al[i,j,Xl...]
+                float((f(a+ε) - f(a)) / ε)
+            end
+            gA = grad(A, l, X)
+            @test all(abs.(gA - gA_numeric) .< 10ε)
         end
-        gA = grad(A, l, X)
-        @test all(abs.(gA - gA_numeric) .< 10ε)
     end
 end

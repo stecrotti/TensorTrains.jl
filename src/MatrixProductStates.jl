@@ -1,7 +1,8 @@
 module MatrixProductStates
 
 using TensorTrains
-import TensorTrains: _reshape1, accumulate_L, accumulate_R, sample_noalloc
+import TensorTrains: _reshape1, accumulate_L, accumulate_R, sample_noalloc, 
+    normalize!
 using Lazy: @forward
 using Tullio: @tullio
 using Random: AbstractRNG, default_rng
@@ -10,7 +11,8 @@ using LinearAlgebra: I, tr
 using LogarithmicNumbers: Logarithmic
 
 export MPS
-export grad_normalization_canonical
+export is_left_canonical, is_right_canonical, is_canonical
+export grad_normalization_canonical, loglikelihood, grad_loglikelihood
 
 """
     MPS{T<:AbstractTensorTrain}
@@ -241,44 +243,33 @@ end
 
 #### Derivatives
 
-function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
-    idxs = Iterators.product([1:d for d in size(A)]...)
-    for id in idxs
-        if allequal(id) && !isapprox(A[id...],  1; atol, rtol)
-            return false
-        end
-        if !allequal(id) && !isapprox(A[id...],  0; atol, rtol)
-            return false
-        end
-    end
-    return true
-end
-
-function is_left_canonical(A; atol=1e-10)
-    A_resh = _reshape1(A)
-    @tullio AA[i,j] := conj(A_resh[k,i,x]) * A_resh[k,j,x]
-    return is_approx_identity(AA; atol)
-end
-
-function is_right_canonical(A; atol=1e-10)
-    A_resh = _reshape1(A)
-    @tullio AA[i,j] := A_resh[i,k,x] * conj(A_resh[j,k,x])
-    return is_approx_identity(AA; atol)
-end
-
-function is_canonical(A, central_idx; atol=1e-10)
-    f_l(x) = is_left_canonical(x; atol)
-    f_r(x) = is_right_canonical(x; atol)
-    return all(f_l, A[begin:begin+central_idx-2]) &&
-        all(f_r, A[begin+central_idx:end])
-end
+TensorTrains.is_left_canonical(A::MPS; kw...) = is_left_canonical(A.ψ; kw...)
+TensorTrains.is_right_canonical(A::MPS; kw...) = is_right_canonical(A.ψ; kw...)
+TensorTrains.is_canonical(A::MPS; kw...) = is_canonical(A.ψ; kw...)
 
 # Gradient of Z w.r.t. Aˡ
 function grad_normalization_canonical(p::MPS, l::Integer)
+    # TODO: return also Z
     @assert l <= length(p)
     @assert is_canonical(p, l)
 
     return 2 * conj(p[l]) / abs2(float(p.ψ.z))
+end
+
+function loglikelihood(p::MPS, X)
+    logz = log(normalization(p))
+    return mean(log(evaluate(p, x)) for x in X) - logz 
+end
+
+function grad_loglikelihood(p::MPS, l::Integer, X)
+    Z = float(normalization(p))
+    Zprime = grad_normalization_canonical(p, l)
+    T = length(X)
+    gA = - Zprime ./ Z
+    for x in X 
+        gA[:,:,x[l]...] .+= 2/T * grad(p.ψ, l, x) / evaluate(p.ψ, x)
+    end
+    return gA
 end
 
 end # module

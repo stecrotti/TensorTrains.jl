@@ -178,10 +178,30 @@ function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     C
 end
 
+function is_left_canonical(A; atol=1e-10)
+    A_resh = _reshape1(A)
+    @tullio AA[i,j] := conj(A_resh[k,i,x]) * A_resh[k,j,x]
+    return is_approx_identity(AA; atol)
+end
+
+function is_right_canonical(A; atol=1e-10)
+    A_resh = _reshape1(A)
+    @tullio AA[i,j] := A_resh[i,k,x] * conj(A_resh[j,k,x])
+    return is_approx_identity(AA; atol)
+end
+
+function is_canonical(A, central_idx; atol=1e-10)
+    f_l(x) = is_left_canonical(x; atol)
+    f_r(x) = is_right_canonical(x; atol)
+    return all(f_l, A[begin:begin+central_idx-2]) &&
+        all(f_r, A[begin+central_idx:end])
+end
+
 # compute the gradient of evaluating the tensor train with respect to the entries of Aˡ
 function grad(A::TensorTrain, l::Integer, X)
+    # TODO: return also the value
     id = fill(one(eltype(A)), 1, 1)
     Ax_left = prod(@view a[:, :, x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
     Ax_right = reduce((A,B) -> B * A, @view a[:, :, x...] for (a,x) in zip(A[end:-1:l+1], X[end:-1:l+1]); init=id)
-    return (Ax_right * Ax_left)'
+    return (Ax_right * Ax_left)' / float(A.z)
 end

@@ -23,6 +23,7 @@ export
     dot, norm, norm2m,
     sample!, sample,
     AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
+    is_left_canonical, is_right_canonical, is_canonical,
     grad,
 
     # Uniform Tensor Trains
