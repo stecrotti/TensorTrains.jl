@@ -4,7 +4,6 @@ import TensorTrains: accumulate_L, accumulate_R
 using StatsBase: sample
 using Tullio: @tullio
 using LinearAlgebra: I
-using FiniteDifferences
 
 @testset "Matrix Product States" begin
 
