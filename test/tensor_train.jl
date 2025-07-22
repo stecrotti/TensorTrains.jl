@@ -27,6 +27,13 @@ function is_right_canonical(A; atol=1e-10)
     return is_approx_identity(AA; atol)
 end
 
+function is_canonical(A, central_idx; atol=1e-10)
+    f_l(x) = is_left_canonical(x; atol)
+    f_r(x) = is_right_canonical(x; atol)
+    return all(f_l, A[begin:begin+central_idx-2]) &&
+        all(f_r, A[begin+central_idx:end])
+end
+
 svd_trunc = TruncThresh(0.0)
 @suppress begin
     @show svd_trunc
@@ -187,8 +194,9 @@ rng = MersenneTwister(0)
         B = TensorTrain(tensors)
         central_idx = 2
         orthogonalize_center!(B, central_idx; svd_trunc = TruncBond(3))
-        @test all(is_left_canonical, B[begin:begin+central_idx-2])
-        @test all(is_right_canonical, B[begin+central_idx:end])
+        # @test all(is_left_canonical, B[begin:begin+central_idx-2])
+        # @test all(is_right_canonical, B[begin+central_idx:end])
+        @test is_canonical(B, central_idx)
         z = normalization(B)
         orthogonalize_center!(B, central_idx; svd_trunc = TruncThresh(0))
         @test float(normalization(B)) ≈ float(z)

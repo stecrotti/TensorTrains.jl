@@ -10,6 +10,7 @@ using LinearAlgebra: I, tr
 using LogarithmicNumbers: Logarithmic
 
 export MPS
+export grad_normalization_canonical
 
 """
     MPS{T<:AbstractTensorTrain}
@@ -34,7 +35,7 @@ struct MPS{T<:AbstractTensorTrain}
 end
 
 @forward MPS.ψ bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
-    Base.setindex!, check_bond_dims, Base.length, Base.eachindex
+    Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
 Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
@@ -105,9 +106,9 @@ end
 
 Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} \\lvert A^1(x^1)\\cdots A^L(x^L)\\rvert ^2`` and return it as a `Logarithmic`, which stores the sign and the logarithm of the absolute value (see the docs of LogarithmicNumbers.jl https://github.com/cjdoris/LogarithmicNumbers.jl?tab=readme-ov-file#documentation)
 """
-function TensorTrains.normalization(p::MPS)
-    l, z = accumulate_L(p)
-    @debug let r, zr = accumulate_R(p)
+function TensorTrains.normalization(p::MPS; normalize_while_accumulating=true)
+    l, z = accumulate_L(p; normalize=normalize_while_accumulating)
+    @debug let r, zr = accumulate_R(p; normalize=normalize_while_accumulating)
         @assert zr ≈ z "z=$z, got $zr, p=$p"  # sanity check
     end
     return z / abs2(p.ψ.z)
@@ -129,7 +130,7 @@ function TensorTrains.normalize!(p::MPS)
             a ./= x
         end
     end
-    logz = log(absZ / p.ψ.z)
+    logz = log(absZ / abs2(p.ψ.z))
     p.ψ.z = 1
     return logz
 end
@@ -167,6 +168,10 @@ end
 
 function TensorTrains.orthogonalize_left!(p::MPS; kw...)
     orthogonalize_left!(p.ψ; kw...)
+end
+
+function TensorTrains.orthogonalize_center!(p::MPS, l::Integer; kw...)
+    orthogonalize_center!(p.ψ, l; kw...)
 end
 
 function TensorTrains.compress!(p::MPS; kw...)
@@ -232,6 +237,50 @@ end
 
 function StatsBase.sample!(x, p::MPS; rz = accumulate_R(p))
     sample!(default_rng(), x, p; rz)
+end
+
+#### Derivatives
+
+function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
+    idxs = Iterators.product([1:d for d in size(A)]...)
+    for id in idxs
+        if allequal(id) && !isapprox(A[id...],  1; atol, rtol)
+            return false
+        end
+        if !allequal(id) && !isapprox(A[id...],  0; atol, rtol)
+            return false
+        end
+    end
+    return true
+end
+
+function is_left_canonical(A; atol=1e-10)
+    A_resh = _reshape1(A)
+    @tullio AA[i,j] := conj(A_resh[k,i,x]) * A_resh[k,j,x]
+    return is_approx_identity(AA; atol)
+end
+
+function is_right_canonical(A; atol=1e-10)
+    A_resh = _reshape1(A)
+    @tullio AA[i,j] := A_resh[i,k,x] * conj(A_resh[j,k,x])
+    return is_approx_identity(AA; atol)
+end
+
+function is_canonical(A, central_idx; atol=1e-10)
+    f_l(x) = is_left_canonical(x; atol)
+    f_r(x) = is_right_canonical(x; atol)
+    return all(f_l, A[begin:begin+central_idx-2]) &&
+        all(f_r, A[begin+central_idx:end])
+end
+
+function grad_normalization_canonical(p::MPS, l::Integer)
+    @assert l <= length(p)
+    @assert is_canonical(p, l)
+
+    A = p[l]
+    At = permutedims(A, (2,1,(1:ndims(A))[3:end]...))
+
+    return 2 * conj(A) / abs2(float(p.ψ.z))
 end
 
 end # module
