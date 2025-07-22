@@ -1,4 +1,19 @@
 using OffsetArrays
+using Tullio
+using TensorTrains: _reshape1
+
+function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
+    idxs = Iterators.product([1:d for d in size(A)]...)
+    for id in idxs
+        if allequal(id) && !isapprox(A[id...],  1; atol, rtol)
+            return false
+        end
+        if !allequal(id) && !isapprox(A[id...],  0; atol, rtol)
+            return false
+        end
+    end
+    return true
+end
 
 svd_trunc = TruncThresh(0.0)
 @suppress begin
@@ -43,6 +58,8 @@ rng = MersenneTwister(0)
         compress!(A)
         x = rand(1:5, 4)
         @test evaluate(A,x) ≈ evaluate(B,x)
+        normalize!(A)
+        @test float(abs2(normalization(A))) ≈ 1
     end
 
     @testset "single variable" begin
@@ -144,6 +161,26 @@ rng = MersenneTwister(0)
         @test only(l[end]) ≈ Z
         @test only(r[begin]) ≈ Z
         @test only(l[begin] * m[1,end] * r[end]) ≈ Z
+    end
+
+    @testset "Orthogonalization" begin
+        tensors = [rand(rng, 1,3,2,2), rand(rng, 3,4,2,2), rand(rng, 4,10,2,2), 
+            rand(rng, 10,4,2,2), rand(4,1,2,2)]
+        B = TensorTrain(tensors)
+        orthogonalize_right!(B; svd_trunc = TruncThresh(1e-3))
+        @test all(is_right_canonical, B[begin+1:end])
+        B = TensorTrain(tensors)
+        orthogonalize_left!(B; svd_trunc = TruncThresh(1e-3))
+        @test all(is_left_canonical, B[begin:end-1])
+        B = TensorTrain(tensors)
+        central_idx = 2
+        orthogonalize_center!(B, central_idx; svd_trunc = TruncBond(3))
+        # @test all(is_left_canonical, B[begin:begin+central_idx-2])
+        # @test all(is_right_canonical, B[begin+central_idx:end])
+        @test is_canonical(B, central_idx)
+        z = normalization(B)
+        orthogonalize_center!(B, central_idx; svd_trunc = TruncThresh(0))
+        @test float(normalization(B)) ≈ float(z)
     end
 
     @testset "Compression" begin
@@ -317,5 +354,31 @@ rng = MersenneTwister(0)
         A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
         B = rand_tt( [1; rand(1:3, L-1); 1], qs... )
         @test norm(A-B)^2 ≈ exact_norm(A-B)^2 ≈ norm2m(A,B)
+    end
+
+    @testset "Derivatives" begin
+        L = 3; N = 2; q = 2; qs = fill(q, N)
+        A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
+        A.z = 2
+        X, _ = sample(A)
+
+        for l in eachindex(X)
+            Al = A[l]
+            Xl = X[l]
+            maxi, maxj, _ = size(Al)
+            
+            ε = 1e-8 * one(eltype(Al))
+            gA_numeric = map(Iterators.product(1:maxi, 1:maxj)) do (i,j)
+                function f(a)
+                    A_cp = deepcopy(A)
+                    A_cp[l][i,j,Xl...] = a
+                    return evaluate(A_cp, X)
+                end
+                a = Al[i,j,Xl...]
+                float((f(a+ε) - f(a)) / ε)
+            end
+            gA = grad(A, l, X)
+            @test all(abs.(gA - gA_numeric) .< 10ε)
+        end
     end
 end

@@ -151,7 +151,8 @@ Compute the normalization of ``Z=\\sum_{x^1,\\ldots,x^L} A^1(x^1)\\cdots A^L(x^L
 Return the natural logarithm of the absolute normalization ``\\log|Z|``
 """
 function LinearAlgebra.normalize!(A::AbstractTensorTrain)
-    absZ = abs(accumulate_L(A)[2])
+    Z = accumulate_L(A)[2]
+    absZ = sqrt(abs2(Z))    # just abs fails for complex numbers (see https://github.com/cjdoris/LogarithmicNumbers.jl/issues/23)
     L = length(A)
     x = exp(1/L * log(absZ))
     if x != 0
