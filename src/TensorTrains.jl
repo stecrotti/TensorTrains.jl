@@ -45,6 +45,6 @@ include("UniformTensorTrains/transfer_operator.jl")
 include("UniformTensorTrains/trunc_vumps.jl")
 
 # Matrix Product States
-include("MatrixProductStates.jl")
+include("MatrixProductStates/MatrixProductStates.jl")
 
 end # end module
