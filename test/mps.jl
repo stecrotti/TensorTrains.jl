@@ -4,6 +4,7 @@ import TensorTrains: accumulate_L, accumulate_R
 using StatsBase: sample
 using Tullio: @tullio
 using LinearAlgebra: I
+using FiniteDifferences
 
 @testset "Matrix Product States" begin
 
@@ -27,8 +28,9 @@ using LinearAlgebra: I
             @test z ≈ trace(L[end])
             p_cp = deepcopy(p)
             x, px = sample(MersenneTwister(0), p_cp)
-            normalize!(p_cp)
+            logz_cp = normalize!(p_cp)
             @test float(normalization(p_cp)) ≈ 1
+            @test exp(logz_cp) ≈ z
             x_, px_ = sample(MersenneTwister(0), p_cp)
             @test x == x_
             @test float(px) ≈ float(px_)
@@ -43,6 +45,9 @@ using LinearAlgebra: I
             @test z ≈ abs2(norm(p.ψ))
             p_cp = deepcopy(p)
             x, px = sample(MersenneTwister(0), p_cp)
+            logz_cp = normalize!(p_cp)
+            @test float(normalization(p_cp)) ≈ 1
+            @test exp(logz_cp) ≈ z
             normalize!(p_cp)
             @test float(normalization(p_cp)) ≈ 1
             x_, px_ = sample(MersenneTwister(0), p_cp)
@@ -116,6 +121,38 @@ using LinearAlgebra: I
             x, q = sample(rng, p)
             normalize!(p)
             @test q ≈ evaluate(p, x)
+        end
+    end
+
+    # Test against finite differences
+    @testset "Real Derivatives" begin
+        F = Float64
+        tensors = [rand(F, 1,5,2,2), rand(F, 5,4,2,2),
+            rand(F, 4,10,2,2), rand(F, 10,1,2,2)]
+        ψ = TensorTrain(tensors)
+        p = MPS(ψ)
+        normalize!(p)
+
+        for l in eachindex(p)
+            orthogonalize_center!(p, l)
+            dfdA = grad_normalization_canonical(p, l)
+            A = p[l]
+            maxi, maxj, maxxi, maxxj = size(A)
+
+            dfdA_numeric = map(Iterators.product(1:maxi, 1:maxj, 1:maxxi, 1:maxxj)) do (i, j, xi, xj)
+                function f(a)
+                    p_cp = deepcopy(p)
+                    @assert is_canonical(p, l)
+                    p_cp[l][i,j,xi,xj] = a
+                    return normalization(p_cp; normalize_while_accumulating=false)
+                end
+
+                ε = 1e-8 * one(eltype(A))
+                a = A[i,j,xi,xj]
+                float((f(a+ε) - f(a)) / ε)
+            end
+            
+            @test all(abs.(dfdA - dfdA_numeric) .< 10ε)
         end
     end
 end
