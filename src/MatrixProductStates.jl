@@ -273,14 +273,12 @@ function is_canonical(A, central_idx; atol=1e-10)
         all(f_r, A[begin+central_idx:end])
 end
 
+# Gradient of Z w.r.t. Aˡ
 function grad_normalization_canonical(p::MPS, l::Integer)
     @assert l <= length(p)
     @assert is_canonical(p, l)
 
-    A = p[l]
-    At = permutedims(A, (2,1,(1:ndims(A))[3:end]...))
-
-    return 2 * conj(A) / abs2(float(p.ψ.z))
+    return 2 * conj(p[l]) / abs2(float(p.ψ.z))
 end
 
 end # module

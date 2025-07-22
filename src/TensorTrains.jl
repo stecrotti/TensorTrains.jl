@@ -23,6 +23,7 @@ export
     dot, norm, norm2m,
     sample!, sample,
     AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
+    grad,
 
     # Uniform Tensor Trains
     AbstractUniformTensorTrain, UniformTensorTrain, InfiniteUniformTensorTrain,
