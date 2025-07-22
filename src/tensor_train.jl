@@ -178,3 +178,10 @@ function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     C
 end
 
+# compute the gradient of evaluating the tensor train with respect to the entries of Aˡ
+function grad(A::TensorTrain, l::Integer, X)
+    id = fill(one(eltype(A)), 1, 1)
+    Ax_left = prod(@view a[:, :, x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
+    Ax_right = reduce((A,B) -> B * A, @view a[:, :, x...] for (a,x) in zip(A[end:-1:l+1], X[end:-1:l+1]); init=id)
+    return (Ax_right * Ax_left)'
+end

@@ -374,4 +374,27 @@ rng = MersenneTwister(0)
         B = rand_tt( [1; rand(1:3, L-1); 1], qs... )
         @test norm(A-B)^2 ≈ exact_norm(A-B)^2 ≈ norm2m(A,B)
     end
+
+    @testset "Derivatives" begin
+        L = 3; N = 2; q = 2; qs = fill(q, N)
+        A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
+        X, _ = sample(A)
+
+        l = 1
+        Al = A[l]
+        Xl = X[l]
+        maxi, maxj, _ = size(Al)
+        gA_numeric = map(Iterators.product(1:maxi, 1:maxj)) do (i,j)
+            function f(a)
+                A_cp = deepcopy(A)
+                A_cp[l][i,j,Xl...] = a
+                return evaluate(A_cp, X)
+            end
+            ε = 1e-8 * one(eltype(Al))
+            a = Al[i,j,Xl...]
+            float((f(a+ε) - f(a)) / ε)
+        end
+        gA = grad(A, l, X)
+        @test all(abs.(gA - gA_numeric) .< 10ε)
+    end
 end
