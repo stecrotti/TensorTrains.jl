@@ -133,26 +133,86 @@ using FiniteDifferences
         p = MPS(ψ)
         normalize!(p)
 
-        for l in eachindex(p)
+        @testset "Gradient of Z" begin
+            for l in eachindex(p)
+                orthogonalize_center!(p, l)
+                dfdA = grad_normalization_canonical(p, l)
+                A = p[l]
+                ε = 1e-8 * one(eltype(A))
+                maxi, maxj, maxxi, maxxj = size(A)
+
+                dfdA_numeric = map(Iterators.product(1:maxi, 1:maxj, 1:maxxi, 1:maxxj)) do (i, j, xi, xj)
+                    function f(a)
+                        p_cp = deepcopy(p)
+                        @assert is_canonical(p, l)
+                        p_cp[l][i,j,xi,xj] = a
+                        return normalization(p_cp; normalize_while_accumulating=false)
+                    end
+                    a = A[i,j,xi,xj]
+                    float((f(a+ε) - f(a)) / ε)
+                end
+                
+                @test all(abs.(dfdA - dfdA_numeric) .< 10ε)
+            end
+        end
+
+        @testset "Gradient of log of unnormalized prob" begin
+            X = sample(p)[1]
+
+            for l in eachindex(X)
+                orthogonalize_center!(p, l)
+                A = p[l]
+                x = X[l]
+                ε = 1e-8 * one(eltype(A))
+                maxi, maxj, _ = size(A)
+
+                dlldA = 2 * grad(p.ψ, l, X) / evaluate(p.ψ, X)
+
+                dlldA_numeric = map(Iterators.product(1:maxi, 1:maxj)) do (i, j)
+                    function f(a)
+                        p_cp = deepcopy(p)
+                        @assert is_canonical(p, l)
+                        p_cp[l][i,j, x...] = a
+                        return log(evaluate(p_cp, X))
+                    end
+
+                    a = A[i,j,x...]
+                    float((f(a+ε) - f(a)) / ε)
+                end
+
+                d = dlldA - dlldA_numeric
+                @test all(abs.(d) .< 100ε)
+            end
+        end
+
+        @testset "Gradient of loglikelihood" begin
+            X = [sample(p)[1] for _ in 1:1]
+            ll = loglikelihood(p, X)
+
+            l = 2
             orthogonalize_center!(p, l)
-            dfdA = grad_normalization_canonical(p, l)
+            dlldA = grad_loglikelihood(p, l, X)
             A = p[l]
+            ε = 1e-8 * one(eltype(A))
             maxi, maxj, maxxi, maxxj = size(A)
 
-            dfdA_numeric = map(Iterators.product(1:maxi, 1:maxj, 1:maxxi, 1:maxxj)) do (i, j, xi, xj)
+            dlldA_numeric = map(Iterators.product(1:maxi, 1:maxj, 1:maxxi, 1:maxxj)) do (i, j, xi, xj)
                 function f(a)
                     p_cp = deepcopy(p)
                     @assert is_canonical(p, l)
                     p_cp[l][i,j,xi,xj] = a
-                    return normalization(p_cp; normalize_while_accumulating=false)
+                    return loglikelihood(p_cp, X)
                 end
 
-                ε = 1e-8 * one(eltype(A))
                 a = A[i,j,xi,xj]
                 float((f(a+ε) - f(a)) / ε)
             end
+            d = dlldA - dlldA_numeric
             
-            @test all(abs.(dfdA - dfdA_numeric) .< 10ε)
+            @test all(abs.(d) .< 100ε)
         end
+        
+
+
     end
 end

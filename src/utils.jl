@@ -18,3 +18,17 @@ function sample_noalloc(rng::AbstractRNG, w)
     @assert false "$w"
 end
 sample_noalloc(w) = sample_noalloc(default_rng(), w)
+
+
+function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
+    idxs = Iterators.product([1:d for d in size(A)]...)
+    for id in idxs
+        if allequal(id) && !isapprox(A[id...],  1; atol, rtol)
+            return false
+        end
+        if !allequal(id) && !isapprox(A[id...],  0; atol, rtol)
+            return false
+        end
+    end
+    return true
+end
