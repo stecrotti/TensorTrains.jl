@@ -27,8 +27,11 @@ end
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
 Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
 
-
 TensorTrains.bond_dims(p::MPS) = bond_dims(p.ψ)
+
+TensorTrains.is_left_canonical(A::MPS; kw...) = is_left_canonical(A.ψ; kw...)
+TensorTrains.is_right_canonical(A::MPS; kw...) = is_right_canonical(A.ψ; kw...)
+TensorTrains.is_canonical(A::MPS; kw...) = is_canonical(A.ψ; kw...)
 
 """
     evaluate(p::PMS, X...)
@@ -224,35 +227,4 @@ end
 
 function StatsBase.sample!(x, p::MPS; rz = accumulate_R(p))
     sample!(default_rng(), x, p; rz)
-end
-
-#### Derivatives
-
-TensorTrains.is_left_canonical(A::MPS; kw...) = is_left_canonical(A.ψ; kw...)
-TensorTrains.is_right_canonical(A::MPS; kw...) = is_right_canonical(A.ψ; kw...)
-TensorTrains.is_canonical(A::MPS; kw...) = is_canonical(A.ψ; kw...)
-
-# Gradient of Z w.r.t. Aˡ
-function grad_normalization_canonical(p::MPS, l::Integer)
-    # TODO: return also Z
-    @assert l <= length(p)
-    @assert is_canonical(p, l)
-
-    return 2 * conj(p[l]) / abs2(float(p.ψ.z))
-end
-
-function loglikelihood(p::MPS, X)
-    logz = log(normalization(p))
-    return mean(log(evaluate(p, x)) for x in X) - logz 
-end
-
-function grad_loglikelihood(p::MPS, l::Integer, X)
-    Z = float(normalization(p))
-    Zprime = grad_normalization_canonical(p, l)
-    T = length(X)
-    gA = - Zprime ./ Z
-    for x in X 
-        gA[:,:,x[l]...] .+= 2/T * grad(p.ψ, l, x) / evaluate(p.ψ, x)
-    end
-    return gA
 end

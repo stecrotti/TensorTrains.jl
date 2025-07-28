@@ -24,7 +24,7 @@ export
     sample!, sample,
     AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
     is_left_canonical, is_right_canonical, is_canonical,
-    grad,
+    grad_evaluate,
 
     # Uniform Tensor Trains
     AbstractUniformTensorTrain, UniformTensorTrain, InfiniteUniformTensorTrain,
