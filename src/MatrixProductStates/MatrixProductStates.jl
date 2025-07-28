@@ -15,6 +15,7 @@ export is_left_canonical, is_right_canonical, is_canonical
 export grad_normalization_canonical, loglikelihood, grad_loglikelihood
 
 include("mps.jl")
+include("derivatives.jl")
 include("dmrg.jl")
 
 end # module

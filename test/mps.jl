@@ -135,7 +135,7 @@ using LinearAlgebra: I
         @testset "Gradient of Z" begin
             for l in eachindex(p)
                 orthogonalize_center!(p, l)
-                dfdA = grad_normalization_canonical(p, l)
+                dfdA, _ = grad_normalization_canonical(p, l)
                 A = p[l]
                 ε = 1e-8 * one(eltype(A))
                 maxi, maxj, maxxi, maxxj = size(A)
@@ -165,7 +165,8 @@ using LinearAlgebra: I
                 ε = 1e-8 * one(eltype(A))
                 maxi, maxj, _ = size(A)
 
-                dlldA = 2 * grad(p.ψ, l, X) / evaluate(p.ψ, X)
+                gr, val = grad_evaluate(p.ψ, l, X)
+                dlldA = 2 * gr / val
 
                 dlldA_numeric = map(Iterators.product(1:maxi, 1:maxj)) do (i, j)
                     function f(a)
@@ -186,11 +187,10 @@ using LinearAlgebra: I
 
         @testset "Gradient of loglikelihood" begin
             X = [sample(p)[1] for _ in 1:1]
-            ll = loglikelihood(p, X)
-
             l = 2
             orthogonalize_center!(p, l)
-            dlldA = grad_loglikelihood(p, l, X)
+            dlldA, ll = grad_loglikelihood(p, l, X)
+            @test ll ≈ loglikelihood(p, X)
             A = p[l]
             ε = 1e-8 * one(eltype(A))
             maxi, maxj, maxxi, maxxj = size(A)

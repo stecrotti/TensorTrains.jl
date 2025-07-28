@@ -197,11 +197,15 @@ function is_canonical(A, central_idx; atol=1e-10)
         all(f_r, A[begin+central_idx:end])
 end
 
+# TODO: return directly the grad of the log so the two z's will cancel out
 # compute the gradient of evaluating the tensor train with respect to the entries of Aˡ
-function grad(A::TensorTrain, l::Integer, X)
-    # TODO: return also the value
+function grad_evaluate(A::TensorTrain, l::Integer, X)
     id = fill(one(eltype(A)), 1, 1)
-    Ax_left = prod(@view a[:, :, x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
-    Ax_right = reduce((A,B) -> B * A, @view a[:, :, x...] for (a,x) in zip(A[end:-1:l+1], X[end:-1:l+1]); init=id)
-    return (Ax_right * Ax_left)' / float(A.z)
+    Ax_left = prod(@view a[:,:,x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
+    Ax_right = reduce((A,B) -> B * A, @view a[:,:,x...] for (a,x) in zip(A[end:-1:l+1], X[end:-1:l+1]); init=id)
+    Ax_center = A[l][:,:,X[l]...]
+    z = float(A.z)
+    val = only(Ax_left * Ax_center * Ax_right) / z
+    gr = (Ax_right * Ax_left)' / z
+    return gr, val
 end

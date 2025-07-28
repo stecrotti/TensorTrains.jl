@@ -377,8 +377,9 @@ rng = MersenneTwister(0)
                 a = Al[i,j,Xl...]
                 float((f(a+ε) - f(a)) / ε)
             end
-            gA = grad(A, l, X)
+            gA, val = grad_evaluate(A, l, X)
             @test all(abs.(gA - gA_numeric) .< 10ε)
+            @test val ≈ evaluate(A, X)
         end
     end
 end
