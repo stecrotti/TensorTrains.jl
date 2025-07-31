@@ -386,7 +386,7 @@ Compute the 2-norm (Frobenius norm) of tensor train `A`
 \lVert A\rVert_2 = \sqrt{\sum_{x^1,x^2,\ldots,x^L}\left[A^1(x^1)A^2(x^2)\cdots A^L(x^L)\right]^2} = \sqrt{A\cdot A}
 ```
 """
-LinearAlgebra.norm(A::AbstractTensorTrain) = sqrt(dot(A, A))
+LinearAlgebra.norm(A::AbstractTensorTrain) = sqrt(real(dot(A, A)))
 
 @doc raw"""
     norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
@@ -398,7 +398,7 @@ Given two tensor trains `A,B`, compute `norm(A - B)^2` as
 ```
 """
 function norm2m(A::AbstractTensorTrain, B::AbstractTensorTrain)
-    return norm(A)^2 + norm(B)^2 - 2*real(dot(A, B))
+    return abs2(norm(A)) + abs2(norm(B)) - 2*real(dot(A, B))
 end
 
 function Base.isapprox(A::AbstractTensorTrain, B::AbstractTensorTrain; atol::Real=0, rtol::Real=1e-6)
