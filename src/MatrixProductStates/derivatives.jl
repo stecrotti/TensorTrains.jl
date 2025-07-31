@@ -33,7 +33,7 @@ function grad_loglikelihood(p::MPS, k::Integer, X)
     for x in X 
         gr, val = grad_evaluate(p.ψ, k, x)
         gA[:,:,x[k]...] .+= 2/T * gr / val
-        ll += 2/T * log(val)
+        ll += 1/T * log(abs2(val))
     end
     return gA, ll
 end
@@ -61,7 +61,8 @@ function grad_normalization_two_site_canonical(p::MPS, k::Integer)
     @tullio zz = conj(Aᵏᵏ⁺¹_[m,n,x]) * Aᵏᵏ⁺¹_[m,n,x]
     # recall that tensor trains have an overall multiplication factor stored in order to avoid numerical issues
     z2 = abs2(float(p.ψ.z))
-    z = zz / z2
+    @assert real(zz) ≈ zz
+    z = real(zz) / z2
     gradz = conj(2 * Aᵏᵏ⁺¹ / z2)
     
     return gradz, z
@@ -81,7 +82,7 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X)
     for x in X 
         gr, val = grad_evaluate_two_site(p.ψ, k, x)
         gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val
-        ll += 2/T * log(val)
+        ll += 1/T * log(abs2(val))
     end
     return gA, ll
 end

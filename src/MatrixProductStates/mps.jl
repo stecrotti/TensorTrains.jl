@@ -89,6 +89,7 @@ function trace(A::Array{T,4}) where T
     @tullio t = A[a,a,b,b]
 end
 
+# TODO: this is somehow a duplicate of norm(::TensorTrain)
 """
     normalization(p::MPS)
 
