@@ -243,22 +243,33 @@ function compress!(A::AbstractTensorTrain; svd_trunc=TruncThresh(1e-6),
     return A
 end
 
-# Split the result of `_merge_tensors` back into two separate tensors
-function _split_tensor(C; svd_trunc=TruncThresh(0.0), left=true)
+# Used for dispatching on the direction of the sweep
+abstract type LeftOrRight end
+struct Left <: LeftOrRight end
+struct Right <: LeftOrRight end
+
+
+# Split the result `C[i,j,x1,x2]` of `_merge_tensors` back into two separate tensors `A[i,k,x1],B[k,j,x2]` such that `A*B=C`
+function _split_tensor(C; svd_trunc=TruncThresh(0.0), lr::LeftOrRight=Left())
     sC = size(C)[3:end]
     sA = sC[1:end/2]
     sB = sC[end/2+1:end]
-    # group together the first and second sets of vsriables
+    # group together the first and second sets of variables
     C_resh_ = reshape(C, (size(C,1), size(C,2), prod(sA), prod(sB)))
     @cast C_resh[(al,xl),(al1,xl1)] := C_resh_[al,al1,xl,xl1]
     U, Λ, V = svd_trunc(C_resh)
-    if left
+
+    function redistribute_unitarity(U, Λ, V, lr::Left)
         A_resh = U
         B_resh = Diagonal(Λ) * V'
-    else
+        return A_resh, B_resh
+    end
+    function redistribute_unitarity(U, Λ, V, lr::Right)
         A_resh = U * Diagonal(Λ)
         B_resh = V'
+        return A_resh, B_resh
     end
+    A_resh, B_resh = redistribute_unitarity(U, Λ, V, lr)
     @cast A_[i,j,x] := A_resh[(i,x),j] x in 1:prod(sA)
     A = reshape(A_, (size(A_,1),size(A_,2),sA...))
     @cast B_[i,j,x] := B_resh[i,(j,x)] x in 1:prod(sB)
