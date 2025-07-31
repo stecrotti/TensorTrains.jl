@@ -40,7 +40,7 @@ end
         dot(A[i,:,xA], B[:,j,xB])
     end
     @test C ≈ C_test
-    A_, B_ = TensorTrains._split_tensor(Array(C))
+    A_, B_ = TensorTrains._split_tensor(Array(collect(C)))
     x = [3,2]
     @test A[:,:,x[1]] * B[:,:,x[2]] ≈ A_[:,:,x[1]] * B_[:,:,x[2]]
 end
