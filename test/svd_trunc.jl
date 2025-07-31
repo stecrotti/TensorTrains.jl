@@ -41,8 +41,8 @@ end
     end
     @test C ≈ C_test
     x = [3,2]
-    A_, B_ = TensorTrains._split_tensor(Array(collect(C)); lr=TensorTrains.Left())
+    A_, B_ = TensorTrains._split_tensor(C; lr=TensorTrains.Left())
     @test A[:,:,x[1]] * B[:,:,x[2]] ≈ A_[:,:,x[1]] * B_[:,:,x[2]]
-    A_, B_ = TensorTrains._split_tensor(Array(collect(C)); lr=TensorTrains.Right())
+    A_, B_ = TensorTrains._split_tensor(C; lr=TensorTrains.Right())
     @test A[:,:,x[1]] * B[:,:,x[2]] ≈ A_[:,:,x[1]] * B_[:,:,x[2]]
 end
