@@ -31,3 +31,16 @@ end
     compress!(p; svd_trunc=TruncVUMPS(9))
     @test isapprox(real(only(marginals(p))), real(only(marginals(q))), atol=1e-5)
 end
+
+@testset "Merge and split tensors" begin
+    A = rand(2,5,3)
+    B = rand(5,4,2)
+    C = TensorTrains._merge_tensors(A, B)
+    C_test = map(Iterators.product(1:2,1:4,1:3,1:2)) do (i,j,xA,xB)
+        dot(A[i,:,xA], B[:,j,xB])
+    end
+    @test C ≈ C_test
+    A_, B_ = TensorTrains._split_tensor(C)
+    x = [3,2]
+    @test A[:,:,x[1]] * B[:,:,x[2]] ≈ A_[:,:,x[1]] * B_[:,:,x[2]]
+end
