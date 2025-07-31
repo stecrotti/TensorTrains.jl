@@ -242,6 +242,29 @@ function compress!(A::AbstractTensorTrain; svd_trunc=TruncThresh(1e-6),
     return A
 end
 
+# Split the result of `_merge_tensors` back into two separate tensors
+function _split_tensor(C; svd_trunc=TruncThresh(0.0), left=true)
+    sC = size(C)[3:end]
+    sA = sC[1:end/2]
+    sB = sC[end/2+1:end]
+    # group together the first and second sets of vsriables
+    C_resh_ = reshape(C, (size(C,1), size(C,2), prod(sA), prod(sB)))
+    @cast C_resh[(al,xl),(al1,xl1)] := C_resh_[al,al1,xl,xl1]
+    U, Λ, V = svd_trunc(C_resh)
+    if left
+        A_resh = U
+        B_resh = Diagonal(Λ) * V'
+    else
+        A_resh = U * Diagonal(Λ)
+        B_resh = V'
+    end
+    @cast A_[i,j,x] := A_resh[(i,x),j] x in 1:prod(sA)
+    A = reshape(A_, (size(A_,1),size(A_,2),sA...))
+    @cast B_[i,j,x] := B_resh[i,(j,x)] x in 1:prod(sB)
+    B = reshape(B_, (size(B_,1),size(B_,2),sB...))
+    return A, B
+end
+
 """
     Base.:(+)(A::AbstracTensorTrain, B::AbstracTensorTrain)
 

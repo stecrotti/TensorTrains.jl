@@ -58,3 +58,16 @@ function grad_normalization_two_site_canonical(p::MPS, l::Integer)
     
     return gradz, z
 end
+
+function grad_loglikelihood_two_site(p::MPS, l::Integer, X)
+    Zprime, Z = grad_normalization_two_site_canonical(p, l)
+    ll = -log(Z)
+    T = length(X)
+    gA = - Zprime ./ Z
+    for x in X 
+        gr, val = grad_evaluate_two_site(p.ψ, l, x)
+        gA[:,:,x[l]...,x[l+1]...] .+= 2/T * gr / val
+        ll += 2/T * log(val)
+    end
+    return gA, ll
+end

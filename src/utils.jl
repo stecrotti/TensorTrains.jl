@@ -33,6 +33,7 @@ function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
     return true
 end
 
+# Merge two tensors each depending on their x's into one which depends on both sets of x's and is the matrix product of the 2 original ones. Used for 2-site DMRG
 function _merge_tensors(A, B)
     sA = size(A)[3:end]
     sB = size(B)[3:end]

@@ -243,3 +243,16 @@ function grad_evaluate(A::TensorTrain, l::Integer, X)
     gr = (Ax_right * Ax_left)' / z
     return gr, val
 end
+
+# TODO: return directly the grad of the log so the two z's will cancel out
+# compute the gradient of evaluating the tensor train with respect to the entries of Aˡ merged with Aˡ⁺¹
+function grad_evaluate_two_site(A::TensorTrain, l::Integer, X)
+    id = fill(one(eltype(A)), 1, 1)
+    Ax_left = prod(@view a[:,:,x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
+    Ax_right = reduce((A,B) -> B * A, @view a[:,:,x...] for (a,x) in zip(A[end:-1:l+2], X[end:-1:l+2]); init=id)
+    Ax_center = _merge_tensors(A[l][:,:,X[l]...], A[l+1][:,:,X[l+1]...])
+    z = float(A.z)
+    val = only(Ax_left * Ax_center * Ax_right) / z
+    gr = (Ax_right * Ax_left)' / z
+    return gr, val
+end

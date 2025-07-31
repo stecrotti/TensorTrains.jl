@@ -2,7 +2,7 @@ module TensorTrains
 
 using KrylovKit: eigsolve
 using Lazy: @forward
-using LinearAlgebra: LinearAlgebra, svd, norm, tr, I, dot, normalize!
+using LinearAlgebra: LinearAlgebra, svd, norm, tr, I, dot, normalize!, Diagonal
 using LogarithmicNumbers: Logarithmic
 using MKL
 using MPSKit: InfiniteMPS, DenseMPO, VUMPS, approximate, dot, add_util_leg, site_type, physicalspace
@@ -25,7 +25,7 @@ export
     sample!, sample,
     AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
     is_left_canonical, is_right_canonical, is_canonical, is_two_site_canonical,
-    grad_evaluate,
+    grad_evaluate, grad_evaluate_two_site,
 
     # Uniform Tensor Trains
     AbstractUniformTensorTrain, UniformTensorTrain, InfiniteUniformTensorTrain,
