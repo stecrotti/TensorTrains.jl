@@ -27,6 +27,7 @@ end
 
 function exact_twovar_marginals(A; 
         p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A])
+    N = ndims(first(A))
     map(Iterators.product(eachindex(A), eachindex(A))) do (l,m)
         if l ≥ m
             zeros(zeros(Int, 2*(N-2))...)
