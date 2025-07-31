@@ -13,7 +13,8 @@ using LogarithmicNumbers: Logarithmic
 export MPS
 export is_left_canonical, is_right_canonical, is_canonical
 export grad_normalization_canonical, grad_normalization_two_site_canonical,
-    loglikelihood, grad_loglikelihood, grad_loglikelihood_two_site
+    loglikelihood, grad_loglikelihood, grad_loglikelihood_two_site,
+    two_site_dmrg_sweep!, two_site_dmrg!
 
 include("mps.jl")
 include("derivatives.jl")

@@ -21,13 +21,11 @@ struct MPS{T<:AbstractTensorTrain}
     ψ :: T
 end
 
-@forward MPS.ψ bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
+@forward MPS.ψ TensorTrains.bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
     Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
 Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
-
-TensorTrains.bond_dims(p::MPS) = bond_dims(p.ψ)
 
 TensorTrains.is_left_canonical(A::MPS; kw...) = is_left_canonical(A.ψ; kw...)
 TensorTrains.is_right_canonical(A::MPS; kw...) = is_right_canonical(A.ψ; kw...)
