@@ -32,3 +32,12 @@ function is_approx_identity(A; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps)
     end
     return true
 end
+
+function _merge_tensors(A, B)
+    sA = size(A)[3:end]
+    sB = size(B)[3:end]
+    @assert length(sA) == length(sB)
+    Ar = _reshape1(A); Br = _reshape1(B)
+    @tullio C[m,n,xA,xB] := Ar[m,k,xA] * Br[k,n,xB]
+    return reshape(C, size(C,1), size(C,2), sA..., sB...)
+end

@@ -164,6 +164,10 @@ function TensorTrains.orthogonalize_center!(p::MPS, l::Integer; kw...)
     orthogonalize_center!(p.ψ, l; kw...)
 end
 
+function TensorTrains.orthogonalize_two_site_center!(p::MPS, l::Integer; kw...)
+    orthogonalize_two_site_center!(p.ψ, l; kw...)
+end
+
 function TensorTrains.compress!(p::MPS; kw...)
     compress!(p.ψ; kw...)
 end

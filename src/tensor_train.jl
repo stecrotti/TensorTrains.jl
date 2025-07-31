@@ -153,6 +153,19 @@ function orthogonalize_center!(C::TensorTrain, l::Integer; svd_trunc=TruncThresh
     orthogonalize_right!(C; svd_trunc, indices = l+1:length(C))
 end
 
+"""
+    orthogonalize_two_site_center!(C::TensorTrain, k::Integer; svd_trunc=TruncThresh(1e-6))
+
+Orthogonalize the tensor train for a two-site DMRG update at positions k and k+1.
+This puts sites 1:k-1 in left-canonical form, sites k+2:N in right-canonical form,
+and leaves sites k and k+1 as the non-orthogonal center for merging.
+"""
+function orthogonalize_two_site_center!(C::TensorTrain, k::Integer; svd_trunc=TruncThresh(1e-6))
+    @assert 1 <= k < length(C) "k must be between 1 and length(C)-1 for two-site update"
+    orthogonalize_left!(C; svd_trunc, indices = 1:k-1)
+    orthogonalize_right!(C; svd_trunc, indices = k+2:length(C))
+end
+
 
 # used to do stuff like `A+B` with `A,B` tensor trains
 function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
@@ -195,6 +208,27 @@ function is_canonical(A, central_idx; atol=1e-10)
     f_r(x) = is_right_canonical(x; atol)
     return all(f_l, A[begin:begin+central_idx-2]) &&
         all(f_r, A[begin+central_idx:end])
+end
+
+"""
+    is_two_site_canonical(A, k)
+
+Check if the tensor train is in canonical form for a two-site update at positions k and k+1.
+This means sites 1:k-1 are left-canonical, sites k+2:N are right-canonical,
+and sites k and k+1 are non-canonical (ready for merging).
+"""
+function is_two_site_canonical(A, k; atol=1e-10)
+    @assert 1 <= k < length(A) "k must be between 1 and length(A)-1 for two-site update"
+    f_l(x) = is_left_canonical(x; atol)
+    f_r(x) = is_right_canonical(x; atol)
+    
+    # Check left canonical: sites 1 to k-1
+    left_canonical = k == 1 || all(f_l, A[1:k-1])
+    
+    # Check right canonical: sites k+2 to N  
+    right_canonical = k+1 == length(A) || all(f_r, A[k+2:end])
+    
+    return left_canonical && right_canonical
 end
 
 # TODO: return directly the grad of the log so the two z's will cancel out
