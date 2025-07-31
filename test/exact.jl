@@ -1,4 +1,4 @@
-function exact_normalization(A::AbstractTensorTrain{F,N}) where {F,N}
+function exact_normalization(A)
     qs = [size(Aˡ)[3:end] for Aˡ in A]
     X = Iterators.product((1:prod(qˡ) for (Aˡ,qˡ) in zip(A,qs))...)
     return sum(
@@ -7,7 +7,7 @@ function exact_normalization(A::AbstractTensorTrain{F,N}) where {F,N}
     )
 end
 
-function exact_prob(A::AbstractTensorTrain{F,N}) where {F,N}
+function exact_prob(A)
     qs = [size(Aˡ)[3:end] for Aˡ in A]
     X = Iterators.product((1:prod(qˡ) for (Aˡ,qˡ) in zip(A,qs))...)
     map(X) do x
@@ -15,8 +15,8 @@ function exact_prob(A::AbstractTensorTrain{F,N}) where {F,N}
     end
 end
 
-function exact_marginals(A::AbstractTensorTrain{F,N}; 
-        p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A]) where {F,N}
+function exact_marginals(A; 
+        p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A])
     map(eachindex(A)) do l
         v = sum(p, dims=eachindex(A)[Not(l)])
         mˡ = reshape(v, qs[l])
@@ -25,8 +25,8 @@ function exact_marginals(A::AbstractTensorTrain{F,N};
     end
 end
 
-function exact_twovar_marginals(A::AbstractTensorTrain{F,N}; 
-        p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A]) where {F,N}
+function exact_twovar_marginals(A; 
+        p = exact_prob(A), qs = [size(Aˡ)[3:end] for Aˡ in A])
     map(Iterators.product(eachindex(A), eachindex(A))) do (l,m)
         if l ≥ m
             zeros(zeros(Int, 2*(N-2))...)
@@ -46,12 +46,4 @@ end
 function exact_dot(A::AbstractTensorTrain{F,N}, B::AbstractTensorTrain{F,N};
         pA = exact_prob(A), pB = exact_prob(B)) where {F,N}
     dot(pA, pB)
-end
-
-function exact_prob(p::TensorTrains.MatrixProductStates.MPS)
-    qs = [size(Aˡ)[3:end] for Aˡ in p]
-    X = Iterators.product((1:prod(qˡ) for (Aˡ,qˡ) in zip(p,qs))...)
-    map(X) do x
-        evaluate(p, [Tuple(CartesianIndices(qs[l])[x[l]]) for l in eachindex(x)])
-    end
 end
