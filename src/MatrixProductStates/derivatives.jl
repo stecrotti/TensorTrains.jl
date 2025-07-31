@@ -5,10 +5,12 @@ function grad_normalization_canonical(p::MPS, l::Integer)
     
     Aˡ = p[l]
     Aˡconj = conj(Aˡ)
-    @tullio zz = Aˡconj[m,n,x1,x2] * Aˡ[m,n,x1,x2]
+    Aˡ_ = _reshape1(Aˡ)
+    Aˡconj_ = _reshape1(Aˡconj) # group all the x's together
+    @tullio zz = Aˡconj_[m,n,x] * Aˡ_[m,n,x]
     z2 = abs2(float(p.ψ.z))
     z = zz / z2
-    gradz = 2 * Aˡconj / z2
+    gradz = conj(2 * Aˡ / z2)
     return gradz, z
 end
 
@@ -30,23 +32,29 @@ function grad_loglikelihood(p::MPS, l::Integer, X)
     return gA, ll
 end
 
-function merge_tensors(A, B)
-    @assert size(A) == size(B)
-
-end
 
 # TODO: return directly the grad of the log so the two z's will cancel out
-# Gradient of Z w.r.t. Aˡ and Aˡ⁺¹ or Aˡ⁻¹, and Z
-function grad_normalization_canonical(p::MPS, l::Integer, lpm1::Integer)
-    @assert abs(l - lpm1) == 1
+# Gradient of Z w.r.t. Aˡ and Aˡ⁺¹ and Z
+# For DMRG two-site update: the MPS should be in canonical form such that
+# - A^1 to A^{l-1} are left-orthogonal
+# - A^{l+2} to A^N are right-orthogonal  
+# - A^l and A^{l+1} form the merged non-orthogonal center
+function grad_normalization_two_site_canonical(p::MPS, l::Integer)
     @assert l <= length(p)
-    @assert is_canonical(p, l)
+    @assert is_two_site_canonical(p, l)  # This ensures proper canonical form for two-site update
     
     Aˡ = p[l]
-    Aˡconj = conj(Aˡ)
-    @tullio zz = Aˡconj[m,n,x1,x2] * Aˡ[m,n,x1,x2]
+    Aˡ⁺¹ = p[l+1]
+    
+    # Compute the merged tensor and its normalization 
+    Aˡˡ⁺¹ = TensorTrains._merge_tensors(Aˡ, Aˡ⁺¹)
+    Aˡˡ⁺¹_ = _reshape1(Aˡˡ⁺¹)
+    @tullio zz = conj(Aˡˡ⁺¹_[m,n,x]) * Aˡˡ⁺¹_[m,n,x] 
     z2 = abs2(float(p.ψ.z))
     z = zz / z2
-    gradz = 2 * Aˡconj / z2
+    
+    # The gradient with respect to the merged tensor is:
+    gradz = conj(2 * Aˡˡ⁺¹ / z2)
+    
     return gradz, z
 end

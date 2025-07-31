@@ -18,12 +18,13 @@ export
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
     bond_dims, flat_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, orthogonalize_center!,
+    orthogonalize_two_site_center!,
     compress!,
-    marginals, twovar_marginals, lognormalization, normalization,  
+    marginals, twovar_marginals, lognormalization, normalization, normalize!,
     dot, norm, norm2m,
     sample!, sample,
     AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
-    is_left_canonical, is_right_canonical, is_canonical,
+    is_left_canonical, is_right_canonical, is_canonical, is_two_site_canonical,
     grad_evaluate,
 
     # Uniform Tensor Trains

@@ -1,5 +1,5 @@
 using TensorTrains
-using TensorTrains: transfer_operator, leading_eig
+using TensorTrains: transfer_operator, leading_eig, _merge_tensors
 using Random, Suppressor, InvertedIndices, LinearAlgebra
 using Test
 using Aqua

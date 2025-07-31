@@ -128,30 +128,47 @@ using LinearAlgebra: I
         F = Float64
         tensors = [rand(F, 1,5,2,2), rand(F, 5,4,2,2),
             rand(F, 4,10,2,2), rand(F, 10,1,2,2)]
+        # tensors = [rand(1,2,1,1), rand(2,1,1,1)]
         ψ = TensorTrain(tensors)
         p = MPS(ψ)
         normalize!(p)
 
+        function compute_dzdA_numeric(p, l; ε = 1e-8 * one(eltype(p[l])))
+            A = p[l]
+            maxi, maxj, maxxi, maxxj = size(A)
+
+            return map(Iterators.product(1:maxi, 1:maxj, 1:maxxi, 1:maxxj)) do (i, j, xi, xj)
+                function f(a)
+                    p_cp = deepcopy(p)
+                    p_cp[l][i,j,xi,xj] = a
+                    return normalization(p_cp; normalize_while_accumulating=false)
+                end
+                a = A[i,j,xi,xj]
+                float((f(a+ε) - f(a)) / ε)
+            end
+        end
+
         @testset "Gradient of Z" begin
             for l in eachindex(p)
                 orthogonalize_center!(p, l)
-                dfdA, _ = grad_normalization_canonical(p, l)
-                A = p[l]
-                ε = 1e-8 * one(eltype(A))
-                maxi, maxj, maxxi, maxxj = size(A)
+                dzdA, z = grad_normalization_canonical(p, l)
+                @test z ≈ normalization(p)
+                ε = 1e-8 * one(eltype(p[l]))
+                dzdA_numeric = compute_dzdA_numeric(p, l; ε)
+                @test all(abs.(dzdA - dzdA_numeric) .< 10ε)
+            end
+        end
 
-                dfdA_numeric = map(Iterators.product(1:maxi, 1:maxj, 1:maxxi, 1:maxxj)) do (i, j, xi, xj)
-                    function f(a)
-                        p_cp = deepcopy(p)
-                        @assert is_canonical(p, l)
-                        p_cp[l][i,j,xi,xj] = a
-                        return normalization(p_cp; normalize_while_accumulating=false)
-                    end
-                    a = A[i,j,xi,xj]
-                    float((f(a+ε) - f(a)) / ε)
-                end
-                
-                @test all(abs.(dfdA - dfdA_numeric) .< 10ε)
+        @testset "Gradient of Z - 2 site" begin
+            for l in 1:length(p)-1  
+                orthogonalize_two_site_center!(p, l)
+                @assert is_two_site_canonical(p, l)
+                dzdA, z = grad_normalization_two_site_canonical(p, l)
+                @test z ≈ float(normalization(p))
+                ε = 1e-8 * one(eltype(p[l]))
+                dzdA_numeric = compute_two_site_dzdA_numeric(p, l; ε)
+                d = abs.(dzdA - dzdA_numeric)
+                @test all(d .< 10ε)
             end
         end
 
