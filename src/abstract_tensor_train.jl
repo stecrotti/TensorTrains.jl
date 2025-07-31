@@ -257,7 +257,7 @@ function _split_tensor(C; svd_trunc=TruncThresh(0.0), lr::LeftOrRight=Left())
     # group together the first and second sets of variables
     C_resh_ = reshape(C, (size(C,1), size(C,2), prod(sA), prod(sB)))
     @cast C_resh[(al,xl),(al1,xl1)] := C_resh_[al,al1,xl,xl1]
-    U, Λ, V = svd_trunc(C_resh)
+    U, Λ, V = svd_trunc(Array(C_resh))
 
     function redistribute_unitarity(U, Λ, V, lr::Left)
         A_resh = U
