@@ -229,24 +229,54 @@ using LinearAlgebra: I
 
         @testset "Gradient of loglikelihood - 2-site" begin
             X = [sample(p)[1] for _ in 1:10]
-            l = 2
-            orthogonalize_two_site_center!(p, l)
-            p_cp = deepcopy(p)
-            A = _merge_tensors(p_cp[l], p_cp[l+1])
-            dlldA, ll = grad_loglikelihood_two_site(p_cp, l, X)
-            @test ll ≈ loglikelihood(p_cp, X)
-            η = 1e-3
-            lls = map(1:100) do _
+            for l in 1:length(p)-1
+                orthogonalize_two_site_center!(p, l)
+                p_cp = deepcopy(p)
                 A = _merge_tensors(p_cp[l], p_cp[l+1])
                 dlldA, ll = grad_loglikelihood_two_site(p_cp, l, X)
                 @test ll ≈ loglikelihood(p_cp, X)
-                p_cp[l], p_cp[l+1] = TensorTrains._split_tensor(A + η*dlldA)
-                ll
+                η = 1e-3
+                lls = map(1:100) do _
+                    A = _merge_tensors(p_cp[l], p_cp[l+1])
+                    dlldA, ll = grad_loglikelihood_two_site(p_cp, l, X)
+                    @test ll ≈ loglikelihood(p_cp, X)
+                    p_cp[l], p_cp[l+1] = TensorTrains._split_tensor(A + η*dlldA)
+                    ll
+                end
+                @test issorted(lls) # check that log-likelihood is increasing steadily for small learning rate
             end
-            @test issorted(lls) # check that log-likelihood is increasing steadily for small learning rate
         end
         
-
-
     end
+
+    # @testset "DMRG" begin
+    #     q = MPS(rand_tt(3, 5, 2,2))
+    #     normalize!(q)
+    #     X = [sample(q)[1] for _ in 1:10^4]
+    #     @show loglikelihood(q, X)
+    #     mq = marginals(q)
+    #     p = MPS(rand_tt(2, length(q), 2,2))
+
+    #     function CB()
+    #         function cb(it, p, k, ll)
+    #             p_cp = deepcopy(p)
+    #             normalize!(p_cp)
+    #             if it == 1
+    #                 d = float(norm2m(p_cp.ψ,q.ψ))
+    #                 mbd = maximum(bond_dims(p.ψ))
+    #                 mp = marginals(p)
+    #                 d_m = maximum(maximum.(abs, mp-mq))
+    #                 println("# k=$k")
+    #                 println("\tit=$it. LogLikelihood=$ll. dmax=$mbd")
+    #                 println("\t|p-q|^2=$d")
+    #                 println("\tMax diff marginals $d_m")
+    #             end
+    #         end
+    #     end
+    #     callback = CB()
+    #     nsweeps = 3
+    #     two_site_dmrg!(p, X, nsweeps; η=5e-2, svd_trunc=TruncBond(3), callback)
+
+    #     mp = marginals(p)
+    # end
 end

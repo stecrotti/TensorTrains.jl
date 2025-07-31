@@ -21,7 +21,8 @@ abstract type AbstractPeriodicTensorTrain{F<:Number, N} <: AbstractTensorTrain{F
 Return a vector with the dimensions of the virtual bonds
 """
 bond_dims(A::AbstractTensorTrain) = [size(a, 1) for a in A]
-###
+
+
 function check_bond_dims(tensors::AbstractVector{T}) where {T<:AbstractArray}
     for t in 1:lastindex(tensors)
         firstindex(tensors[t],1) == firstindex(tensors[t],2) == 1 || 
