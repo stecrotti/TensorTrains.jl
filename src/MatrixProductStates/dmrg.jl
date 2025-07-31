@@ -2,7 +2,8 @@
 function two_site_dmrg_sweep!(
     p::MPS,
     X,       # data as a vector of vectors
-    idxs;    # indices for the sweep
+    idxs,    # indices for the sweep
+    lr::LeftOrRight;     # `Left()` if the sweep is going L->R, hence leaving behind left-orthogonal tensors. `Right()` otherwise  
     svd_trunc=TruncThresh(1e-6),    
     η = 1e-3,   # learning rate for gradient descent
     ndesc = 100,    # number of gradient descent steps
@@ -13,7 +14,7 @@ function two_site_dmrg_sweep!(
         for it in 1:ndesc
             A = _merge_tensors(p[k], p[k+1])
             dlldA, ll = grad_loglikelihood_two_site(p, k, X)
-            p[k], p[k+1] = TensorTrains._split_tensor(A + η*dlldA; svd_trunc)
+            p[k], p[k+1] = TensorTrains._split_tensor(A + η*dlldA; svd_trunc, lr)
             callback(it, p, k, ll)
         end
     end
@@ -21,7 +22,7 @@ end
 
 function two_site_dmrg!(p, X, nsweeps; kw...)
     for sweep in 1:nsweeps
-        two_site_dmrg_sweep!(p, X, 1:length(p)-1; kw...)
-        two_site_dmrg_sweep!(p, X, length(p)-2:-1:1; kw...)
+        two_site_dmrg_sweep!(p, X, 1:length(p)-1, Left(); kw...)
+        two_site_dmrg_sweep!(p, X, length(p)-1:-1:1, Right(); kw...)
     end
 end
