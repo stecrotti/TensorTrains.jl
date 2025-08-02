@@ -90,6 +90,7 @@ using LinearAlgebra: I
 
     @testset "Sampling" begin
         x, q = sample(rng, p)
+        @test is_in_domain(p, x)
         normalize!(p)
         @test q ≈ evaluate(p, x)
     end

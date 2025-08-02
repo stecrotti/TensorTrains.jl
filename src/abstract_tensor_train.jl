@@ -38,6 +38,18 @@ function check_bond_dims(tensors::AbstractVector{T}) where {T<:AbstractArray}
 end
 
 """
+    is_in_domain(A::AbstractTensorTrain, X...)
+
+Return true if data `X` is in the domain of `A`. After this check it should be safe to use @inbounds when indexing `A` with `X`
+"""
+function is_in_domain(A::AbstractTensorTrain, X...)
+    return all(
+        all(xi ∈ 1:size(Ax,i+2) for (i,xi) in enumerate(x))
+        for (Ax, x) in zip(A, X...)
+    )
+end
+
+"""
     evaluate(A::AbstractTensorTrain, X...)
 
 Evaluate the Tensor Train `A` at input `X`

@@ -13,6 +13,8 @@ At each step, at site k:
 Reference: https://arxiv.org/abs/1709.01662.
 """
 function two_site_dmrg!(p, X, nsweeps; kw...)
+    all(is_in_domain(p, x...) for x in X) ||
+        throw(DomainError("The values in `X` exceed the domain of the MPS"))
     # Bring the MPS in canonical form wrt indices 1,2 to initiate the process
     orthogonalize_two_site_center!(p, 1; svd_trunc=TruncThresh(0.0))
     for sweep in 1:nsweeps
@@ -42,6 +44,10 @@ function two_site_dmrg_sweep!(
         # Also, the checks on orthogonal form (is_canonical) are O(L) and should eventually 
         #  be dropped once we are sure that they always pass.
         # Everything within this loop should eventually be O(1) wrt L and O(nsamples)
+
+        # TODO: optimizers
+        # Instead of writing gradient descent by hand, use some optimization
+        #  library. This will allow to explore other optimizers
 
         for it in 1:ndesc
             A = _merge_tensors(p[k], p[k+1])
