@@ -322,6 +322,7 @@ rng = MersenneTwister(0)
                 L = 6
                 A = rand_tt( [1; rand(rng, 1:7, L-1); 1], qs... )
                 x, p = sample(copy(rng), A)
+                @test is_in_domain(A, x)
                 y = deepcopy(x)
                 sample!(rng, y, A)
                 @test x == y

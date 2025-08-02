@@ -26,6 +26,7 @@ end
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
 Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
+TensorTrains.is_in_domain(p::MPS, X...) = is_in_domain(p.ψ, X...)
 
 """
     rand_mps([T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
@@ -248,4 +249,17 @@ end
 
 function StatsBase.sample!(x, p::MPS; rz = accumulate_R(p))
     sample!(default_rng(), x, p; rz)
+end
+
+
+# TODO: maybe since (p.ψ.z) is both at the numerator and denominator, ignore it to avoid cancellations with the subtraction?
+
+"""
+    loglikelihood(p::MPS, X)
+
+Compute the loglikelihood of the data `X` under the MPS distribution `p`.
+"""
+function loglikelihood(p::MPS, X)
+    logz = log(normalization(p))
+    return mean(log(evaluate(p, x)) for x in X) - logz 
 end

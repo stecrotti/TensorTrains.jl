@@ -1,3 +1,5 @@
+# TODO: return directly the grad of the log so the two (p.ψ.z)'s will cancel out in the quotient
+
 # Gradient of Z w.r.t. Aᵏ, and Z
 function grad_normalization_canonical(p::MPS, k::Integer)
     @assert k <= length(p)
@@ -12,16 +14,6 @@ function grad_normalization_canonical(p::MPS, k::Integer)
     z = zz / z2
     gradz = conj(2 * Aᵏ / z2)
     return gradz, z
-end
-
-"""
-    loglikelihood(p::MPS, X)
-
-Compute the loglikelihood of the data `X` under the MPS distribution `p`.
-"""
-function loglikelihood(p::MPS, X)
-    logz = log(normalization(p))
-    return mean(log(evaluate(p, x)) for x in X) - logz 
 end
 
 # Gradient of loglikelihood w.r.t. Aᵏ, and loglikelihood
@@ -39,7 +31,7 @@ function grad_loglikelihood(p::MPS, k::Integer, X)
 end
 
 
-# TODO: return directly the grad of the log so the two z's will cancel out
+# TODO: return directly the grad of the log so the two (p.ψ.z)'s will cancel out in the quotient
 
 """
     grad_normalization_two_site_canonical(p::MPS, k::Integer) -> gradz, z
