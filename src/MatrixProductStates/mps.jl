@@ -11,7 +11,7 @@ Example:
 ```@example
     L = 3
     q = (2, 3)
-    ψ = rand_tt(4, L, q...)
+    ψ = rand_mps(4, L, q...)
     p = MPS(ψ)
     X = [[rand(1:qi) for qi in q] for l in 1:L]
     evaluate(p, X), abs2(evaluate(ψ, X))    # are the same
@@ -26,6 +26,24 @@ end
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
 Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
+
+"""
+    rand_mps([T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
+    rand_mps([T = Float64], d::Integer, L::Integer, q...)
+
+Construct a Matrix Product States with `rand(T)` entries, by specifying either:
+- `bondsizes`: the size of each bond
+- `d` a fixed size for all bonds, `L` the length
+and
+- `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
+"""
+function rand_mps(t::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
+    return MPS(rand_tt(t, bondsizes, q...))
+end
+rand_mps(bondsizes::AbstractVector{<:Integer}, q...) = rand_mps(Float64, bondsizes, q...)
+rand_mps(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = rand_mps(T, [1; fill(d, L-1); 1], q...)
+rand_mps(d::Integer, L::Integer, q...) = rand_mps(Float64, d, L, q...)
+
 
 TensorTrains.is_left_canonical(A::MPS; kw...) = is_left_canonical(A.ψ; kw...)
 TensorTrains.is_right_canonical(A::MPS; kw...) = is_right_canonical(A.ψ; kw...)
