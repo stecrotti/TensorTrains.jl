@@ -1,4 +1,28 @@
-# Fit a MPS to data using the DMRG-like gradient descent as in https://arxiv.org/abs/1709.01662
+"""
+Fit a MPS to data using the 2site-DMRG-like gradient descent.
+The algorithm performs successive sweeps left->right, then right->left on the MPS.
+At each step, at site k:
+- The MPS is in canonical form (matrices 1:k-1 left-orthogonal, k+2:L right-orthogonal)
+- Two adjacent matrices Aᵏ,Aᵏ⁺¹ are merged by matrix multiplication (that's why "2site"_DMRG)
+- The gradient of the log-likelihood wrt the merged tensor is computed
+- Some steps of gradient descent are performed
+- The updated tensor is split back into two separate ones by SVD+truncations
+- Matrix k (resp. k+1) is kept left(resp. right)-orthogonal when the sweep is going right (resp. left)
+- Move to next site
+
+Reference: https://arxiv.org/abs/1709.01662.
+"""
+function two_site_dmrg!(p, X, nsweeps; kw...)
+    # Bring the MPS in canonical form wrt indices 1,2 to initiate the process
+    orthogonalize_two_site_center!(p, 1; svd_trunc=TruncThresh(0.0))
+    for sweep in 1:nsweeps
+        # sweep left to right
+        two_site_dmrg_sweep!(p, X, 1:length(p)-1, Left(); kw...)
+        # sweep right to left
+        two_site_dmrg_sweep!(p, X, length(p)-1:-1:1, Right(); kw...)
+    end
+end
+
 function two_site_dmrg_sweep!(
     p::MPS,
     X,       # data as a vector of vectors
@@ -11,11 +35,13 @@ function two_site_dmrg_sweep!(
 
     for k in idxs
         # TODO: performance improvements
-        # The accumulation of matrices to the left and 
-        #  to the right (hidden in `grad_loglikelihood_two_site` -> `grad_evaluate_two_site`)
-        #  takes O(L). This should be avoidable by  memorizing stuff.
-        # Also, the checks on orthogonal form are O(L) and should eventually be dropped.
-        # Everything within this loop should eventually be O(1)
+        # The accumulation of matrices to the left and to the right 
+        #  in `grad_loglikelihood_two_site` -> `grad_evaluate_two_site` takes O(L).
+        # This should be avoidable by memorizing the product of matrices 1:k-1 and k+2:L 
+        #  for all datapoints and at each step in the sweep updating the current (k-th) matrix.
+        # Also, the checks on orthogonal form (is_canonical) are O(L) and should eventually 
+        #  be dropped once we are sure that they always pass.
+        # Everything within this loop should eventually be O(1) wrt L and O(nsamples)
 
         for it in 1:ndesc
             A = _merge_tensors(p[k], p[k+1])
@@ -30,11 +56,3 @@ function two_site_dmrg_sweep!(
     end
 end
 
-function two_site_dmrg!(p, X, nsweeps; kw...)
-    # Bring the MPS in canonical form wrt indices 1,2
-    orthogonalize_two_site_center!(p, 1; svd_trunc=TruncThresh(0.0))
-    for sweep in 1:nsweeps
-        two_site_dmrg_sweep!(p, X, 1:length(p)-1, Left(); kw...)
-        two_site_dmrg_sweep!(p, X, length(p)-1:-1:1, Right(); kw...)
-    end
-end
