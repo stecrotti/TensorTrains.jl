@@ -27,6 +27,7 @@ rng = MersenneTwister(0)
     @testset "basics" begin
         tensors = [rand(1,5,2,2), rand(5,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
         A = TensorTrain(tensors)
+        @test nparams(A) == prod((1,5,2,2)) + prod((5,4,2,2)) + prod((4,10,2,2)) + prod((10,1,2,2))
         B = TensorTrain(copy(tensors))
         @test A == B
         @test A ≈ B

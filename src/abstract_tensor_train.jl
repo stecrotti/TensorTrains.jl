@@ -22,6 +22,20 @@ Return a vector with the dimensions of the virtual bonds
 """
 bond_dims(A::AbstractTensorTrain) = [size(a, 1) for a in A]
 
+"""
+    nparams(A::AbstractTensorTrain)
+
+Return the number of parameters of the tensor train.
+One complex number counts as two parameters.
+"""
+function nparams(A::AbstractTensorTrain{F}) where F
+    n = sum(length, A)
+    if F <: Complex
+        n *= 2
+    end
+    return n
+end
+
 
 function check_bond_dims(tensors::AbstractVector{T}) where {T<:AbstractArray}
     for t in 1:lastindex(tensors)

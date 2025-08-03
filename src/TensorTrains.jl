@@ -17,7 +17,7 @@ export
     getindex, iterate, firstindex, lastindex, setindex!, eachindex, length, show,
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
-    is_in_domain,
+    nparams, is_in_domain,
     bond_dims, flat_tt, rand_tt, orthogonalize_right!, orthogonalize_left!, orthogonalize_center!,
     orthogonalize_two_site_center!,
     compress!,

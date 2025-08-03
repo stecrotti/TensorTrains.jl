@@ -22,7 +22,8 @@ struct MPS{T<:AbstractTensorTrain}
 end
 
 @forward MPS.ψ TensorTrains.bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
-    Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex
+    Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex,
+    TensorTrains.nparams
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
 Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
