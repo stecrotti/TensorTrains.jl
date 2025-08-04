@@ -26,7 +26,7 @@ function CB()
     lls = zeros(0)
     ds = zeros(0)
     dmax = zeros(0)
-    function cb(it, p, k, ll)
+    function cb(sweep, k, it, p, ll)
         if it == 1
             means_p = [dot(eachindex(m), m) for m in marginals(p)]
             d_m = maximum(abs, means_data - means_p)
@@ -43,8 +43,11 @@ end
 
 callback = CB()
 nsweeps = 5
-two_site_dmrg!(p, X, nsweeps; 
-    η=5e-2, ndesc=1, svd_trunc=TruncBond(10), callback)
+ndesc = 1
+η = 5e-2
+svd_trunc=TruncBond(10)
+
+two_site_dmrg!(p, X, nsweeps; η, ndesc, svd_trunc, callback)
 
 println("Log-Likelihood according to generating distribution = $ll_data\n")
 
@@ -52,7 +55,7 @@ pl = plot(; xlabel="Iterations")
 plot!(pl, callback.lls, label="Log-Likelihood")
 vline!(pl, (N-1):(N-1):length(callback.lls), label="Ends of sweeps", ls=:dash, c=:gray)
 hline!(pl, [ll_data], ls=:dot, c=:black, label="Log-Likelihood according to generating distr")
-pl2 = plot(callback.ds; label="Max difference in empirical vs fitted means", xlabel="Iterations")
+pl2 = plot(callback.ds; yscale=:log10, label="Max difference in empirical vs fitted means", xlabel="Iterations")
 vline!(pl2, (N-1):(N-1):length(callback.lls), label="Ends of sweeps", ls=:dash, c=:gray, legend=:topright)
 pl3 = plot(callback.dmax, label="Max bond dim", xlabel="Iterations", legend=:bottomright)
 vline!(pl3, (N-1):(N-1):length(callback.lls), label="Ends of sweeps", ls=:dash, c=:gray)

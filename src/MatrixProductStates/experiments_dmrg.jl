@@ -14,7 +14,7 @@ mq = marginals(q)
 p = MPS(rand_tt(ComplexF64, 2, length(q), 2,2))
 
 function CB()
-    function cb(it, p, k, ll)
+    function cb(sweep, k, it, p, ll)
         if it == 1
             p_cp = deepcopy(p)
             normalize!(p_cp)

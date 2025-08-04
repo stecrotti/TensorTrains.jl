@@ -1,5 +1,5 @@
 using TensorTrains.MatrixProductStates
-import TensorTrains.MatrixProductStates: trace
+import TensorTrains.MatrixProductStates: trace, update_environment!
 import TensorTrains: accumulate_L, accumulate_R
 using StatsBase: sample
 using Tullio: @tullio
@@ -252,34 +252,29 @@ end
         end
     end
 
-# @testset "DMRG" begin
-#     q = MPS(rand_tt(3, 5, 2,2))
-#     normalize!(q)
-#     X = [sample(q)[1] for _ in 1:10^4]
-#     @show loglikelihood(q, X)
-#     mq = marginals(q)
-#     p = MPS(rand_tt(2, length(q), 2,2))
+    @testset "Environments" begin
+        X = [sample(p)[1] for _ in 1:10]
 
-#     function CB()
-#         function cb(it, p, k, ll)
-#             p_cp = deepcopy(p)
-#             normalize!(p_cp)
-#             if it == 1
-#                 d = float(norm2m(p_cp.ψ,q.ψ))
-#                 mbd = maximum(bond_dims(p.ψ))
-#                 mp = marginals(p)
-#                 d_m = maximum(maximum.(abs, mp-mq))
-#                 println("# k=$k")
-#                 println("\tit=$it. LogLikelihood=$ll. dmax=$mbd")
-#                 println("\t|p-q|^2=$d")
-#                 println("\tMax diff marginals $d_m")
-#             end
-#         end
-#     end
-#     callback = CB()
-#     nsweeps = 3
-#     two_site_dmrg!(p, X, nsweeps; η=5e-2, svd_trunc=TruncBond(3), callback)
+        @testset "Left Environments" begin
+            for k in 1:length(p)-1
+                prodA_left = [precompute_left_environments(p.ψ, x) for x in X]
+                prodA_right = [precompute_right_environments(p.ψ, x) for x in X]
+                p[k] .+= 2
+                update_environment!(prodA_left, p, k, X, Left())
+                prodA_left_new = [precompute_left_environments(p.ψ, x) for x in X]
+                @test all(prodA_left[n][1:k] ≈ prodA_left_new[n][1:k] for n in eachindex(X))
+            end
+        end
 
-#     mp = marginals(p)
-# end
+        @testset "Right Environments" begin
+            for k in length(p)-1:-1:1
+                prodA_left = [precompute_left_environments(p.ψ, x) for x in X]
+                prodA_right = [precompute_right_environments(p.ψ, x) for x in X]
+                p[k+1] .+= 2
+                update_environment!(prodA_right, p, k, X, Right())
+                prodA_right_new = [precompute_right_environments(p.ψ, x) for x in X]
+                @test all(prodA_right[n][k+1:end] ≈ prodA_right_new[n][k+1:end] for n in eachindex(X))
+            end
+        end
+    end
 end

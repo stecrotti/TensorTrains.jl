@@ -25,7 +25,7 @@ end
 
 
 @forward TensorTrain.tensors Base.getindex, Base.iterate, Base.firstindex, Base.lastindex,
-    Base.setindex!, Base.length, Base.eachindex,
+    Base.setindex!, Base.length, Base.eachindex, Base.reverse
     check_bond_dims
 
 
@@ -235,23 +235,47 @@ end
 # compute the gradient of evaluating the tensor train with respect to the entries of Aˡ
 function grad_evaluate(A::TensorTrain, l::Integer, X)
     id = fill(one(eltype(A)), 1, 1)
-    Ax_left = prod(@view a[:,:,x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
-    Ax_right = reduce((A,B) -> B * A, @view a[:,:,x...] for (a,x) in zip(A[end:-1:l+1], X[end:-1:l+1]); init=id)
+    prodA_left = prod(@view a[:,:,x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
+    prodA_right = reduce((A,B) -> B * A, @view a[:,:,x...] for (a,x) in zip(A[end:-1:l+1], X[end:-1:l+1]); init=id)
     Ax_center = A[l][:,:,X[l]...]
     z = float(A.z)
-    val = only(Ax_left * Ax_center * Ax_right) / z
-    gr = (Ax_right * Ax_left)' / z
+    val = only(prodA_left * Ax_center * prodA_right) / z
+    gr = (prodA_right * prodA_left)' / z
     return gr, val
+end
+
+"
+Pre-compute the product of all matrices to the left of k and to the right of k+1
+for a single datapoint `X`
+"
+function precompute_left_environments(A::TensorTrain{F}, X) where {F}
+    prodA_left = pushfirst!(
+        accumulate((A,B) -> A * B, Ak[:,:,xk...] for (Ak,xk) in zip(A,X)),
+        ones(F,1,1)
+    )
+    return OffsetArray(prodA_left, -1)
+end
+
+function precompute_right_environments(A::TensorTrain{F}, X) where F
+    prodA_right = push!(
+        reverse(accumulate((A,B) -> B * A, Ak[:,:,xk...] for (Ak,xk) in zip(reverse(A),reverse(X)))),
+        ones(F,1,1)
+    )
+    return OffsetArray(prodA_right, 0)
 end
 
 # TODO: return directly the grad of the log so the two z's will cancel out
 # compute the gradient of evaluating the tensor train with respect to the entries of Aˡ merged with Aˡ⁺¹
-function grad_evaluate_two_site(A::TensorTrain, l::Integer, X)
-    id = fill(one(eltype(A)), 1, 1)
-    Ax_left = prod(@view a[:,:,x...] for (a,x) in zip(A[1:l-1], X[1:l-1]); init=id)
-    Ax_right = reduce((A,B) -> B * A, @view a[:,:,x...] for (a,x) in zip(A[end:-1:l+2], X[end:-1:l+2]); init=id)
-    Ax_center = _merge_tensors(A[l][:,:,X[l]...], A[l+1][:,:,X[l+1]...])
+# Optionally provide pre-computed matrix products from the left and the right
+function grad_evaluate_two_site(A::TensorTrain, k::Integer, X;
+    prodA_left = precompute_left_environments(A, X),
+    prodA_right = precompute_right_environments(A, X)
+)
+    Ax_center = _merge_tensors(A[k][:,:,X[k]...], A[k+1][:,:,X[k+1]...])
     z = float(A.z)
+    Ax_left = prodA_left[k-1]
+    Ax_right = prodA_right[k+2]
+    # @show k size(Ax_left) size(Ax_center) size(Ax_right)
     val = only(Ax_left * Ax_center * Ax_right) / z
     gr = (Ax_right * Ax_left)' / z
     return gr, val
