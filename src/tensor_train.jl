@@ -266,16 +266,13 @@ end
 
 # TODO: return directly the grad of the log so the two z's will cancel out
 # compute the gradient of evaluating the tensor train with respect to the entries of Aˡ merged with Aˡ⁺¹
-# Optionally provide pre-computed matrix products from the left and the right
+# TODO: 
 function grad_evaluate_two_site(A::TensorTrain, k::Integer, X;
-    prodA_left = precompute_left_environments(A, X),
-    prodA_right = precompute_right_environments(A, X)
+    Ax_left = precompute_left_environments(A, X)[k-1],
+    Ax_right = precompute_right_environments(A, X)[k+2],
 )
     Ax_center = _merge_tensors(A[k][:,:,X[k]...], A[k+1][:,:,X[k+1]...])
     z = float(A.z)
-    Ax_left = prodA_left[k-1]
-    Ax_right = prodA_right[k+2]
-    # @show k size(Ax_left) size(Ax_center) size(Ax_right)
     val = only(Ax_left * Ax_center * Ax_right) / z
     gr = (Ax_right * Ax_left)' / z
     return gr, val

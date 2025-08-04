@@ -78,7 +78,7 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
     # TODO: this operation is in principle parallelizable
     for (n,x) in enumerate(X)
         gr, val = grad_evaluate_two_site(p.ψ, k, x; 
-            prodA_left = prodA_left[n], prodA_right = prodA_right[n]
+            Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2]
             )
         gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val
         ll += 1/T * log(abs2(val))
