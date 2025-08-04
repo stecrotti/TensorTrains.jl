@@ -29,11 +29,11 @@ function CB()
     function cb(sweep, k, it, p, ll)
         if it == 1
             means_p = [dot(eachindex(m), m) for m in marginals(p)]
-            d_m = maximum(abs, means_data - means_p)
+            d_m = mean(abs, means_data - means_p)
             mbd = maximum(bond_dims(p.ψ))
             println("# site k=$k")
             println("LogLikelihood=$ll\ndmax=$mbd")
-            println("Max diff empirical vs fitted means = $d_m\n")
+            println("Mean diff empirical vs fitted means = $d_m\n")
             push!(lls, ll)
             push!(ds, d_m)
             push!(dmax, mbd)
@@ -42,7 +42,7 @@ function CB()
 end
 
 callback = CB()
-nsweeps = 5
+nsweeps = 7
 ndesc = 1
 η = 5e-2
 svd_trunc=TruncBond(10)
@@ -51,12 +51,12 @@ two_site_dmrg!(p, X, nsweeps; η, ndesc, svd_trunc, callback)
 
 println("Log-Likelihood according to generating distribution = $ll_data\n")
 
-pl = plot(; xlabel="Iterations")
+pl = plot(; xlabel="Iterations", title="Uniform Ising with N=$N, $nsamples training data", titlefontsize=11)
 plot!(pl, callback.lls, label="Log-Likelihood")
-vline!(pl, (N-1):(N-1):length(callback.lls), label="Ends of sweeps", ls=:dash, c=:gray)
 hline!(pl, [ll_data], ls=:dot, c=:black, label="Log-Likelihood according to generating distr")
-pl2 = plot(callback.ds; yscale=:log10, label="Max difference in empirical vs fitted means", xlabel="Iterations")
+vline!(pl, (N-1):(N-1):length(callback.lls), label="Ends of sweeps", ls=:dash, c=:gray)
+pl2 = plot(callback.ds; yscale=:log10, label="Mean difference in empirical vs fitted means", xlabel="Iterations")
 vline!(pl2, (N-1):(N-1):length(callback.lls), label="Ends of sweeps", ls=:dash, c=:gray, legend=:topright)
 pl3 = plot(callback.dmax, label="Max bond dim", xlabel="Iterations", legend=:bottomright)
 vline!(pl3, (N-1):(N-1):length(callback.lls), label="Ends of sweeps", ls=:dash, c=:gray)
-plot(pl, pl2, pl3, layout=(3,1), size=(700,500))
+plot(pl, pl2, pl3, layout=(3,1), size=(500,500))
