@@ -51,17 +51,18 @@ function two_site_dmrg_sweep!(
         # Instead of writing gradient descent by hand, use some optimization
         #  library. This will allow to explore other optimizers
 
+        # Merge Aᵏ and Aᵏ⁺¹ into a larger tensor
+        A = _merge_tensors(p[k], p[k+1]) 
+
         for it in 1:ndesc
-            # Merge Aᵏ and Aᵏ⁺¹ into a larger tensor
-            A = _merge_tensors(p[k], p[k+1])
             # Compute the gradient wrt the merged tensors
             dlldA, ll = grad_loglikelihood_two_site(p, k, X;
                 prodA_left, prodA_right
                 )
             # Do 1 step of gradient ascent
-            Anew = A + η*dlldA
+            A .+= η*dlldA
             # Split the updated tensor into two by SVD + truncations
-            p[k], p[k+1] = TensorTrains._split_tensor(Anew; svd_trunc, lr)
+            p[k], p[k+1] = TensorTrains._split_tensor(A; svd_trunc, lr)
             # Any post-update operations
             callback(sweep, k, it, p, ll)
         end
