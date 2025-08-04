@@ -40,8 +40,8 @@ Compute the gradient of the normalization of `p` with respect to the merged tens
 Return also the normalization, which is a byproduct of the computation.
 """
 function grad_normalization_two_site_canonical(p::MPS, k::Integer)
-    @assert k <= length(p)
-    @assert is_two_site_canonical(p, k)  # Ensure that the MPS is in canonical form wrt center sites k,k+1
+    @assert k <= length(p)-1
+    @debug @assert is_two_site_canonical(p, k)  # Ensure that the MPS is in canonical form wrt center sites k,k+1
     
     Aᵏ = p[k]
     Aᵏ⁺¹ = p[k+1]
@@ -66,13 +66,20 @@ end
 Compute the gradient of the loglikelihood of data `X` under the MPS distribution `p` with respect to the merged tensors Aᵏ and Aᵏ⁺¹.
 Return also the loglikelihood, which is a byproduct of the computation. 
 """
-function grad_loglikelihood_two_site(p::MPS, k::Integer, X)
+function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
+    prodA_left = [precompute_left_environments(p.ψ, x) for x in X],
+    prodA_right = [precompute_right_environments(p.ψ, x) for x in X])
+
     Zprime, Z = grad_normalization_two_site_canonical(p, k)
     ll = -log(Z) 
     T = length(X)
-    gA = - Zprime ./ Z
-    for x in X 
-        gr, val = grad_evaluate_two_site(p.ψ, k, x)
+    gA = - Zprime / Z
+
+    # TODO: this operation is in principle parallelizable
+    for (n,x) in enumerate(X)
+        gr, val = grad_evaluate_two_site(p.ψ, k, x; 
+            prodA_left = prodA_left[n], prodA_right = prodA_right[n]
+            )
         gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val
         ll += 1/T * log(abs2(val))
     end
