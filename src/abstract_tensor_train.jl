@@ -59,7 +59,7 @@ Return true if data `X` is in the domain of `A`. After this check it should be s
 function is_in_domain(A::AbstractTensorTrain, X...)
     return all(
         all(xi ∈ 1:size(Ax,i+2) for (i,xi) in enumerate(x))
-        for (Ax, x) in zip(A, X...)
+            for (Ax, x) in zip(A, X)
     )
 end
 
