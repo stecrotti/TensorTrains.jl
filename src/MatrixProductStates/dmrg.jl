@@ -13,8 +13,10 @@ At each step, at site k:
 Reference: https://arxiv.org/abs/1709.01662.
 """
 function two_site_dmrg!(p, X, nsweeps; kw...)
-    all(is_in_domain(p, x...) for x in X) ||
-        throw(DomainError("The values in `X` exceed the domain of the MPS"))
+    for x in X
+        is_in_domain(p, x...) ||
+            throw(DomainError("The value x=$x in `X` exceed the domain of the MPS"))
+    end
     # Bring the MPS in canonical form wrt indices 1,2 to initiate the process
     orthogonalize_two_site_center!(p, 1; svd_trunc=TruncThresh(0.0))
     # Pre-compute left and right environments for efficient gradient calculations
