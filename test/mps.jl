@@ -1,5 +1,6 @@
 using TensorTrains.MatrixProductStates
-import TensorTrains.MatrixProductStates: trace, update_environment!
+import TensorTrains.MatrixProductStates: trace, update_environments!,
+    precompute_left_environments, precompute_right_environments, Left, Right
 import TensorTrains: accumulate_L, accumulate_R
 using StatsBase: sample
 using Tullio: @tullio
@@ -260,7 +261,7 @@ end
                 prodA_left = [precompute_left_environments(p.ψ, x) for x in X]
                 prodA_right = [precompute_right_environments(p.ψ, x) for x in X]
                 p[k] .+= 2
-                update_environment!(prodA_left, p, k, X, Left())
+                update_environments!(prodA_left, prodA_right, p, k, X, Left())
                 prodA_left_new = [precompute_left_environments(p.ψ, x) for x in X]
                 @test all(prodA_left[n][1:k] ≈ prodA_left_new[n][1:k] for n in eachindex(X))
             end
@@ -271,7 +272,7 @@ end
                 prodA_left = [precompute_left_environments(p.ψ, x) for x in X]
                 prodA_right = [precompute_right_environments(p.ψ, x) for x in X]
                 p[k+1] .+= 2
-                update_environment!(prodA_right, p, k, X, Right())
+                update_environments!(prodA_left, prodA_right, p, k, X, Right())
                 prodA_right_new = [precompute_right_environments(p.ψ, x) for x in X]
                 @test all(prodA_right[n][k+1:end] ≈ prodA_right_new[n][k+1:end] for n in eachindex(X))
             end
