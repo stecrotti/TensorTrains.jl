@@ -270,8 +270,8 @@ end
 function grad_evaluate_two_site(A::TensorTrain, k::Integer, X;
     Ax_left = precompute_left_environments(A, X)[k-1],
     Ax_right = precompute_right_environments(A, X)[k+2],
-)
     Ax_center = _merge_tensors(A[k][:,:,X[k]...], A[k+1][:,:,X[k+1]...])
+)
     z = float(A.z)
     val = only(Ax_left * Ax_center * Ax_right) / z
     gr = (Ax_right * Ax_left)' / z
