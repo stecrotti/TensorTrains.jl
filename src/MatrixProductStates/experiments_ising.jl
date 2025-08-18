@@ -42,8 +42,8 @@ function CB()
 end
 
 callback = CB()
-nsweeps = 3
-ndesc = 1
+nsweeps = 2
+ndesc = 2
 η = 5e-2
 svd_trunc=TruncBond(10)
 
