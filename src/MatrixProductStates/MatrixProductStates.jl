@@ -10,7 +10,7 @@ using Random: AbstractRNG, default_rng
 using StatsBase
 using LinearAlgebra: I, tr
 using LogarithmicNumbers: Logarithmic
-import OptimKit
+import Optim
 
 export MPS
 export rand_mps

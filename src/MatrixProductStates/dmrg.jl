@@ -43,31 +43,47 @@ function two_site_dmrg_sweep!(
     svd_trunc = TruncBond(5),    
     η = 1e-3,   # learning rate for gradient descent
     ndesc = 100,    # number of gradient descent steps
+    optimizer = Optim.Adam(; alpha=η),
     callback = (sweep, k, it, p, ll) -> nothing,
     prodA_left = [precompute_left_environments(p.ψ, x) for x in X],
     prodA_right = [precompute_right_environments(p.ψ, x) for x in X])
 
 
     for k in idxs
-        # TODO: optimizers
-        # Instead of writing gradient descent by hand, use some optimization
-        #  library. This will allow to explore other optimizers
-
         # Merge Aᵏ and Aᵏ⁺¹ into a larger tensor
-        A = _merge_tensors(p[k], p[k+1]) 
+        Aᵏᵏ⁺¹ = _merge_tensors(p[k], p[k+1]) 
 
-        for it in 1:ndesc
-            # Compute the gradient wrt the merged tensors
-            dlldA, ll = grad_loglikelihood_two_site(p, k, X;
-                prodA_left, prodA_right
+        # make a function to be used by Optim.jl which computes value and gradient https://julianlsolvers.github.io/Optim.jl/stable/user/tipsandtricks/#Avoid-repeating-computations
+        function make_fg(p, k, Aᵏᵏ⁺¹, X)
+            function fg!(F, G, A)
+                dlldA, ll = grad_loglikelihood_two_site(p, k, X;
+                    prodA_left, prodA_right, Aᵏᵏ⁺¹ = reshape(A, size(Aᵏᵏ⁺¹))
                 )
-            # Do 1 step of gradient ascent
-            A .+= η*dlldA
-            # Split the updated tensor into two by SVD + truncations
-            p[k], p[k+1] = TensorTrains._split_tensor(A; svd_trunc, lr)
-            # Any post-update operations
-            callback(sweep, k, it, p, ll)
+                if G !== nothing
+                    G .= -reshape(dlldA, length(G))
+                end
+                if F !== nothing
+                    return -ll
+                end
+                return nothing
+            end
         end
+
+        res = Optim.optimize(
+            Optim.only_fg!(make_fg(p, k, Aᵏᵏ⁺¹, X)),
+            reshape(Aᵏᵏ⁺¹, length(Aᵏᵏ⁺¹)),
+            optimizer,
+            Optim.Options(iterations=ndesc)
+        )
+
+        Aᵏᵏ⁺¹ .= reshape(res.minimizer, size(Aᵏᵏ⁺¹))
+        ll = - res.minimum
+
+        # Split the updated tensor into two by SVD + truncations
+        p[k], p[k+1] = TensorTrains._split_tensor(Aᵏᵏ⁺¹; svd_trunc, lr)
+
+        # Any post-update operations
+        callback(sweep, k, 1, p, ll)
 
         # Update environments for efficient computation of grad log-likelihood
         update_environments!(prodA_left, prodA_right, p, k, X, lr)
