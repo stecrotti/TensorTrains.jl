@@ -2,7 +2,7 @@ using TensorTrains, TensorTrains.MatrixProductStates
 
 d_original = 3
 L = 5
-q = MPS(rand_tt(d_original, L, 2,2))
+q = rand_mps(ComplexF64, d_original, L, 2,2)
 normalize!(q)
 nsamples = 5*10^3
 X = [sample(q)[1] for _ in 1:nsamples]
@@ -31,6 +31,6 @@ function CB()
 end
 
 callback = CB()
-nsweeps = 2
+nsweeps = 4
 two_site_dmrg!(p, X, nsweeps; 
-    η=5e-2, ndesc=100, svd_trunc=TruncBond(2), callback)
+    η=1e-3, ndesc=10, svd_trunc=TruncBond(d_original), callback)

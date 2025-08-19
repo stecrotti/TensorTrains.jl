@@ -1,6 +1,6 @@
 # Fitting a simple ising model with fully connected couplings
 
-using TensorTrains, TensorTrains.MatrixProductStates
+using TensorTrains, TensorTrains.MatrixProductStates, Optim
 import UniformIsingModels
 using Random, LinearAlgebra, Unzip, Statistics
 using Plots
@@ -43,11 +43,12 @@ end
 
 callback = CB()
 nsweeps = 2
-ndesc = 2
-η = 5e-2
+ndesc = 10
+η = 1e-3
 svd_trunc=TruncBond(10)
 
-two_site_dmrg!(p, X, nsweeps; η, ndesc, svd_trunc, callback)
+two_site_dmrg!(p, X, nsweeps; η, ndesc, svd_trunc, callback,
+    optimizer = Optim.Adam(alpha=η))
 
 println("Log-Likelihood according to generating distribution = $ll_data\n")
 
