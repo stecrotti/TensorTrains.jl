@@ -184,7 +184,7 @@ rng = MersenneTwister(0)
         orthogonalize_center!(B, central_idx; svd_trunc = TruncThresh(0))
         @test float(normalization(B)) ≈ float(z)
         orthogonalize_two_site_center!(B, central_idx; svd_trunc = TruncThresh(0))
-        @test is_two_site_canonical(B)
+        @test is_two_site_canonical(B, central_idx)
     end
 
     @testset "Compression" begin
