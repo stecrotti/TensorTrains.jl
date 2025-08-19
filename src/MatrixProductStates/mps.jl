@@ -117,7 +117,8 @@ Compute the normalization ``Z=\\sum_{x^1,\\ldots,x^L} \\lvert A^1(x^1)\\cdots A^
 """
 function TensorTrains.normalization(p::MPS; normalize_while_accumulating=true)
     l, z = accumulate_L(p; normalize=normalize_while_accumulating)
-    @debug let r, zr = accumulate_R(p; normalize=normalize_while_accumulating)
+    @debug begin
+        r, zr = accumulate_R(p; normalize=normalize_while_accumulating)
         @assert zr ≈ z "z=$z, got $zr, p=$p"  # sanity check
     end
     return z / abs2(p.ψ.z)
