@@ -27,10 +27,13 @@ rng = MersenneTwister(0)
     @testset "basics" begin
         tensors = [rand(1,5,2,2), rand(5,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
         A = TensorTrain(tensors)
-        @test nparams(A) == prod((1,5,2,2)) + prod((5,4,2,2)) + prod((4,10,2,2)) + prod((10,1,2,2))
+        np = prod((1,5,2,2)) + prod((5,4,2,2)) + prod((4,10,2,2)) + prod((10,1,2,2))
+        @test nparams(A) == np
         B = TensorTrain(copy(tensors))
         @test A == B
         @test A ≈ B
+        C = TensorTrain(complex.(tensors))
+        @test nparams(C) == 2 * np
     end
 
     @testset "Bond dimensions" begin
@@ -176,12 +179,12 @@ rng = MersenneTwister(0)
         B = TensorTrain(tensors)
         central_idx = 2
         orthogonalize_center!(B, central_idx; svd_trunc = TruncBond(3))
-        # @test all(is_left_canonical, B[begin:begin+central_idx-2])
-        # @test all(is_right_canonical, B[begin+central_idx:end])
         @test is_canonical(B, central_idx)
         z = normalization(B)
         orthogonalize_center!(B, central_idx; svd_trunc = TruncThresh(0))
         @test float(normalization(B)) ≈ float(z)
+        orthogonalize_two_site_center!(B, central_idx; svd_trunc = TruncThresh(0))
+        @test is_two_site_canonical(B)
     end
 
     @testset "Compression" begin
