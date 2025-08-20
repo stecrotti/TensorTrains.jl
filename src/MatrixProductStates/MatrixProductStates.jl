@@ -14,7 +14,6 @@ import Optim
 
 export MPS
 export rand_mps
-export is_left_canonical, is_right_canonical, is_canonical
 export grad_normalization_canonical, grad_normalization_two_site_canonical,
     loglikelihood, grad_loglikelihood, grad_loglikelihood_two_site,
     two_site_dmrg_sweep!, two_site_dmrg!

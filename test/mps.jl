@@ -17,6 +17,13 @@ using LinearAlgebra: I
     q = exact_prob(p)
     z = float(normalization(p))
 
+    @testset "Equality" begin
+        @test MPS(ψ) == p
+        t_cp = copy(tensors)
+        t_cp[1] .+= 1e-17 * rand()
+        @test MPS(t_cp) ≈ p
+    end
+
     @testset "Checks against exact computations" begin
         @test exact_normalization(p) ≈ z
         @test exact_marginals(p) ≈ marginals(p)
@@ -164,19 +171,6 @@ end
         end
     end
 
-    # @testset "Gradient of Z - 2 site" begin
-    #     for l in 1:length(p)-1  
-    #         orthogonalize_two_site_center!(p, l)
-    #         @assert is_two_site_canonical(p, l)
-    #         dzdA, z = grad_normalization_two_site_canonical(p, l)
-    #         @test z ≈ float(normalization(p))
-    #         ε = 1e-8 * one(eltype(p[l]))
-    #         dzdA_numeric = compute_two_site_dzdA_numeric(p, l; ε)
-    #         d = abs.(dzdA - dzdA_numeric)
-    #         @test all(d .< 10ε)
-    #     end
-    # end
-
     @testset "Gradient of log of unnormalized prob" begin
         X = sample(p)[1]
 
@@ -277,5 +271,14 @@ end
                 @test all(prodA_right[n][k+1:end] ≈ prodA_right_new[n][k+1:end] for n in eachindex(X))
             end
         end
+    end
+
+    @testset "DMRG" begin
+        X = [sample(p)[1] for _ in 1:10^2]
+        q = rand_mps(ComplexF64, 2, length(p), 2,2)
+        ll = loglikelihood(q, X)
+        two_site_dmrg!(q, X, 1; 
+            η=1e-4, ndesc=10, svd_trunc=TruncBond(5))
+        @test loglikelihood(q, X) > ll
     end
 end
