@@ -21,6 +21,10 @@ struct MPS{T<:AbstractTensorTrain}
     ψ :: T
 end
 
+function MPS(tensors::Vector{<:AbstractArray}; kw...) 
+    return MPS(TensorTrain(tensors; kw...))
+end
+
 @forward MPS.ψ TensorTrains.bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
     Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex,
     TensorTrains.nparams
@@ -45,11 +49,6 @@ end
 rand_mps(bondsizes::AbstractVector{<:Integer}, q...) = rand_mps(Float64, bondsizes, q...)
 rand_mps(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = rand_mps(T, [1; fill(d, L-1); 1], q...)
 rand_mps(d::Integer, L::Integer, q...) = rand_mps(Float64, d, L, q...)
-
-
-TensorTrains.is_left_canonical(A::MPS; kw...) = is_left_canonical(A.ψ; kw...)
-TensorTrains.is_right_canonical(A::MPS; kw...) = is_right_canonical(A.ψ; kw...)
-TensorTrains.is_canonical(A::MPS; kw...) = is_canonical(A.ψ; kw...)
 
 """
     evaluate(p::PMS, X...)
