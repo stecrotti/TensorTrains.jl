@@ -12,6 +12,7 @@ using TensorCast: @cast, TensorCast
 using TensorKit: TensorMap, ⊗, ℝ, id, storagetype
 using Tullio: @tullio
 using OffsetArrays
+import Optim
 
 export 
     getindex, iterate, firstindex, lastindex, setindex!, eachindex, length, show,
@@ -26,13 +27,16 @@ export
     sample!, sample,
     AbstractPeriodicTensorTrain, PeriodicTensorTrain, flat_periodic_tt, rand_periodic_tt,
     is_left_canonical, is_right_canonical, is_canonical, is_two_site_canonical,
-    grad_evaluate, grad_evaluate_two_site,
+    grad_evaluate, grad_evaluate_two_site, grad_squareloss_two_site,
 
     # Uniform Tensor Trains
     AbstractUniformTensorTrain, UniformTensorTrain, InfiniteUniformTensorTrain,
     symmetrized_uniform_tensor_train, periodic_tensor_train,
     flat_infinite_uniform_tt, rand_infinite_uniform_tt,
-    TruncVUMPS
+    TruncVUMPS,
+
+    # DMRG
+    two_site_dmrg!
 
 
 include("utils.jl")
@@ -40,6 +44,7 @@ include("svd_trunc.jl")
 include("abstract_tensor_train.jl")
 include("tensor_train.jl")
 include("periodic_tensor_train.jl")
+include("dmrg.jl")
 
 # Uniform Tensor Trains
 include("UniformTensorTrains/uniform_tensor_train.jl")
