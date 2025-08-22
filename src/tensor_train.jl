@@ -278,3 +278,30 @@ function grad_evaluate_two_site(A::TensorTrain, k::Integer, X;
     gr = (Ax_right * Ax_left)' / z
     return gr, val
 end
+
+"""
+    grad_squareloss_two_site(ψ::TensorTrain, k::Integer, X, Y) -> grad_sl, sl
+
+Compute the gradient of the square loss from fitting data `(X,Y)` with the tensor train `ψ` with respect to the merged tensors Aᵏ and Aᵏ⁺¹.
+Return also the loss, which is a byproduct of the computation. 
+"""
+function grad_squareloss_two_site(ψ::TensorTrain, k::Integer, X, Y;
+    prodA_left = [precompute_left_environments(ψ, x) for x in X],
+    prodA_right = [precompute_right_environments(ψ, x) for x in X],
+    Aᵏᵏ⁺¹ =_merge_tensors(ψ[k], ψ[k+1]))
+
+    T = length(X)
+    @assert length(Y) == T
+    gA = zero(Aᵏᵏ⁺¹)
+    sl = 0
+
+    # TODO: this operation is in principle parallelizable
+    for (n,(x,y)) in enumerate(zip(X,Y))
+        gr, val = grad_evaluate_two_site(ψ, k, x; 
+            Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2], Aᵏᵏ⁺¹
+            )
+        gA[:,:,x[k]...,x[k+1]...] .+= 1/T * gr * (val - y)
+        sl += 1/T * abs2(val - y)
+    end
+    return gA, sl
+end
