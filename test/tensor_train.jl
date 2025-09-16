@@ -168,7 +168,7 @@ rng = MersenneTwister(0)
     end
 
     @testset "Orthogonalization" begin
-        tensors = [rand(rng, 1,3,2,2), rand(rng, 3,4,2,2), rand(rng, 4,10,2,2), 
+        tensors = [rand(rng, 1,3,2,2), rand(rng, 3,4,2,2), rand(rng, 4,10,2,2),
             rand(rng, 10,4,2,2), rand(4,1,2,2)]
         B = TensorTrain(tensors)
         orthogonalize_right!(B; svd_trunc = TruncThresh(1e-3))
@@ -188,7 +188,7 @@ rng = MersenneTwister(0)
     end
 
     @testset "Compression" begin
-        tensors = [rand(rng, 1,3,2,2), rand(rng, 3,4,2,2), rand(rng, 4,10,2,2), 
+        tensors = [rand(rng, 1,3,2,2), rand(rng, 3,4,2,2), rand(rng, 4,10,2,2),
             rand(rng, 10,1,2,2)]
         A = TensorTrain(tensors)
         x, = sample(A)
@@ -363,7 +363,7 @@ rng = MersenneTwister(0)
 
     @testset "Derivatives" begin
         L = 3; N = 2; q = 2; qs = fill(q, N)
-        A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
+        A = rand_tt( [1; rand(1:3, L-1); 1], qs...)
         A.z = 2
         X, _ = sample(A)
 
@@ -371,7 +371,7 @@ rng = MersenneTwister(0)
             Al = A[l]
             Xl = X[l]
             maxi, maxj, _ = size(Al)
-            
+
             ε = 1e-8 * one(eltype(Al))
             gA_numeric = map(Iterators.product(1:maxi, 1:maxj)) do (i,j)
                 function f(a)
@@ -386,5 +386,20 @@ rng = MersenneTwister(0)
             @test all(abs.(gA - gA_numeric) .< 10ε)
             @test val ≈ evaluate(A, X)
         end
+    end
+
+    @testset "DMRG" begin
+        L = 3; N = 2; q = 2; qs = fill(q, N)
+        p = rand_tt([1; rand(1:3, L-1); 1], qs...)
+        nsamples = 10^2
+        X = [sample(p)[1] for _ in 1:nsamples]
+        Y = randn(nsamples)
+        q = rand_tt(2, length(p), 2,2)
+        preds = [evaluate(q, x) for x in X]
+        lossval = mean(abs2, preds - Y)
+        two_site_dmrg!(q, X, Y, 1;
+            η=1e-4, ndesc=10, svd_trunc=TruncBond(5))
+        preds = [evaluate(q, x) for x in X]
+        @test mean(abs2, preds - Y) < lossval
     end
 end
