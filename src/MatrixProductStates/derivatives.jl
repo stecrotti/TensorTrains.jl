@@ -4,7 +4,7 @@
 function grad_normalization_canonical(p::MPS, k::Integer)
     @assert k <= length(p)
     @assert is_canonical(p, k)
-    
+
     Aᵏ = p[k]
     Aᵏconj = conj(Aᵏ)
     Aᵏ_ = _reshape1(Aᵏ)
@@ -22,7 +22,7 @@ function grad_loglikelihood(p::MPS, k::Integer, X)
     ll = -log(Z)
     T = length(X)
     gA = - Zprime ./ Z
-    for x in X 
+    for x in X
         gr, val = grad_evaluate(p.ψ, k, x)
         gA[:,:,x[k]...] .+= 2/T * gr / val
         ll += 1/T * log(abs2(val))
@@ -43,7 +43,7 @@ function grad_normalization_two_site_canonical(p::MPS, k::Integer;
         Aᵏᵏ⁺¹ = _merge_tensors(p[k], p[k+1]))
     @assert k <= length(p)-1
     @debug @assert is_two_site_canonical(p, k)  # Ensure that the MPS is in canonical form wrt center sites k,k+1
-    
+
     # group the x's together
     Aᵏᵏ⁺¹_ = _reshape1(Aᵏᵏ⁺¹)
     # contract to compute (something proportional to) Z
@@ -53,7 +53,7 @@ function grad_normalization_two_site_canonical(p::MPS, k::Integer;
     @assert real(zz) ≈ zz
     z = real(zz) / z2
     gradz = conj(2 * Aᵏᵏ⁺¹ / z2)
-    
+
     return gradz, z
 end
 
@@ -61,7 +61,7 @@ end
     grad_loglikelihood_two_site(p::MPS, k::Integer, X) -> grad_ll, ll
 
 Compute the gradient of the loglikelihood of data `X` under the MPS distribution `p` with respect to the merged tensors Aᵏ and Aᵏ⁺¹.
-Return also the loglikelihood, which is a byproduct of the computation. 
+Return also the loglikelihood, which is a byproduct of the computation.
 """
 function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
     prodA_left = [precompute_left_environments(p.ψ, x) for x in X],
@@ -69,17 +69,42 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
     Aᵏᵏ⁺¹ =_merge_tensors(p[k], p[k+1]))
 
     Zprime, Z = grad_normalization_two_site_canonical(p, k; Aᵏᵏ⁺¹)
-    ll = -log(Z) 
+    ll = -log(Z)
     T = length(X)
     gA = - Zprime / Z
 
     # TODO: this operation is in principle parallelizable
     for (n,x) in enumerate(X)
-        gr, val = grad_evaluate_two_site(p.ψ, k, x; 
+        gr, val = grad_evaluate_two_site(p.ψ, k, x;
             Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2], Aᵏᵏ⁺¹
             )
         gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val
         ll += 1/T * log(abs2(val))
     end
     return gA, ll
+end
+
+"""
+    two_site_dmrg!(p::MPS, X, nsweeps; kw...)
+
+Fit a MPS to data `X` using a MPS ansatz and the 2site-DMRG-like gradient descent.
+The algorithm performs successive sweeps left->right, then right->left on the MPS.
+At each step, at site k:
+- The MPS is in canonical form (matrices 1:k-1 left-orthogonal, k+2:L right-orthogonal)
+- Two adjacent matrices Aᵏ,Aᵏ⁺¹ are merged by matrix multiplication (that's why "2site"_DMRG)
+- The gradient of the log-likelihood wrt the merged tensor is computed
+- Some steps of gradient descent are performed
+- The updated tensor is split back into two separate ones by SVD+truncations
+- Matrix k (resp. k+1) is kept left(resp. right)-orthogonal when the sweep is going right (resp. left)
+- Move to next site
+
+Reference: https://arxiv.org/abs/1709.01662.
+"""
+function two_site_dmrg!(p::MPS, X, nsweeps; kw...)
+    function func(p, k, data; _kw...)
+        grad, val = grad_loglikelihood_two_site(p, k, data...; _kw...)
+        # must return function to be minimized, so the *negative* log-likelihood
+        return -grad, -val
+    end
+    return _two_site_dmrg_generic!(func, p, (X,), nsweeps; kw...)
 end

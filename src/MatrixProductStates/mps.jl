@@ -21,13 +21,14 @@ struct MPS{T<:AbstractTensorTrain}
     ψ :: T
 end
 
-function MPS(tensors::Vector{<:AbstractArray}; kw...) 
+function MPS(tensors::Vector{<:AbstractArray}; kw...)
     return MPS(TensorTrain(tensors; kw...))
 end
 
 @forward MPS.ψ TensorTrains.bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
     Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex,
-    TensorTrains.nparams
+    TensorTrains.nparams,
+    TensorTrains.precompute_left_environments, TensorTrains.precompute_right_environments
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
 Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
@@ -157,7 +158,7 @@ function TensorTrains.marginals(p::MPS;
     (; ψ) = p
     d = size(ψ[begin], 1)
 
-    map(eachindex(ψ)) do t 
+    map(eachindex(ψ)) do t
         Aᵗ = _reshape1(ψ[t])
         R = t + 1 ≤ length(ψ) ? r[t+1] : id4(d)
         L = t - 1 ≥ 1 ? l[t-1] : id4(d)
@@ -166,7 +167,7 @@ function TensorTrains.marginals(p::MPS;
         @tullio pᵗ[x] := lA[a¹,aᵗ⁺¹,b¹,bᵗ,x] * rA[aᵗ⁺¹,a¹,bᵗ,b¹,x]
         pᵗ ./= sum(pᵗ)
         @debug @assert real(pᵗ) ≈ pᵗ
-        pᵗ = real(pᵗ)  
+        pᵗ = real(pᵗ)
         reshape(pᵗ, size(ψ[t])[3:end])
     end
 end
@@ -209,7 +210,7 @@ function TensorTrains.sample!(rng::AbstractRNG, x, p::MPS{<:AbstractTensorTrain{
     @assert all(length(xᵗ) == N-2 for xᵗ in x)
     (; ψ) = p
     d = size(ψ[end], 2)
-    
+
     Q = Matrix(I, d, d)     # stores product of the first `l` matrices, evaluated at the sampled `x¹,...,xᵗ`
     for l in eachindex(p)
         rˡ⁺¹ = l == L ? [a==aᴸ * b == bᴸ for a in 1:d, aᴸ in 1:d, b in 1:d, bᴸ in 1:d] : r[l+1]
@@ -262,5 +263,5 @@ Compute the loglikelihood of the data `X` under the MPS distribution `p`.
 """
 function loglikelihood(p::MPS, X)
     logz = log(normalization(p))
-    return mean(log(evaluate(p, x)) for x in X) - logz 
+    return mean(log(evaluate(p, x)) for x in X) - logz
 end

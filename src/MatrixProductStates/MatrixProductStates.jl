@@ -1,9 +1,10 @@
 module MatrixProductStates
 
 using TensorTrains
-import TensorTrains: _reshape1, accumulate_L, accumulate_R, sample_noalloc, 
+import TensorTrains: _reshape1, accumulate_L, accumulate_R, sample_noalloc,
     normalize!, _merge_tensors, _split_tensor, LeftOrRight, Left, Right,
-    precompute_left_environments, precompute_right_environments
+    precompute_left_environments, precompute_right_environments, update_environments!,
+    _two_site_dmrg_generic!, two_site_dmrg!
 using Lazy: @forward
 using Tullio: @tullio
 using Random: AbstractRNG, default_rng
@@ -16,10 +17,10 @@ export MPS
 export rand_mps
 export grad_normalization_canonical, grad_normalization_two_site_canonical,
     loglikelihood, grad_loglikelihood, grad_loglikelihood_two_site,
-    two_site_dmrg_sweep!, two_site_dmrg!
+    two_site_dmrg!
 
 include("mps.jl")
 include("derivatives.jl")
-include("dmrg.jl")
+# include("dmrg.jl")
 
 end # module

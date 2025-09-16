@@ -25,19 +25,17 @@ function CB()
     loss = zeros(0)
     dmax = zeros(0)
     loss_test = zeros(0)
-    function cb(sweep, k, it, ψ, ll)
-        if it == 1
-            preds = [evaluate(ψ, x) for x in X]
-            l = mean(abs2, preds - Y)
-            push!(loss, l)
-            preds_test = [evaluate(ψ, x) for x in Xtest]
-            l_test = mean(abs2, preds_test - Ytest)
-            push!(loss_test, l_test)
-            mbd = maximum(bond_dims(ψ))
-            push!(dmax, mbd)
-            println("# site k=$k")
-            println("Loss=$l\ndmax=$mbd")
-        end
+    function cb(sweep, k, ψ, loss_val)
+        preds = [evaluate(ψ, x) for x in X]
+        l = mean(abs2, preds - Y)
+        push!(loss, l)
+        preds_test = [evaluate(ψ, x) for x in Xtest]
+        l_test = mean(abs2, preds_test - Ytest)
+        push!(loss_test, l_test)
+        mbd = maximum(bond_dims(ψ))
+        push!(dmax, mbd)
+        println("Sweep $sweep, site k=$k")
+        println("Loss=$l\ndmax=$mbd\n")
     end
 end
 

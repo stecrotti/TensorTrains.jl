@@ -1,6 +1,6 @@
 using TensorTrains
 using TensorTrains: transfer_operator, leading_eig, _merge_tensors
-using Random, Suppressor, InvertedIndices, LinearAlgebra
+using Random, Suppressor, InvertedIndices, LinearAlgebra, Statistics
 using Test
 using Aqua
 
