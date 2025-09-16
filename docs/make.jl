@@ -6,6 +6,7 @@ makedocs(
     format = Documenter.HTML(),
     modules = [
         TensorTrains,
+        MatrixProductStates
         ],
     pages = [
         "Home" => "index.md",

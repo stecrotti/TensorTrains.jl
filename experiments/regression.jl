@@ -43,7 +43,7 @@ callback = CB()
 nsweeps = 6
 ndesc = 100
 η = 1e-3
-svd_trunc=TruncBond(8)
+svd_trunc=TruncBond(3)
 
 two_site_dmrg!(ψ, X, Y, nsweeps; η, ndesc, svd_trunc, callback,
     optimizer = Optim.Adam(alpha=η), weight_decay=1e-3)
