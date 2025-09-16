@@ -19,8 +19,8 @@ mutable struct TensorTrain{F<:Number, N, T, Z} <: AbstractTensorTrain{F,N}
     end
     TensorTrain{F,N,T,Z}(tensors; z::Z=Logarithmic(one(F))) where {F,N,T,Z} = TensorTrain{F,N}(tensors; z)
 end
-function TensorTrain(tensors::Vector{<:AbstractArray{F,N}}; z=Logarithmic(one(F))) where {F<:Number, N} 
-    return TensorTrain{F,N}(tensors; z)
+function TensorTrain(tensors::Vector{<:AbstractArray{F,N}}; z=one(F)) where {F<:Number, N}
+    return TensorTrain{F,N}(tensors; z = Logarithmic(z))
 end
 
 
@@ -84,7 +84,7 @@ function orthogonalize_right!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6),
 
     isempty(indices) && return C
     issorted(indices) || throw(ArgumentError("Indices must be sorted"))
-    all(id ∈ 2:lastindex(C) for id in extrema(indices)) || throw(ArgumentError("Indices not compatible with tensor train positions $(eachindex(C)): got $indices")) 
+    all(id ∈ 2:lastindex(C) for id in extrema(indices)) || throw(ArgumentError("Indices not compatible with tensor train positions $(eachindex(C)): got $indices"))
     Cᵀ = _reshape1(C[end])
     q = size(Cᵀ, 3)
     @cast M[m, (n, x)] := Cᵀ[m, n, x]
@@ -94,7 +94,7 @@ function orthogonalize_right!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6),
     for t in Iterators.reverse(indices)
         U, λ, V = svd_trunc(M)
         @cast Aᵗ[m, n, x] := V'[m, (n, x)] x ∈ 1:q
-        C[t] = _reshapeas(Aᵗ, C[t])     
+        C[t] = _reshapeas(Aᵗ, C[t])
         Cᵗ⁻¹ = _reshape1(C[t-1])
         @tullio D[m, n, x] := Cᵗ⁻¹[m, k, x] * U[k, n] * λ[n]
         m = maximum(abs, D)
@@ -123,7 +123,7 @@ function orthogonalize_left!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6),
 
     isempty(indices) && return C
     issorted(indices) || throw(ArgumentError("Indices must be sorted"))
-    all(id ∈ 1:lastindex(C)-1 for id in extrema(indices)) || throw(ArgumentError("Indices not compatible with tensor train positions $(eachindex(C)): got $indices")) 
+    all(id ∈ 1:lastindex(C)-1 for id in extrema(indices)) || throw(ArgumentError("Indices not compatible with tensor train positions $(eachindex(C)): got $indices"))
     C⁰ = _reshape1(C[begin])
     q = size(C⁰, 3)
     @cast M[(m, x), n] |= C⁰[m, n, x]
@@ -221,13 +221,13 @@ function is_two_site_canonical(A, k; atol=1e-10)
     @assert 1 <= k < length(A) "k must be between 1 and length(A)-1 for two-site update"
     f_l(x) = is_left_canonical(x; atol)
     f_r(x) = is_right_canonical(x; atol)
-    
+
     # Check left canonical: sites 1 to k-1
     left_canonical = k == 1 || all(f_l, A[1:k-1])
-    
-    # Check right canonical: sites k+2 to N  
+
+    # Check right canonical: sites k+2 to N
     right_canonical = k+1 == length(A) || all(f_r, A[k+2:end])
-    
+
     return left_canonical && right_canonical
 end
 
@@ -266,7 +266,7 @@ end
 
 # TODO: return directly the grad of the log so the two z's will cancel out
 # compute the gradient of evaluating the tensor train with respect to the entries of Aˡ merged with Aˡ⁺¹
-# TODO: 
+# TODO:
 function grad_evaluate_two_site(A::TensorTrain, k::Integer, X;
     Ax_left = precompute_left_environments(A, X)[k-1],
     Ax_right = precompute_right_environments(A, X)[k+2],
@@ -283,7 +283,7 @@ end
     grad_squareloss_two_site(ψ::TensorTrain, k::Integer, X, Y) -> grad_sl, sl
 
 Compute the gradient of the square loss from fitting data `(X,Y)` with the tensor train `ψ` with respect to the merged tensors Aᵏ and Aᵏ⁺¹.
-Return also the loss, which is a byproduct of the computation. 
+Return also the loss, which is a byproduct of the computation.
 """
 function grad_squareloss_two_site(ψ::TensorTrain, k::Integer, X, Y;
     prodA_left = [precompute_left_environments(ψ, x) for x in X],
@@ -300,7 +300,7 @@ function grad_squareloss_two_site(ψ::TensorTrain, k::Integer, X, Y;
 
     # TODO: this operation is in principle parallelizable
     for (n,(x,y)) in enumerate(zip(X,Y))
-        gr, val = grad_evaluate_two_site(ψ, k, x; 
+        gr, val = grad_evaluate_two_site(ψ, k, x;
             Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2], Aᵏᵏ⁺¹
             )
         gA[:,:,x[k]...,x[k+1]...] .+= 1/T * gr * (val - y)
