@@ -288,12 +288,15 @@ Return also the loss, which is a byproduct of the computation.
 function grad_squareloss_two_site(ψ::TensorTrain, k::Integer, X, Y;
     prodA_left = [precompute_left_environments(ψ, x) for x in X],
     prodA_right = [precompute_right_environments(ψ, x) for x in X],
-    Aᵏᵏ⁺¹ =_merge_tensors(ψ[k], ψ[k+1]))
+    Aᵏᵏ⁺¹ =_merge_tensors(ψ[k], ψ[k+1]),
+    weight_decay = 0.0)
 
     T = length(X)
     @assert length(Y) == T
-    gA = zero(Aᵏᵏ⁺¹)
-    sl = 0
+    @assert weight_decay >= 0
+    # gA = zero(Aᵏᵏ⁺¹)
+    gA = weight_decay * Aᵏᵏ⁺¹
+    sl = weight_decay * abs2(norm(Aᵏᵏ⁺¹))
 
     # TODO: this operation is in principle parallelizable
     for (n,(x,y)) in enumerate(zip(X,Y))
