@@ -15,6 +15,8 @@ flat_periodic_tt
 rand_periodic_tt
 bond_dims
 evaluate
+nparams
+is_in_domain
 marginals
 twovar_marginals
 lognormalization
@@ -29,15 +31,23 @@ sample!
 sample
 orthogonalize_right!
 orthogonalize_left!
+orthogonalize_two_site_center!
+is_two_site_canonical
 compress!
 ```
-### Uniform Tensor Trains
+
+## Uniform Tensor Trains
 ```@docs
 AbstractUniformTensorTrain
 UniformTensorTrain
 InfiniteUniformTensorTrain
 symmetrized_uniform_tensor_train
 periodic_tensor_train
+```
+
+### Infinite Tensor Trains
+```@docs
+TruncVUMPS
 ```
 
 ## Truncators
@@ -49,7 +59,26 @@ TruncBondMax
 TruncBondThresh
 ```
 
-### Infinite Tensor Trains
+## Gradients
 ```@docs
-TruncVUMPS
+grad_squareloss_two_site
+```
+
+## DMRG-like optimization
+```@docs
+two_site_dmrg!
+```
+
+## Matrix Product States
+Can be accessed, for now, via
+```julia
+using TensorTrains.MatrixProductStates
+```
+
+```@docs
+MPS
+rand_mps
+loglikelihood
+grad_loglikelihood_two_site
+grad_normalization_two_site_canonical
 ```
