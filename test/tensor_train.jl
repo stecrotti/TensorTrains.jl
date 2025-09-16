@@ -401,5 +401,12 @@ rng = MersenneTwister(0)
             η=1e-4, ndesc=10, svd_trunc=TruncBond(5))
         preds = [evaluate(q, x) for x in X]
         @test mean(abs2, preds - Y) < lossval
+
+        @testset "Single precision" begin
+            q32 = TensorTrain(convert.(Array{Float32}, q.tensors))
+            @test evaluate(q32, X[1]) ≈ evaluate(q, X[1])
+            two_site_dmrg!(q32, X, Y, 1;
+                η=1f-4, ndesc=10, svd_trunc=TruncBond(5))
+        end
     end
 end

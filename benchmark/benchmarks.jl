@@ -57,6 +57,13 @@ p = rand_mps(ComplexF64, d, L, qs...)
 nsweeps = 1
 
 SUITE["mps"]["dmrg"] = @benchmarkable begin
-    two_site_dmrg!(p_cp, X, nsweeps; 
+    two_site_dmrg!(p_cp, X, nsweeps;
         η=5e-2, ndesc=100, svd_trunc=TruncBond(d))
 end setup = (p_cp = deepcopy(p))
+
+p32 = MPS(convert.(Array{ComplexF32}, p.ψ.tensors))
+
+SUITE["mps"]["dmrg - single precision"] = @benchmarkable begin
+    two_site_dmrg!(p_cp, X, nsweeps;
+        η=5f-2, ndesc=100, svd_trunc=TruncBond(d))
+end setup = (p_cp = deepcopy(p32))

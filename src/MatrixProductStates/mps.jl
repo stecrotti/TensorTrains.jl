@@ -26,7 +26,7 @@ function MPS(tensors::Vector{<:AbstractArray}; kw...)
 end
 
 @forward MPS.ψ TensorTrains.bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
-    Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex,
+    Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex, Base.eltype,
     TensorTrains.nparams,
     TensorTrains.precompute_left_environments, TensorTrains.precompute_right_environments
 
