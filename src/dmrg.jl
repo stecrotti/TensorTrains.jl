@@ -2,17 +2,6 @@
     two_site_dmrg!(p::TensorTrain, X, Y, nsweeps; kw...)
 
 Perform regression on data `(X, Y)` using a tensor train ansatz and the 2site-DMRG-like gradient descent.
-The algorithm performs successive sweeps left->right, then right->left on the MPS.
-At each step, at site k:
-- The MPS is in canonical form (matrices 1:k-1 left-orthogonal, k+2:L right-orthogonal)
-- Two adjacent matrices Aᵏ,Aᵏ⁺¹ are merged by matrix multiplication (that's why "2site"_DMRG)
-- The gradient of the log-likelihood wrt the merged tensor is computed
-- Some steps of gradient descent are performed
-- The updated tensor is split back into two separate ones by SVD+truncations
-- Matrix k (resp. k+1) is kept left(resp. right)-orthogonal when the sweep is going right (resp. left)
-- Move to next site
-
-Adapted for supervised learning from https://arxiv.org/abs/1709.01662.
 """
 function two_site_dmrg!(p::TensorTrain, X, Y, nsweeps; kw...)
     func = (p, k, data; _kw...) -> grad_squareloss_two_site(p, k, data...; _kw...)
@@ -29,6 +18,20 @@ The specific function to be *minimized* is passed as the first argument.
 - `(X, Y)`: for supervised learning (regression)
 
 Note that this function is internal and should not be called directly. It is documented only for the purpose of understandability of the package's inner workings.
+
+## Details
+
+The algorithm performs successive sweeps left->right, then right->left on the MPS.
+At each step, at site k:
+- The TensorTrain/MPS is in canonical form (matrices 1:k-1 left-orthogonal, k+2:L right-orthogonal)
+- Two adjacent matrices Aᵏ,Aᵏ⁺¹ are merged by matrix multiplication (that's why "2site"-DMRG)
+- The gradient of the loss function wrt the merged tensor is computed
+- Some steps of gradient descent are performed (by default using Adam)
+- The updated tensor is split back into two separate ones by SVD+truncations
+- Matrix k (resp. k+1) is kept left(resp. right)-orthogonal when the sweep is going right (resp. left)
+- Move to next site
+
+Adapted from https://arxiv.org/abs/1709.01662.
 """
 function _two_site_dmrg_generic!(func, p, data::Tuple, nsweeps; kw...)
     X = data[1]
