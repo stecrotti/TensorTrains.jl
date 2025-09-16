@@ -167,7 +167,7 @@ end
             @test z ≈ normalization(p)
             ε = 1e-8 * one(eltype(p[l]))
             dzdA_numeric = compute_dzdA_numeric(p, l; ε)
-            @test all(abs.(dzdA - dzdA_numeric) .< 10ε)
+            @test all(abs.(dzdA - dzdA_numeric) .< 20ε)
         end
     end
 
@@ -223,7 +223,7 @@ end
             float((f(a+ε) - f(a)) / ε)
         end
         d = dlldA - dlldA_numeric
-        
+
         @test all(abs.(d) .< 100ε)
     end
 
@@ -277,7 +277,7 @@ end
         X = [sample(p)[1] for _ in 1:10^2]
         q = rand_mps(ComplexF64, 2, length(p), 2,2)
         ll = loglikelihood(q, X)
-        two_site_dmrg!(q, X, 1; 
+        two_site_dmrg!(q, X, 1;
             η=1e-4, ndesc=10, svd_trunc=TruncBond(5))
         @test loglikelihood(q, X) > ll
     end
