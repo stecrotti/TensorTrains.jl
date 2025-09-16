@@ -12,7 +12,7 @@ At each step, at site k:
 
 Adapted for supervised learning from https://arxiv.org/abs/1709.01662.
 """
-function two_site_dmrg!(ψ, X, Y, nsweeps; kw...)
+function two_site_dmrg!(ψ::TensorTrain, X, Y, nsweeps; kw...)
     for x in X
         is_in_domain(ψ, x...) ||
             throw(DomainError("The value x=$x in `X` exceed the domain of the Tensor Train"))
@@ -44,8 +44,9 @@ function two_site_dmrg_sweep!(
     svd_trunc = TruncBond(5),    
     η = 1e-3,   # learning rate for gradient descent
     ndesc = 100,    # number of gradient descent steps
+    weight_decay = 0.0,
     optimizer = Optim.Adam(; alpha=η),
-    callback = (sweep, k, it, p, ll) -> nothing,
+    callback = (sweep, k, it, p, loss_val) -> nothing,
     prodA_left = [precompute_left_environments(p.ψ, x) for x in X],
     prodA_right = [precompute_right_environments(p.ψ, x) for x in X])
 
@@ -57,14 +58,15 @@ function two_site_dmrg_sweep!(
         # make a function to be used by Optim.jl which computes value and gradient https://julianlsolvers.github.io/Optim.jl/stable/user/tipsandtricks/#Avoid-repeating-computations
         function make_fg(p, k, Aᵏᵏ⁺¹, X, Y)
             function fg!(F, G, A)
-                dlldA, ll = grad_squareloss_two_site(p, k, X, Y;
+                grad, val = grad_squareloss_two_site(p, k, X, Y;
+                    weight_decay,
                     prodA_left, prodA_right, Aᵏᵏ⁺¹ = reshape(A, size(Aᵏᵏ⁺¹))
                 )
                 if G !== nothing
-                    G .= reshape(dlldA, length(G))
+                    G .= reshape(grad, length(G))
                 end
                 if F !== nothing
-                    return ll
+                    return val
                 end
                 return nothing
             end
@@ -78,13 +80,13 @@ function two_site_dmrg_sweep!(
         )
 
         Aᵏᵏ⁺¹ .= reshape(res.minimizer, size(Aᵏᵏ⁺¹))
-        ll = - res.minimum
+        loss_val = res.minimum
 
         # Split the updated tensor into two by SVD + truncations
         p[k], p[k+1] = TensorTrains._split_tensor(Aᵏᵏ⁺¹; svd_trunc, lr)
 
         # Any post-update operations
-        callback(sweep, k, 1, p, ll)
+        callback(sweep, k, 1, p, loss_val)
 
         # Update environments for efficient computation of grad log-likelihood
         update_environments!(prodA_left, prodA_right, p, k, X, lr)

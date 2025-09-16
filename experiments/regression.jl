@@ -42,13 +42,13 @@ function CB()
 end
 
 callback = CB()
-nsweeps = 10
+nsweeps = 6
 ndesc = 100
 η = 1e-3
-svd_trunc=TruncBond(3)
+svd_trunc=TruncBond(8)
 
 two_site_dmrg!(ψ, X, Y, nsweeps; η, ndesc, svd_trunc, callback,
-    optimizer = Optim.Adam(alpha=η))
+    optimizer = Optim.Adam(alpha=η), weight_decay=1e-3)
 
 pl = plot(; xlabel="Iterations", title="Uniform Ising with N=$N, $T training data", titlefontsize=11)
 plot!(pl, callback.loss, label="Training loss")
