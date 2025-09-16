@@ -20,7 +20,7 @@ means_data = mean(X)
 nll_data = -mean(log, ps)
 println("Negative Log-Likelihood according to generating distribution = $nll_data\n")
 
-p = MPS(rand_tt(ComplexF64, 2, N, 2))
+p = MPS(rand_tt(ComplexF32, 2, N, 2))
 
 function CB()
     nlls = zeros(0)
@@ -42,7 +42,7 @@ end
 callback = CB()
 nsweeps = 2
 ndesc = 10
-η = 1e-3
+η = 1f-3
 svd_trunc=TruncBond(10)
 
 two_site_dmrg!(p, X, nsweeps; η, ndesc, svd_trunc, callback,
