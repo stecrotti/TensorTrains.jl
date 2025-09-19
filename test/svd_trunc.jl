@@ -23,12 +23,12 @@ end
     end
 end
 
-@testset "TruncVUMPS" begin
+@testset "TruncInfinite" begin
     p = flat_infinite_uniform_tt(10, 2, 4)
     q = deepcopy(p)
-    compress!(p; svd_trunc=TruncVUMPS(12))
+    compress!(p; svd_trunc=TruncInfinite(12))
     @test p == q
-    compress!(p; svd_trunc=TruncVUMPS(9))
+    compress!(p; svd_trunc=TruncInfinite(9))
     @test isapprox(real(only(marginals(p))), real(only(marginals(q))), atol=1e-5)
 end
 
