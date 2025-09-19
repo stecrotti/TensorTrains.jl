@@ -24,7 +24,7 @@ end
 end
 
 @testset "TruncInfinite" begin
-    p = flat_infinite_uniform_tt(10, 2, 4)
+    p = rand_infinite_uniform_tt(10, 2, 4)
     q = deepcopy(p)
     compress!(p; svd_trunc=TruncInfinite(12))
     @test p == q

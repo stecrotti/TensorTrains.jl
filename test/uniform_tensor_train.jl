@@ -131,12 +131,12 @@ end
     @test dot(r, r) ≈ 1
 end
 
-@testset "VUMPS truncations" begin
+@testset "Infinite truncations" begin
     rng = MersenneTwister(0)
     A = rand(rng, 10,10,3,4)
     p = InfiniteUniformTensorTrain(A)
     q = deepcopy(p)
-    svd_trunc = TruncVUMPS(8)
+    svd_trunc = TruncInfinite(8)
     @suppress @show svd_trunc
     compress!(p; svd_trunc)
     @test size(p.tensor)[1:2] == (8, 8)
