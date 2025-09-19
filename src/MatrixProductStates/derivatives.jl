@@ -89,7 +89,7 @@ end
 
 Fit a MPS to data `X` using a MPS ansatz and the 2site-DMRG-like gradient descent.
 """
-function two_site_dmrg!(p::MPS, X, nsweeps; kw...)
+function TensorTrains.two_site_dmrg!(p::MPS, X, nsweeps; kw...)
     function func(p, k, data; _kw...)
         grad, val = grad_loglikelihood_two_site(p, k, data...; _kw...)
         # must return function to be *minimized*, so the *negative* log-likelihood
