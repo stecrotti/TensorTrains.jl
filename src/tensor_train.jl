@@ -60,7 +60,7 @@ and
 """
 function rand_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
     A = flat_tt(T, bondsizes, q...)
-    foreach(a->(a .= rand.()), A)
+    foreach(a->(a .= rand.(T)), A)
     A
 end
 
