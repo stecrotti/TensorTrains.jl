@@ -105,6 +105,10 @@ function TensorTrains.accumulate_R(p::MPS{<:AbstractTensorTrain{F}}; normalize=t
     return R, real(z)
 end
 
+function TensorTrains.accumulate_M(p::MPS{<:AbstractTensorTrain{F}}; normalize=true) where {F}
+    error("To be implemented")
+end
+
 function trace(A::Array{T,4}) where T
     @tullio t = A[a,a,b,b]
 end
@@ -170,6 +174,40 @@ function TensorTrains.marginals(p::MPS;
         pᵗ = real(pᵗ)
         reshape(pᵗ, size(ψ[t])[3:end])
     end
+end
+
+"""
+    twovar_marginals(p::MPS; l, r, M, Δlmax)
+
+Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
+
+### Optional arguments
+- `l = accumulate_L(p)[1]`, `r = accumulate_R(p)[1]`, `M = accumulate_M(p)` pre-computed partial normalizations
+- `maxdist = length(A)`: compute marginals only at distance `maxdist`: ``|l-m|\\le maxdist``
+"""
+function TensorTrains.twovar_marginals(p::MPS;
+    l = accumulate_L(p)[1], r = accumulate_R(p)[1], M = accumulate_M(p),
+    maxdist = length(A)-1) where {F<:Real,N}
+    qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
+    b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...)
+        for _ in eachindex(A), _ in eachindex(A)]
+    d = first(bond_dims(A))
+    for t in 1:length(A)-1
+        lᵗ⁻¹ = t == 1 ? Matrix(I, d, d) : l[t-1]
+        Aᵗ = _reshape1(A[t])
+        for u in t+1:min(length(A),t+maxdist)
+            rᵘ⁺¹ = u == length(A) ? Matrix(I, d, d) : r[u+1]
+            Aᵘ = _reshape1(A[u])
+            Mᵗᵘ = M[t, u]
+            rl = rᵘ⁺¹ * lᵗ⁻¹
+            @tullio rlAt[aᵘ⁺¹, aᵗ⁺¹, xᵗ] := rl[aᵘ⁺¹,aᵗ] * Aᵗ[aᵗ, aᵗ⁺¹, xᵗ]
+            @tullio rlAtMtu[aᵘ⁺¹,xᵗ,aᵘ] := rlAt[aᵘ⁺¹, aᵗ⁺¹, xᵗ] * Mᵗᵘ[aᵗ⁺¹, aᵘ]
+            @tullio bᵗᵘ[xᵗ, xᵘ] := rlAtMtu[aᵘ⁺¹,xᵗ,aᵘ] * Aᵘ[aᵘ, aᵘ⁺¹, xᵘ]
+            bᵗᵘ ./= sum(bᵗᵘ)
+            b[t,u] = reshape(bᵗᵘ, qs)
+        end
+    end
+    b
 end
 
 function TensorTrains.orthogonalize_right!(p::MPS; kw...)
