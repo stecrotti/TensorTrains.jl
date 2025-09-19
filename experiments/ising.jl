@@ -20,7 +20,7 @@ means_data = mean(X)
 nll_data = -mean(log, ps)
 println("Negative Log-Likelihood according to generating distribution = $nll_data\n")
 
-p = MPS(rand_tt(ComplexF32, 2, N, 2))
+p = rand_mps(Float64, 2, N, 2)
 
 function CB()
     nlls = zeros(0)
@@ -30,7 +30,7 @@ function CB()
         means_p = [dot(eachindex(m), m) for m in marginals(p)]
         d_m = mean(abs, means_data - means_p)
         mbd = maximum(bond_dims(p.ψ))
-        println("# site k=$k")
+        println("# Sweep $sweep, site k=$k")
         println("Negative LogLikelihood=$nll\ndmax=$mbd")
         println("Mean diff empirical vs fitted means = $d_m\n")
         push!(nlls, nll)
@@ -42,7 +42,7 @@ end
 callback = CB()
 nsweeps = 2
 ndesc = 10
-η = 1f-3
+η = 1e-3
 svd_trunc=TruncBond(10)
 
 two_site_dmrg!(p, X, nsweeps; η, ndesc, svd_trunc, callback,
@@ -59,3 +59,5 @@ vline!(pl2, (N-1):(N-1):length(callback.nlls), label="Ends of sweeps", ls=:dash,
 pl3 = plot(callback.dmax, label="Max bond dim", xlabel="Iterations", legend=:bottomright)
 vline!(pl3, (N-1):(N-1):length(callback.nlls), label="Ends of sweeps", ls=:dash, c=:gray)
 plot(pl, pl2, pl3, layout=(3,1), size=(500,500))
+
+savefig(pl, "experiments/ising_train.pdf")

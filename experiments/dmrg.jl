@@ -10,8 +10,7 @@ nll = -loglikelihood(q, X)
 println("Negative Log-Likelihood according to generating distribution q=$nll\n")
 mq = marginals(q)
 
-# Use complex entries for (supposed) better expressivity
-p = MPS(rand_tt(ComplexF64, 2, length(q), 2,2))
+p = rand_mps(Float64, 2, length(q), 2,2)
 
 function CB()
     function cb(sweep, k, p, nll)
