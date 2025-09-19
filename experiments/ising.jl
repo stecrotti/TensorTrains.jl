@@ -43,7 +43,7 @@ callback = CB()
 nsweeps = 2
 ndesc = 10
 η = 1e-3
-svd_trunc=TruncBond(10)
+svd_trunc=TruncBond(4)
 
 two_site_dmrg!(p, X, nsweeps; η, ndesc, svd_trunc, callback,
     optimizer = Optim.Adam(alpha=η))
@@ -58,6 +58,6 @@ pl2 = plot(callback.ds; yscale=:log10, label="Mean difference in empirical vs fi
 vline!(pl2, (N-1):(N-1):length(callback.nlls), label="Ends of sweeps", ls=:dash, c=:gray, legend=:topright)
 pl3 = plot(callback.dmax, label="Max bond dim", xlabel="Iterations", legend=:bottomright)
 vline!(pl3, (N-1):(N-1):length(callback.nlls), label="Ends of sweeps", ls=:dash, c=:gray)
-plot(pl, pl2, pl3, layout=(3,1), size=(500,500))
+pl_ising = plot(pl, pl2, pl3, layout=(3,1), size=(500,500))
 
-savefig(pl, "experiments/ising_train.pdf")
+savefig(pl_ising, "experiments/ising_train.pdf")
