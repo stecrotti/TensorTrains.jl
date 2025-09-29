@@ -66,7 +66,8 @@ Return also the loglikelihood, which is a byproduct of the computation.
 function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
     prodA_left = [precompute_left_environments(p.ψ, x) for x in X],
     prodA_right = [precompute_right_environments(p.ψ, x) for x in X],
-    Aᵏᵏ⁺¹ =_merge_tensors(p[k], p[k+1]))
+    Aᵏᵏ⁺¹ =_merge_tensors(p[k], p[k+1]),
+    weights = ones(length(X)))
 
     Zprime, Z = grad_normalization_two_site_canonical(p, k; Aᵏᵏ⁺¹)
     ll = -log(Z)
@@ -78,8 +79,8 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
         gr, val = grad_evaluate_two_site(p.ψ, k, x;
             Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2], Aᵏᵏ⁺¹
             )
-        gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val
-        ll += 1/T * log(abs2(val))
+        gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val * weights[n]
+        ll += 1/T * log(abs2(val)) * weights[n]
     end
     return gA, ll
 end

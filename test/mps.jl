@@ -277,8 +277,9 @@ end
         X = [sample(p)[1] for _ in 1:10^2]
         q = rand_mps(ComplexF64, 2, length(p), 2,2)
         ll = loglikelihood(q, X)
+        weights = ones(length(X))
         two_site_dmrg!(q, X, 1;
-            η=1e-4, ndesc=10, svd_trunc=TruncBond(5))
+            η=1e-4, ndesc=10, svd_trunc=TruncBond(5), weights)
         @test loglikelihood(q, X) > ll
     end
 end
