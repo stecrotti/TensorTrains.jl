@@ -316,13 +316,14 @@ end
 # TODO: maybe since (p.ψ.z) is both at the numerator and denominator, ignore it to avoid cancellations with the subtraction?
 
 """
-    StatsBase.loglikelihood(p::MPS, X)
+    StatsBase.loglikelihood(p::MPS, X; weights)
 
 Compute the loglikelihood of the data `X` under the MPS distribution `p`.
+Optionally re-weight the log-probability of each datapoint.
 """
-function StatsBase.loglikelihood(p::MPS, X)
-    logz = log(normalization(p))
-    return mean(log(evaluate(p, x)) for x in X) - logz
+function StatsBase.loglikelihood(p::MPS, X; weights=ones(length(X)/length(X)))
+    logz = log(normalization(p)) * mean(weights)
+    return mean(log(evaluate(p, x)) * w for (x,w) in zip(X,weights)) - logz
 end
 
 """

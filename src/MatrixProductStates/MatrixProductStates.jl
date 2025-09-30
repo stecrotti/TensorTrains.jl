@@ -16,7 +16,7 @@ import Optim
 
 export MPS
 export rand_mps
-export evaluate
+export nparams, evaluate
 export grad_normalization_canonical, grad_normalization_two_site_canonical,
     loglikelihood, grad_loglikelihood, grad_loglikelihood_two_site,
     two_site_dmrg!, empirical_distribution_mps
