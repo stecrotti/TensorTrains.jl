@@ -326,12 +326,19 @@ function StatsBase.loglikelihood(p::MPS, X)
 end
 
 """
-    empirical_distribution_mps(X; qs)
+    empirical_distribution_mps(X; qs, weights)
 
 Return a MPS encoding the empirical probability distribution of dataset ``X=\\{x^{(1)}, \\ldots, x^{(M)}\\}``.
 The resulting MPS evaluates to ``p(x)=\\frac{1}{M}\\sum_{\\mu \\in 1:M}\\delta(x, x^{(\\mu)})``.
+
+## Optional arguments
+- `qs`: the number of states for each variable. Inferred from the data if not provided
+- `weights`: allows to re-weight the probability of each sample. It should sum to one (not checked)
 """
-function empirical_distribution_mps(X; qs=maximum(maximum.(X)))
+function empirical_distribution_mps(X; qs=maximum(maximum.(X)), 
+    weights=ones(length(X))/length(X))
+
+    @assert all(>=(0), weights)
     M = length(X)
     L = length(X[1])
     @assert all(x -> length(x)==L, X)
@@ -340,7 +347,7 @@ function empirical_distribution_mps(X; qs=maximum(maximum.(X)))
         if i == 1
             A = zeros(1, M, qs...)
             for n in 1:M
-                A[1,n,X[n][i]...] = 1
+                A[1,n,X[n][i]...] =sqrt(weights[n])
             end
             A
         elseif i == L
@@ -358,5 +365,5 @@ function empirical_distribution_mps(X; qs=maximum(maximum.(X)))
         end
     end
     
-    return MPS(tensors; z = sqrt(M))
+    return MPS(tensors)
 end
