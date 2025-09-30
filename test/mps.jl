@@ -308,3 +308,12 @@ end
         @test loglikelihood(q, X) > ll
     end
 end
+
+@testset "Empirical distribution" begin
+    X = [[[rand(1:q) for q in (2, 3)] for _ in 1:50] for _ in 1:100]
+    unique!(X)
+    p = empirical_distribution_mps(X)
+    for x in X
+        @test evaluate(p, x) ≈ 1/length(X)
+    end
+end

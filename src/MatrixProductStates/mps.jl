@@ -324,3 +324,39 @@ function StatsBase.loglikelihood(p::MPS, X)
     logz = log(normalization(p))
     return mean(log(evaluate(p, x)) for x in X) - logz
 end
+
+"""
+    empirical_distribution_mps(X; qs)
+
+Return a MPS encoding the empirical probability distribution of dataset ``X=\\{x^{(1)}, \\ldots, x^{(M)}\\}``.
+The resulting MPS evaluates to ``p(x)=\\frac{1}{M}\\sum_{\\mu \\in 1:M}\\delta(x, x^{(\\mu)})``.
+"""
+function empirical_distribution_mps(X; qs=maximum(maximum.(X)))
+    M = length(X)
+    L = length(X[1])
+    @assert all(x -> length(x)==L, X)
+
+    tensors = map(1:L) do i
+        if i == 1
+            A = zeros(1, M, qs...)
+            for n in 1:M
+                A[1,n,X[n][i]...] = 1
+            end
+            A
+        elseif i == L
+            A = zeros(M, 1, qs...)
+            for n in 1:M
+                A[n,1,X[n][i]...] = 1
+            end
+            A
+        else
+            A = zeros(M, M, qs...)
+            for n in 1:M
+                A[n,n,X[n][i]...] = 1
+            end
+            A
+        end
+    end
+    
+    return MPS(tensors; z = sqrt(M))
+end
