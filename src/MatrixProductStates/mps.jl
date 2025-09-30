@@ -27,7 +27,7 @@ end
 
 @forward MPS.ψ TensorTrains.bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
     Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex, Base.eltype,
-    TensorTrains.nparams,
+    TensorTrains.nparams, TensorTrains.normalize_eachmatrix!,
     TensorTrains.precompute_left_environments, TensorTrains.precompute_right_environments
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
@@ -321,7 +321,7 @@ end
 Compute the loglikelihood of the data `X` under the MPS distribution `p`.
 Optionally re-weight the log-probability of each datapoint.
 """
-function StatsBase.loglikelihood(p::MPS, X; weights=ones(length(X)/length(X)))
+function loglikelihood(p::MPS, X; weights=ones(length(X))/length(X))
     logz = log(normalization(p)) * mean(weights)
     return mean(log(evaluate(p, x)) * w for (x,w) in zip(X,weights)) - logz
 end
