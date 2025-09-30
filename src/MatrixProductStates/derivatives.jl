@@ -70,9 +70,9 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
     weights = ones(length(X)))
 
     Zprime, Z = grad_normalization_two_site_canonical(p, k; Aᵏᵏ⁺¹)
-    ll = -log(Z)
+    ll = -log(Z) * mean(weights)
     T = length(X)
-    gA = - Zprime / Z
+    gA = - Zprime / Z * mean(weights)
 
     # TODO: this operation is in principle parallelizable
     for (n,x) in enumerate(X)
@@ -86,13 +86,13 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
 end
 
 """
-    two_site_dmrg!(p::MPS, X, nsweeps; kw...)
+    two_site_dmrg!(p::MPS, X, nsweeps; weights, kw...)
 
 Fit a MPS to data `X` using a MPS ansatz and the 2site-DMRG-like gradient descent.
 """
-function TensorTrains.two_site_dmrg!(p::MPS, X, nsweeps; kw...)
+function TensorTrains.two_site_dmrg!(p::MPS, X, nsweeps; weights = ones(length(X)), kw...)
     function func(p, k, data; _kw...)
-        grad, val = grad_loglikelihood_two_site(p, k, data...; _kw...)
+        grad, val = grad_loglikelihood_two_site(p, k, data...; weights, _kw...)
         # must return function to be *minimized*, so the *negative* log-likelihood
         return -grad, -val
     end
