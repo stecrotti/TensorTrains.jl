@@ -76,9 +76,9 @@ using TensorTrains.MatrixProductStates
 ```
 
 ```@docs
-MatrixProductStates.MPS
-MatrixProductStates.rand_mps
-MatrixProductStates.loglikelihood
-MatrixProductStates.grad_loglikelihood_two_site
-MatrixProductStates.grad_normalization_two_site_canonical
+TensorTrains.MatrixProductStates.MPS
+TensorTrains.MatrixProductStates.rand_mps
+TensorTrains.MatrixProductStates.loglikelihood
+TensorTrains.MatrixProductStates.grad_loglikelihood_two_site
+TensorTrains.MatrixProductStates.grad_normalization_two_site_canonical
 ```
