@@ -64,8 +64,12 @@ function rand_tt(rng::AbstractRNG, ::Type{T}, bondsizes::AbstractVector{<:Intege
     return A
 end
 
+function rand_tt(rng::AbstractRNG, ::Type{T}, d::Integer, L::Integer, q...) where T <: Number
+    return rand_tt(rng, T, [1; fill(d, L-1); 1], q...)
+end
+
 rand_tt(rng::AbstractRNG, bondsizes::AbstractVector{<:Integer}, q...) = rand_tt(rng, Float64, bondsizes, q...)
-rand_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where {T <: Number} = rand_tt(default_rng(), Type{T}, bondsizes, q...)
+rand_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where {T <: Number} = rand_tt(default_rng(), T, bondsizes, q...)
 rand_tt(bondsizes::AbstractVector{<:Integer}, q...) = rand_tt(default_rng(), Float64, bondsizes, q...)
 
 rand_tt(rng::AbstractRNG, d::Integer, L::Integer, q...) = rand_tt(rng, Float64, [1; fill(d, L-1); 1], q...)

@@ -356,8 +356,8 @@ rng = MersenneTwister(0)
 
     @testset "Norm" begin
         L = 3; N = 2; q = 2; qs = fill(q, N)
-        A = rand_tt( [1; rand(1:3, L-1); 1], qs... )
-        B = rand_tt( [1; rand(1:3, L-1); 1], qs... )
+        A = rand_tt(Float64, [1; rand(1:3, L-1); 1], qs... )
+        B = rand_tt( 3, L, qs... )
         @test norm(A-B)^2 ≈ exact_norm(A-B)^2 ≈ norm2m(A,B)
     end
 
@@ -390,7 +390,7 @@ rng = MersenneTwister(0)
 
     @testset "DMRG" begin
         L = 3; N = 2; q = 2; qs = fill(q, N)
-        p = rand_tt([1; rand(1:3, L-1); 1], qs...)
+        p = rand_tt(rng, [1; rand(1:3, L-1); 1], qs...)
         nsamples = 10^2
         X = [sample(p)[1] for _ in 1:nsamples]
         Y = randn(nsamples)
