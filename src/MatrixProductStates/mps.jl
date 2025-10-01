@@ -59,12 +59,13 @@ If `ψ` is the tensor train wrapped by `p`, then the output is ``\\lvert\\psi (X
 """
 TensorTrains.evaluate(p::MPS, X...) = abs2(evaluate(p.ψ, X...))
 
-id4(d::Integer) = [a==a¹ && b==b¹ for a in 1:d, a¹ in 1:d, b in 1:d, b¹ in 1:d]
+id4(T::Type, d::Integer) = [convert(T, a==a¹ && b==b¹) for a in 1:d, a¹ in 1:d, b in 1:d, b¹ in 1:d]
+id4(d::Integer) = id4(Float64, d)
 
 function TensorTrains.accumulate_L(p::MPS{<:AbstractTensorTrain{F}}; normalize=true) where {F}
     (; ψ) = p
     d = size(ψ[begin], 1)
-    Ll = id4(d)
+    Ll = id4(F, d)
     z = Logarithmic(one(F))
     L = map(_reshape1(Al) for Al in ψ) do Aˡ
         nl = maximum(abs, Ll)
@@ -86,7 +87,7 @@ end
 function TensorTrains.accumulate_R(p::MPS{<:AbstractTensorTrain{F}}; normalize=true) where {F}
     (; ψ) = p
     d = size(ψ[end], 2)
-    Rl = id4(d)
+    Rl = id4(F, d)
     z = Logarithmic(one(F))
     R = map(_reshape1(Al) for Al in Iterators.reverse(ψ)) do Aˡ
         nl = maximum(abs, Rl)
@@ -105,8 +106,28 @@ function TensorTrains.accumulate_R(p::MPS{<:AbstractTensorTrain{F}}; normalize=t
     return R, real(z)
 end
 
-function TensorTrains.accumulate_M(p::MPS{<:AbstractTensorTrain{F}}; normalize=true) where {F}
-    error("To be implemented")
+function TensorTrains.accumulate_M(p::MPS)
+    L = length(p)
+    F = eltype(p)
+    M = fill(zeros(F, 0, 0, 0, 0), L, L)
+
+    for u in 2:L
+        Au = _reshape1(p[u-1])
+        for t in 1:u-2
+            Mu1 = M[t, u-1]
+            @tullio Mu_[a¹,b¹,aˡ⁺¹,bˡ,xˡ] := Mu1[a¹,aˡ,b¹,bˡ] * conj(Au[aˡ,aˡ⁺¹,xˡ])
+            @tullio Mu[a¹,aˡ⁺¹,b¹,bˡ⁺¹] := Mu_[a¹,b¹,aˡ⁺¹,bˡ,xˡ] * Au[bˡ,bˡ⁺¹,xˡ]
+            # @tullio Mu[a¹,aˡ⁺¹,b¹,bˡ⁺¹] := Mu1[a¹,aˡ,b¹,bˡ] * conj(Au[aˡ,aˡ⁺¹,xˡ]) * Au[bˡ,bˡ⁺¹,xˡ]
+            # restore hermiticity after possible numerical errors
+            @debug @assert Mu ≈ conj(permutedims(Mu, (3,4,1,2)))
+            Mu .= (conj(permutedims(Mu, (3,4,1,2))) + Mu) / 2
+            M[t, u] =  Mu
+        end
+        # initial condition
+        M[u-1, u] = id4(F, size(p[u],1))
+    end
+
+    return M
 end
 
 function trace(A::Array{T,4}) where T
@@ -177,32 +198,37 @@ function TensorTrains.marginals(p::MPS;
 end
 
 """
-    twovar_marginals(p::MPS; l, r, M, Δlmax)
+    twovar_marginals(p::MPS; l, r, M, maxdist)
 
 Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
 
 ### Optional arguments
 - `l = accumulate_L(p)[1]`, `r = accumulate_R(p)[1]`, `M = accumulate_M(p)` pre-computed partial normalizations
-- `maxdist = length(A)`: compute marginals only at distance `maxdist`: ``|l-m|\\le maxdist``
+- `maxdist = length(p)`: compute marginals only at distance `maxdist`: ``|l-m|\\le maxdist``
 """
-function TensorTrains.twovar_marginals(p::MPS;
+function TensorTrains.twovar_marginals(p::MPS{<:TensorTrain{F,N}};
     l = accumulate_L(p)[1], r = accumulate_R(p)[1], M = accumulate_M(p),
-    maxdist = length(A)-1) where {F<:Real,N}
-    qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
-    b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...)
-        for _ in eachindex(A), _ in eachindex(A)]
-    d = first(bond_dims(A))
-    for t in 1:length(A)-1
-        lᵗ⁻¹ = t == 1 ? Matrix(I, d, d) : l[t-1]
-        Aᵗ = _reshape1(A[t])
-        for u in t+1:min(length(A),t+maxdist)
-            rᵘ⁺¹ = u == length(A) ? Matrix(I, d, d) : r[u+1]
-            Aᵘ = _reshape1(A[u])
+    maxdist = length(p)-1) where {F<:Number,N}
+    qs = tuple(reduce(vcat, [x,x] for x in size(p[begin])[3:end])...)
+    b = Array{real(F),2*(N-2)}[zeros(real(F), zeros(Int, 2*(N-2))...)
+        for _ in eachindex(p), _ in eachindex(p)]
+    d = first(bond_dims(p))
+    for t in 1:length(p)-1
+        lᵗ⁻¹ = t == 1 ? id4(F, d) : l[t-1]
+        Aᵗ = _reshape1(p[t])
+        for u in t+1:min(length(p),t+maxdist)
+            rᵘ⁺¹ = u == length(p) ? id4(F, d) : r[u+1]
+            Aᵘ = _reshape1(p[u])
             Mᵗᵘ = M[t, u]
-            rl = rᵘ⁺¹ * lᵗ⁻¹
-            @tullio rlAt[aᵘ⁺¹, aᵗ⁺¹, xᵗ] := rl[aᵘ⁺¹,aᵗ] * Aᵗ[aᵗ, aᵗ⁺¹, xᵗ]
-            @tullio rlAtMtu[aᵘ⁺¹,xᵗ,aᵘ] := rlAt[aᵘ⁺¹, aᵗ⁺¹, xᵗ] * Mᵗᵘ[aᵗ⁺¹, aᵘ]
-            @tullio bᵗᵘ[xᵗ, xᵘ] := rlAtMtu[aᵘ⁺¹,xᵗ,aᵘ] * Aᵘ[aᵘ, aᵘ⁺¹, xᵘ]
+            @tullio lAᵗ[a¹,b¹,bᵗ,aᵗ⁺¹,xᵗ] := lᵗ⁻¹[a¹,aᵗ,b¹,bᵗ] * conj(Aᵗ[aᵗ,aᵗ⁺¹,xᵗ])
+            @tullio lAᵗAᵗ[a¹,b¹,aᵗ⁺¹,bᵗ⁺¹,xᵗ] := lAᵗ[a¹,b¹,bᵗ,aᵗ⁺¹,xᵗ] * Aᵗ[bᵗ,bᵗ⁺¹,xᵗ]
+            @tullio lAᵗAᵗM[a¹,b¹,aᵘ,bᵘ,xᵗ] := lAᵗAᵗ[a¹,b¹,aᵗ⁺¹,bᵗ⁺¹,xᵗ] * Mᵗᵘ[aᵗ⁺¹,aᵘ,bᵗ⁺¹,bᵘ]
+            @tullio Aᵘr[bᵘ,aᵘ⁺¹,a¹,b¹,xᵘ] := Aᵘ[bᵘ,bᵘ⁺¹,xᵘ] * rᵘ⁺¹[aᵘ⁺¹,a¹,bᵘ⁺¹,b¹]
+            @tullio AᵘAᵘr[a¹,b¹,aᵘ,bᵘ,xᵘ] := conj(Aᵘ[aᵘ,aᵘ⁺¹,xᵘ]) * Aᵘr[bᵘ,aᵘ⁺¹,a¹,b¹,xᵘ]
+            @tullio bᵗᵘ[xᵗ,xᵘ] := lAᵗAᵗM[a¹,b¹,aᵘ,bᵘ,xᵗ] * AᵘAᵘr[a¹,b¹,aᵘ,bᵘ,xᵘ]
+            
+            @debug @assert real(bᵗᵘ) ≈ bᵗᵘ "Two-variable marginals should be real"
+            bᵗᵘ = real(bᵗᵘ)
             bᵗᵘ ./= sum(bᵗᵘ)
             b[t,u] = reshape(bᵗᵘ, qs)
         end

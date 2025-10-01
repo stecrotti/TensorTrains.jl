@@ -1,7 +1,8 @@
 module MatrixProductStates
 
 using TensorTrains
-import TensorTrains: _reshape1, accumulate_L, accumulate_R, sample_noalloc,
+import TensorTrains: _reshape1, accumulate_L, accumulate_R, accumulate_M,
+    sample_noalloc, 
     normalize!, _merge_tensors, _split_tensor, LeftOrRight, Left, Right,
     precompute_left_environments, precompute_right_environments, update_environments!,
     _two_site_dmrg_generic!, two_site_dmrg!
