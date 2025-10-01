@@ -248,6 +248,34 @@ end
         end
     end
 
+    @testset "Complex Derivatives" begin
+        F = ComplexF64
+        tensors = [rand(F, 1,5,2,2), rand(F, 5,4,2,2),
+            rand(F, 4,10,2,2), rand(F, 10,1,2,2)]
+        ψ = TensorTrain(tensors)
+        p = MPS(ψ)
+
+        @testset "Gradient of loglikelihood - 2-site" begin
+            X = [sample(p)[1] for _ in 1:10]
+            for l in 1:length(p)-1
+                orthogonalize_two_site_center!(p, l)
+                p_cp = deepcopy(p)
+                A = _merge_tensors(p_cp[l], p_cp[l+1])
+                dlldA, ll = grad_loglikelihood_two_site(p_cp, l, X)
+                @test ll ≈ loglikelihood(p_cp, X)
+                η = 1e-3
+                lls = map(1:100) do _
+                    A = _merge_tensors(p_cp[l], p_cp[l+1])
+                    dlldA, ll = grad_loglikelihood_two_site(p_cp, l, X)
+                    @test ll ≈ loglikelihood(p_cp, X)
+                    p_cp[l], p_cp[l+1] = TensorTrains._split_tensor(A + η*dlldA)
+                    ll
+                end
+                @test issorted(lls) # check that log-likelihood is increasing steadily for small learning rate
+            end
+        end
+    end
+
     @testset "Environments" begin
         X = [sample(p)[1] for _ in 1:10]
 
