@@ -49,8 +49,8 @@ flat_tt(d::Integer, L::Integer, q...) = flat_tt([1; fill(d, L-1); 1], q...)
 
 
 """
-    rand_tt([T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
-    rand_tt([T = Float64], d::Integer, L::Integer, q...)
+    rand_tt([rng=default_rng()], [T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
+    rand_tt([rng=default_rng()], [T = Float64], d::Integer, L::Integer, q...)
 
 Construct a Tensor Train with `rand(T)` entries, by specifying either:
 - `bondsizes`: the size of each bond
@@ -58,17 +58,19 @@ Construct a Tensor Train with `rand(T)` entries, by specifying either:
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
-function rand_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
+function rand_tt(rng::AbstractRNG, ::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
     A = flat_tt(T, bondsizes, q...)
-    foreach(a->(a .= rand.(T)), A)
-    A
+    foreach(a->(a .= rand.(rng, T)), A)
+    return A
 end
 
-rand_tt(bondsizes::AbstractVector{<:Integer}, q...) = rand_tt(Float64, bondsizes, q...)
+rand_tt(rng::AbstractRNG, bondsizes::AbstractVector{<:Integer}, q...) = rand_tt(rng, Float64, bondsizes, q...)
+rand_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where {T <: Number} = rand_tt(default_rng(), Type{T}, bondsizes, q...)
+rand_tt(bondsizes::AbstractVector{<:Integer}, q...) = rand_tt(default_rng(), Float64, bondsizes, q...)
 
-rand_tt(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = rand_tt(T, [1; fill(d, L-1); 1], q...)
-
-rand_tt(d::Integer, L::Integer, q...) = rand_tt(Float64, d, L, q...)
+rand_tt(rng::AbstractRNG, d::Integer, L::Integer, q...) = rand_tt(rng, Float64, [1; fill(d, L-1); 1], q...)
+rand_tt(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = rand_tt(default_rng(), T, [1; fill(d, L-1); 1], q...)
+rand_tt(d::Integer, L::Integer, q...) = rand_tt(default_rng(), Float64, d, L, q...)
 
 
 """

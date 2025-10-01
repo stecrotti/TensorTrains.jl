@@ -139,11 +139,7 @@ end
 
 # Test against finite differences
 @testset "Real Derivatives" begin
-    F = Float64
-    tensors = [rand(F, 1,5,2,2), rand(F, 5,4,2,2),
-        rand(F, 4,10,2,2), rand(F, 10,1,2,2)]
-    ψ = TensorTrain(tensors)
-    p = MPS(ψ)
+    p = rand_mps(MersenneTwister(0), 5, 4, 2, 2)
     normalize!(p)
 
     function compute_dzdA_numeric(p, l; ε = 1e-8 * one(eltype(p[l])))
