@@ -123,7 +123,7 @@ rng = MersenneTwister(0)
         L = 5
         q = (2, 4)
         d = 3
-        C = rand_tt(d, L, q...)
+        C = rand_tt(rng, d, L, q...)
         x = [[rand(1:q[1]), rand(1:q[2])] for _ in C]
         e1 = evaluate(C, x)
 
@@ -394,7 +394,7 @@ rng = MersenneTwister(0)
         nsamples = 10^2
         X = [sample(p)[1] for _ in 1:nsamples]
         Y = randn(nsamples)
-        q = rand_tt(2, length(p), 2,2)
+        q = rand_tt(Float64, 2, length(p), 2,2)
         preds = [evaluate(q, x) for x in X]
         lossval = mean(abs2, preds - Y)
         two_site_dmrg!(q, X, Y, 1;

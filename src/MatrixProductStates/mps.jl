@@ -35,8 +35,8 @@ Base.isapprox(A::T, B::T; kw...) where {T<:MPS} = isapprox(A.ψ, B.ψ; kw...)
 TensorTrains.is_in_domain(p::MPS, X...) = is_in_domain(p.ψ, X...)
 
 """
-    rand_mps([T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
-    rand_mps([T = Float64], d::Integer, L::Integer, q...)
+    rand_mps([rng=default_rng()], [T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
+    rand_mps([rng=default_rng()], [T = Float64], d::Integer, L::Integer, q...)
 
 Construct a Matrix Product States with `rand(T)` entries, by specifying either:
 - `bondsizes`: the size of each bond
@@ -44,12 +44,7 @@ Construct a Matrix Product States with `rand(T)` entries, by specifying either:
 and
 - `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
 """
-function rand_mps(t::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
-    return MPS(rand_tt(t, bondsizes, q...))
-end
-rand_mps(bondsizes::AbstractVector{<:Integer}, q...) = rand_mps(Float64, bondsizes, q...)
-rand_mps(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = rand_mps(T, [1; fill(d, L-1); 1], q...)
-rand_mps(d::Integer, L::Integer, q...) = rand_mps(Float64, d, L, q...)
+rand_mps(args...) = MPS(rand_tt(args...))
 
 """
     evaluate(p::PMS, X...)
