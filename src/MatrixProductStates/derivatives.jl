@@ -12,7 +12,7 @@ function grad_normalization_canonical(p::MPS, k::Integer)
     @tullio zz = Aᵏconj_[m,n,x] * Aᵏ_[m,n,x]
     z2 = abs2(float(p.ψ.z))
     z = zz / z2
-    gradz = conj(2 * Aᵏ / z2)
+    gradz = 2 * Aᵏ / z2
     return gradz, z
 end
 
@@ -52,7 +52,7 @@ function grad_normalization_two_site_canonical(p::MPS, k::Integer;
     z2 = abs2(float(p.ψ.z))
     @assert real(zz) ≈ zz
     z = real(zz) / z2
-    gradz = conj(2 * Aᵏᵏ⁺¹ / z2)
+    gradz = 2 * Aᵏᵏ⁺¹ / z2
 
     return gradz, z
 end
@@ -79,7 +79,7 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
         gr, val = grad_evaluate_two_site(p.ψ, k, x;
             Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2], Aᵏᵏ⁺¹
             )
-        gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val * weights[n]
+        @inbounds gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val * weights[n]
         ll += 1/T * log(abs2(val)) * weights[n]
     end
     return gA, ll
