@@ -257,11 +257,11 @@ end
 # TODO: maybe since (p.ψ.z) is both at the numerator and denominator, ignore it to avoid cancellations with the subtraction?
 
 """
-    loglikelihood(p::MPS, X)
+    StatsBase.loglikelihood(p::MPS, X)
 
 Compute the loglikelihood of the data `X` under the MPS distribution `p`.
 """
-function loglikelihood(p::MPS, X)
+function StatsBase.loglikelihood(p::MPS, X)
     logz = log(normalization(p))
     return mean(log(evaluate(p, x)) for x in X) - logz
 end

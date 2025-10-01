@@ -21,6 +21,5 @@ export grad_normalization_canonical, grad_normalization_two_site_canonical,
 
 include("mps.jl")
 include("derivatives.jl")
-# include("dmrg.jl")
 
 end # module
