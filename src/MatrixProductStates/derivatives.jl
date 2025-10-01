@@ -67,20 +67,20 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
     prodA_left = [precompute_left_environments(p.ψ, x) for x in X],
     prodA_right = [precompute_right_environments(p.ψ, x) for x in X],
     Aᵏᵏ⁺¹ =_merge_tensors(p[k], p[k+1]),
-    weights = ones(length(X)))
+    weights = ones(length(X))/length(X))
 
     Zprime, Z = grad_normalization_two_site_canonical(p, k; Aᵏᵏ⁺¹)
-    ll = -log(Z) * mean(weights)
+    ll = -log(Z) * sum(weights)
     T = length(X)
-    gA = - Zprime / Z * mean(weights)
+    gA = - Zprime / Z * sum(weights)
 
     # TODO: this operation is in principle parallelizable
     for (n,x) in enumerate(X)
         gr, val = grad_evaluate_two_site(p.ψ, k, x;
             Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2], Aᵏᵏ⁺¹
             )
-        @inbounds gA[:,:,x[k]...,x[k+1]...] .+= 2/T * gr / val * weights[n]
-        ll += 1/T * log(abs2(val)) * weights[n]
+        @inbounds gA[:,:,x[k]...,x[k+1]...] .+= 2 * gr / val * weights[n]
+        ll += log(abs2(val)) * weights[n]
     end
     return gA, ll
 end

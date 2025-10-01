@@ -318,12 +318,12 @@ end
 """
     StatsBase.loglikelihood(p::MPS, X; weights)
 
-Compute the loglikelihood of the data `X` under the MPS distribution `p`.
+Compute the average loglikelihood of the data `X` under the MPS distribution `p`.
 Optionally re-weight the log-probability of each datapoint.
 """
 function loglikelihood(p::MPS, X; weights=ones(length(X))/length(X))
     logz = log(normalization(p)) * sum(weights)
-    return mean(log(evaluate(p, x)) * w for (x,w) in zip(X,weights)) - logz
+    return sum(log(evaluate(p, x)) * w for (x,w) in zip(X,weights)) - logz
 end
 
 """
