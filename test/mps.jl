@@ -27,6 +27,7 @@ using LinearAlgebra: I
     @testset "Checks against exact computations" begin
         @test exact_normalization(p) ≈ z
         @test exact_marginals(p) ≈ marginals(p)
+        @test exact_twovar_marginals(p) ≈ twovar_marginals(p)
     end
 
     @testset "Normalization" begin
