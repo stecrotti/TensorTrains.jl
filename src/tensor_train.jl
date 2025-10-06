@@ -281,7 +281,7 @@ function grad_evaluate_two_site(A::TensorTrain, k::Integer, X;
     Ax_center = Aᵏᵏ⁺¹[:,:,X[k]...,X[k+1]...]
     z = float(A.z)
     val = only(Ax_left * Ax_center * Ax_right) / z
-    gr = (Ax_right * Ax_left)' / z
+    gr = transpose(Ax_right * Ax_left) / z
     return gr, val
 end
 
@@ -300,7 +300,6 @@ function grad_squareloss_two_site(ψ::TensorTrain, k::Integer, X, Y;
     T = length(X)
     @assert length(Y) == T
     @assert weight_decay >= 0
-    # gA = zero(Aᵏᵏ⁺¹)
     gA = weight_decay * Aᵏᵏ⁺¹
     sl = weight_decay * abs2(norm(Aᵏᵏ⁺¹))
 
