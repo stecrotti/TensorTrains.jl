@@ -3,15 +3,16 @@ using Plots
 
 d_original = 3
 L = 5
-q = rand_mps(ComplexF64, d_original, L, 4)
+F = ComplexF64
+q = rand_mps(F, d_original, L, 4)
 normalize!(q)
-nsamples = 5*10^3
+nsamples = 10*10^3
 X = [sample(q)[1] for _ in 1:nsamples]
 nll = -loglikelihood(q, X)
 println("Negative Log-Likelihood according to generating distribution q = $nll\n")
 mq = marginals(q)
 
-p = rand_mps(ComplexF64, 2, length(q), 4)
+p = rand_mps(F, 2, length(q), 4)
 
 function CB()
     nlls = zeros(0)
@@ -37,7 +38,7 @@ end
 callback = CB()
 nsweeps = 20
 two_site_dmrg!(p, X, nsweeps;
-    η=1e-3, ndesc=10, svd_trunc=TruncBond(d_original), callback)
+    η=1e-4, ndesc=10, svd_trunc=TruncBond(d_original), callback)
 
 pl1 = plot(callback.nlls, xlabel="it", ylabel="NLL", label="")
 hline!(pl1, [nll], ls=:dash, c=:gray, label="NLL according to generative model")
