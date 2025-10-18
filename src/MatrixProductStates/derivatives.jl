@@ -79,7 +79,7 @@ function grad_loglikelihood_two_site(p::MPS, k::Integer, X;
         gr, val = grad_evaluate_two_site(p.ψ, k, x;
             Ax_left = prodA_left[n][k-1], Ax_right = prodA_right[n][k+2], Aᵏᵏ⁺¹
             )
-        @inbounds gA[:,:,x[k]...,x[k+1]...] .+= 2 * conj(gr) / (T * val) * weights[n]
+        @inbounds gA[:,:,x[k]...,x[k+1]...] .+= 2 * conj(gr) / (T * conj(val)) * weights[n]
         ll += 1/T * log(abs2(val)) * weights[n]
     end
     return gA, ll

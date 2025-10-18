@@ -35,9 +35,9 @@ function CB()
 end
 
 callback = CB()
-nsweeps = 40
+nsweeps = 20
 two_site_dmrg!(p, X, nsweeps;
-    η=1e-4, ndesc=10, svd_trunc=TruncBond(d_original+2), callback)
+    η=1e-3, ndesc=10, svd_trunc=TruncBond(d_original), callback)
 
 pl1 = plot(callback.nlls, xlabel="it", ylabel="NLL", label="")
 hline!(pl1, [nll], ls=:dash, c=:gray, label="NLL according to generative model")
