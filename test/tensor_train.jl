@@ -154,8 +154,7 @@ rng = MersenneTwister(0)
     end
 
     @testset "Accumulators" begin
-        tensors = [rand(1,3,2,2), rand(3,4,2,2), rand(4,10,2,2), rand(10,1,2,2)]
-        A = TensorTrain(tensors)
+        A = randn_tt(3, 4, 2, 2)
         l, = TensorTrains.accumulate_L(A; normalize=false)
         r, = TensorTrains.accumulate_R(A; normalize=false)
         m = TensorTrains.accumulate_M(A)
