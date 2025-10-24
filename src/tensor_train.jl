@@ -78,6 +78,43 @@ rand_tt(d::Integer, L::Integer, q...) = rand_tt(default_rng(), Float64, d, L, q.
 
 
 """
+    randn_tt([rng=default_rng()], [T = Float64], bondsizes::AbstractVector{<:Integer}, q...)
+    randn_tt([rng=default_rng()], [T = Float64], d::Integer, L::Integer, q...)
+
+Construct a Tensor Train with `randn(T)` entries, by specifying either:
+- `bondsizes`: the size of each bond
+- `d` a fixed size for all bonds, `L` the length
+and
+- `q` a Tuple/Vector specifying the number of values taken by each variable on a single site
+"""
+function randn_tt(rng::AbstractRNG, ::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
+    A = flat_tt(T, bondsizes, q...)
+    d = maximum(bondsizes)
+    L = length(A)
+    # σ = norm(A) ^ (-1/L)
+    σ = 1 / sqrt(d)
+    # σ = 1
+    foreach(a->(a .= σ .* randn.(rng, T)), A)
+    # σ = prod(q)^L / normalization(A)
+    # σ = exp( lognormalization(A) -  L*log(prod(q)) - sum(log, bond_dims(A)))
+    
+    return A
+end
+
+function randn_tt(rng::AbstractRNG, ::Type{T}, d::Integer, L::Integer, q...) where T <: Number
+    return randn_tt(rng, T, [1; fill(d, L-1); 1], q...)
+end
+
+randn_tt(rng::AbstractRNG, bondsizes::AbstractVector{<:Integer}, q...) = randn_tt(rng, Float64, bondsizes, q...)
+randn_tt(::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where {T <: Number} = randn_tt(default_rng(), T, bondsizes, q...)
+randn_tt(bondsizes::AbstractVector{<:Integer}, q...) = randn_tt(default_rng(), Float64, bondsizes, q...)
+
+randn_tt(rng::AbstractRNG, d::Integer, L::Integer, q...) = randn_tt(rng, Float64, [1; fill(d, L-1); 1], q...)
+randn_tt(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = randn_tt(default_rng(), T, [1; fill(d, L-1); 1], q...)
+randn_tt(d::Integer, L::Integer, q...) = randn_tt(default_rng(), Float64, d, L, q...)
+
+
+"""
     orthogonalize_right!(A::AbstractTensorTrain; svd_trunc::SVDTrunc, indices)
 
 Bring `A` to right-orthogonal form by means of SVD decompositions.
