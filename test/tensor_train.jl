@@ -168,6 +168,7 @@ rng = MersenneTwister(0)
 
     @testset "Orthogonalization" begin
         B = randn_tt(rng, 3, 4, 2, 2)
+        tensors = B.tensors
         orthogonalize_right!(B; svd_trunc = TruncThresh(1e-3))
         @test all(is_right_canonical, B[begin+1:end])
         B = TensorTrain(tensors)
@@ -186,7 +187,7 @@ rng = MersenneTwister(0)
 
     @testset "Compression" begin
         A = randn_tt(Float64, 4, 5, 3, 2)
-        x, = sample(A)
+        x = [[rand(1:q) for q in size(Ai)[end-1:end]] for Ai in A]
         B = deepcopy(A)
         C = deepcopy(A)
         svd_trunc = TruncThresh(1e-2)
