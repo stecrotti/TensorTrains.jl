@@ -90,14 +90,8 @@ and
 function randn_tt(rng::AbstractRNG, ::Type{T}, bondsizes::AbstractVector{<:Integer}, q...) where T <: Number
     A = flat_tt(T, bondsizes, q...)
     d = maximum(bondsizes)
-    L = length(A)
-    # σ = norm(A) ^ (-1/L)
     σ = 1 / sqrt(d)
-    # σ = 1
     foreach(a->(a .= σ .* randn.(rng, T)), A)
-    # σ = prod(q)^L / normalization(A)
-    # σ = exp( lognormalization(A) -  L*log(prod(q)) - sum(log, bond_dims(A)))
-    
     return A
 end
 
