@@ -134,6 +134,24 @@ rng = MersenneTwister(0)
         orthogonalize_left!(C; svd_trunc)
         e3 = evaluate(C, x)
         @test e3 ≈ e1
+
+        C = randn_tt(Float64, [1,3,4,5,1], q...)
+        e1 = evaluate(C, x)
+        orthogonalize_right!(C; svd_trunc)
+        e2 = evaluate(C, x)
+        @test e2 ≈ e1
+
+        C = randn_tt(rng, [1,3,4,5,1], q...)
+        e1 = evaluate(C, x)
+        orthogonalize_right!(C; svd_trunc)
+        e2 = evaluate(C, x)
+        @test e2 ≈ e1
+
+        C = randn_tt([1,3,4,5,1], q...)
+        e1 = evaluate(C, x)
+        orthogonalize_right!(C; svd_trunc)
+        e2 = evaluate(C, x)
+        @test e2 ≈ e1
     end
 
     @testset "Flat" begin
