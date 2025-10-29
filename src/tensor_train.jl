@@ -119,10 +119,11 @@ Heuristically re-scale the entries of `A` such that the expected RMS value of th
 - `grid = 10.0 .^ (-2:0.05:2)`: for gridsearch of best per-entry re-scaling factor 
 """
 function tune_scaling!(A::TensorTrain;
-        ninputs::Integer = 10^2, target_stdev::Real = 1.0, 
-        grid = 10.0 .^ (-2:0.05:2))
+    ninputs::Integer = 10^2, target_stdev::Real = 1.0, 
+    grid = 10.0 .^ (-2:0.05:2), verbose::Bool = false)
 
     X = [[[rand(1:q) for q in size(Ai)[3:end]] for Ai in A] for _ in 1:ninputs]
+    verbose && println("Tuning scaling...")
     stdevs = map(grid) do s
         B = deepcopy(A)
         for Bi in B
@@ -130,8 +131,9 @@ function tune_scaling!(A::TensorTrain;
         end
         std(evaluate.((B,), X))
     end
-    i = argmin(abs.(stdevs .- target_stdev))
+    stdev, i = findmin(filter!(!isnan, abs.(stdevs .- target_stdev)))
     s = grid[i]
+    verbose && println("Selected entry-wise scaling factor $s which gave a RMS output value of $stdev")
     for Ai in A
         Ai .*= s
     end
