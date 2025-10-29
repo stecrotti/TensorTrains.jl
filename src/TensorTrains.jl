@@ -7,7 +7,7 @@ using LogarithmicNumbers: Logarithmic
 using MKL
 using MPSKit: InfiniteMPS, DenseMPO, VUMPS, approximate, dot, add_util_leg, site_type, physicalspace
 using Random: AbstractRNG, default_rng
-using StatsBase: StatsBase, sample!, sample
+using StatsBase: StatsBase, sample!, sample, std
 using TensorCast: @cast, TensorCast
 using TensorKit: TensorMap, ⊗, ℝ, id, storagetype
 using Tullio: @tullio
@@ -18,7 +18,7 @@ export
     getindex, iterate, firstindex, lastindex, setindex!, eachindex, length, show,
     SVDTrunc, TruncBond, TruncThresh, TruncBondMax, TruncBondThresh, summary_compact,
     AbstractTensorTrain, TensorTrain, normalize_eachmatrix!, +, -, ==, isapprox, evaluate, 
-    nparams, is_in_domain,
+    nparams, is_in_domain, tune_scaling!,
     bond_dims, flat_tt, rand_tt, randn_tt, orthogonalize_right!, 
     orthogonalize_left!, orthogonalize_center!, orthogonalize_two_site_center!,
     compress!,
