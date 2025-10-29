@@ -107,6 +107,36 @@ randn_tt(rng::AbstractRNG, d::Integer, L::Integer, q...) = randn_tt(rng, Float64
 randn_tt(::Type{T}, d::Integer, L::Integer, q...) where {T <: Number} = randn_tt(default_rng(), T, [1; fill(d, L-1); 1], q...)
 randn_tt(d::Integer, L::Integer, q...) = randn_tt(default_rng(), Float64, d, L, q...)
 
+"""
+    tune_scaling!(A::TensorTrain)
+
+Heuristically re-scale the entries of `A` such that the expected RMS value of the output is about 1.
+
+## Keyword arguments
+
+- `ninputs = 10^2`: number of random inputs to use to estimate RMS value of output
+- `target_stdev = 1.0`: target value for RMS output
+- `grid = 10.0 .^ (-2:0.05:2)`: for gridsearch of best per-entry re-scaling factor 
+"""
+function tune_scaling!(A::TensorTrain;
+        ninputs::Integer = 10^2, target_stdev::Real = 1.0, 
+        grid = 10.0 .^ (-2:0.05:2))
+
+    X = [[[rand(1:q) for q in size(Ai)[3:end]] for Ai in A] for _ in 1:ninputs]
+    stdevs = map(grid) do s
+        B = deepcopy(A)
+        for Bi in B
+            Bi .*= s
+        end
+        std(evaluate.((B,), X))
+    end
+    i = argmin(abs.(stdevs .- target_stdev))
+    s = grid[i]
+    for Ai in A
+        Ai .*= s
+    end
+    return A
+end
 
 """
     orthogonalize_right!(A::AbstractTensorTrain; svd_trunc::SVDTrunc, indices)

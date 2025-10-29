@@ -152,6 +152,8 @@ rng = MersenneTwister(0)
         orthogonalize_right!(C; svd_trunc)
         e2 = evaluate(C, x)
         @test e2 ≈ e1
+
+        tune_scaling!(C)
     end
 
     @testset "Flat" begin
