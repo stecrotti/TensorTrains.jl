@@ -27,7 +27,7 @@ end
 
 @forward MPS.ψ TensorTrains.bond_dims, Base.iterate, Base.firstindex, Base.lastindex,
     Base.setindex!, Base.getindex, check_bond_dims, Base.length, Base.eachindex, Base.eltype,
-    TensorTrains.nparams,
+    TensorTrains.nparams, TensorTrains.normalize_eachmatrix!,
     TensorTrains.precompute_left_environments, TensorTrains.precompute_right_environments
 
 Base.:(==)(A::T, B::T) where {T<:MPS} = isequal(A.ψ, B.ψ)
@@ -316,11 +316,55 @@ end
 # TODO: maybe since (p.ψ.z) is both at the numerator and denominator, ignore it to avoid cancellations with the subtraction?
 
 """
-    StatsBase.loglikelihood(p::MPS, X)
+    StatsBase.loglikelihood(p::MPS, X; weights)
 
-Compute the loglikelihood of the data `X` under the MPS distribution `p`.
+Compute the average loglikelihood of the data `X` under the MPS distribution `p`.
+Optionally re-weight the log-probability of each datapoint.
 """
-function StatsBase.loglikelihood(p::MPS, X)
-    logz = log(normalization(p))
-    return mean(log(evaluate(p, x)) for x in X) - logz
+function loglikelihood(p::MPS, X; weights=ones(length(X))/length(X))
+    logz = log(normalization(p)) * sum(weights)
+    return sum(log(evaluate(p, x)) * w for (x,w) in zip(X,weights)) - logz
+end
+
+"""
+    empirical_distribution_mps(X; qs, weights)
+
+Return a MPS encoding the empirical probability distribution of dataset ``X=\\{x^{(1)}, \\ldots, x^{(M)}\\}``.
+The resulting MPS evaluates to ``p(x)=\\frac{1}{M}\\sum_{\\mu \\in 1:M}\\delta(x, x^{(\\mu)})``.
+
+## Optional arguments
+- `qs`: the number of states for each variable. Inferred from the data if not provided
+- `weights`: allows to re-weight the probability of each sample. It should sum to one (not checked)
+"""
+function empirical_distribution_mps(X; qs=maximum(maximum.(X)), 
+    weights=ones(length(X))/length(X))
+
+    @assert all(>=(0), weights)
+    M = length(X)
+    L = length(X[1])
+    @assert all(x -> length(x)==L, X)
+
+    tensors = map(1:L) do i
+        if i == 1
+            A = zeros(1, M, qs...)
+            for n in 1:M
+                A[1,n,X[n][i]...] =sqrt(weights[n])
+            end
+            A
+        elseif i == L
+            A = zeros(M, 1, qs...)
+            for n in 1:M
+                A[n,1,X[n][i]...] = 1
+            end
+            A
+        else
+            A = zeros(M, M, qs...)
+            for n in 1:M
+                A[n,n,X[n][i]...] = 1
+            end
+            A
+        end
+    end
+    
+    return MPS(tensors)
 end
