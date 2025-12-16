@@ -240,8 +240,8 @@ end
 function _compose(f, A::TensorTrain{F,NA}, B::TensorTrain{F,NB}) where {F,NA,NB}
     axes(A[1])[3:end] == axes(B[1])[3:end] || throw(ArgumentError("Tensor Trains must have the types of physical indices, got $(axes(A[1])[3:end]) and $(axes(B[1])[3:end])"))
     length(A) == length(B) || throw(ArgumentError("Tensor Trains must have the same length, got $(length(A)) and $(length(B))"))
-    z = max(A.z, B.z)
-    za, zb = float(A.z/z), f(float(B.z/z))
+    z = min(abs(A.z), abs(B.z))
+    za, zb = float(z/A.z), f(float(z/B.z))
     tensors = map(zip(eachindex(A),A,B)) do (t,Aᵗ,Bᵗ)
         At, Bt = _reshape1(Aᵗ), _reshape1(Bᵗ)
         X = axes(At,3)
