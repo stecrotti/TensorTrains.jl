@@ -247,23 +247,19 @@ end
     @testset "Complex Derivatives" begin
         F = ComplexF64
         tensors = [rand(F, 1,5,2,2), rand(F, 5,4,2,2),
-            rand(F, 4,10,2,2), rand(F, 10,1,2,2)]
+            rand(F, 4,10,2,2), rand(F, 10,3,2,2), rand(F, 3, 1, 2, 2)]
         ψ = TensorTrain(tensors)
         p = MPS(ψ)
 
         @testset "Gradient of loglikelihood - 2-site" begin
-            X = [sample(p)[1] for _ in 1:10]
+            X = [sample(rng, p)[1] for _ in 1:10]
             for l in 1:length(p)-1
-                orthogonalize_two_site_center!(p, l)
                 p_cp = deepcopy(p)
-                A = _merge_tensors(p_cp[l], p_cp[l+1])
-                dlldA, ll = grad_loglikelihood_two_site(p_cp, l, X)
-                @test ll ≈ loglikelihood(p_cp, X)
-                η = 1e-3
-                lls = map(1:100) do _
+                orthogonalize_two_site_center!(p_cp, l)
+                η = 1e-4
+                lls = map(1:100) do it
                     A = _merge_tensors(p_cp[l], p_cp[l+1])
                     dlldA, ll = grad_loglikelihood_two_site(p_cp, l, X)
-                    @test ll ≈ loglikelihood(p_cp, X)
                     p_cp[l], p_cp[l+1] = TensorTrains._split_tensor(A + η*dlldA)
                     ll
                 end

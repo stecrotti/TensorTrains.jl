@@ -217,19 +217,19 @@ function orthogonalize_left!(C::TensorTrain{F}; svd_trunc=TruncThresh(1e-6),
     return C
 end
 
-function orthogonalize_center!(C::TensorTrain, l::Integer; svd_trunc=TruncThresh(1e-6))
+function orthogonalize_center!(C::TensorTrain, l::Integer; svd_trunc=TruncThresh(0.0))
     orthogonalize_left!(C; svd_trunc, indices = 1:l-1)
     orthogonalize_right!(C; svd_trunc, indices = l+1:length(C))
 end
 
 """
-    orthogonalize_two_site_center!(C::TensorTrain, k::Integer; svd_trunc=TruncThresh(1e-6))
+    orthogonalize_two_site_center!(C::TensorTrain, k::Integer; svd_trunc=TruncThresh(0.0))
 
 Orthogonalize the tensor train for a two-site DMRG update at positions k and k+1.
 This puts sites 1:k-1 in left-canonical form, sites k+2:N in right-canonical form,
 and leaves sites k and k+1 as the non-orthogonal center for merging.
 """
-function orthogonalize_two_site_center!(C::TensorTrain, k::Integer; svd_trunc=TruncThresh(1e-6))
+function orthogonalize_two_site_center!(C::TensorTrain, k::Integer; svd_trunc=TruncThresh(0.0))
     @assert 1 <= k < length(C) "k must be between 1 and length(C)-1 for two-site update"
     orthogonalize_left!(C; svd_trunc, indices = 1:k-1)
     orthogonalize_right!(C; svd_trunc, indices = k+2:length(C))
@@ -309,7 +309,7 @@ function grad_evaluate(A::TensorTrain, l::Integer, X)
     Ax_center = A[l][:,:,X[l]...]
     z = float(A.z)
     val = only(prodA_left * Ax_center * prodA_right) / z
-    gr = (prodA_right * prodA_left)' / z
+    gr = transpose(prodA_right * prodA_left) / z
     return gr, val
 end
 
@@ -344,7 +344,7 @@ function grad_evaluate_two_site(A::TensorTrain, k::Integer, X;
     Ax_center = Aᵏᵏ⁺¹[:,:,X[k]...,X[k+1]...]
     z = float(A.z)
     val = only(Ax_left * Ax_center * Ax_right) / z
-    gr = (Ax_right * Ax_left)' / z
+    gr = transpose(Ax_right * Ax_left) / z
     return gr, val
 end
 
