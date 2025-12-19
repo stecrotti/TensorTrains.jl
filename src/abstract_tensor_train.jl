@@ -202,7 +202,7 @@ Compute the marginal distributions ``p(x^l)`` at each site
 - `l = accumulate_L(A)[1]`, `r = accumulate_R(A)[1]` pre-computed partial normalizations
 """
 function marginals(A::AbstractTensorTrain{F,N};
-    l = accumulate_L(A)[1], r = accumulate_R(A)[1]) where {F<:Real,N}
+    l = accumulate_L(A)[1], r = accumulate_R(A)[1]) where {F<:Number,N}
 
     map(eachindex(A)) do t 
         Aᵗ = _reshape1(A[t])
@@ -226,7 +226,7 @@ Compute the marginal distributions for each pair of sites ``p(x^l, x^m)``
 """
 function twovar_marginals(A::AbstractTensorTrain{F,N};
     l = accumulate_L(A)[1], r = accumulate_R(A)[1], M = accumulate_M(A),
-    maxdist = length(A)-1) where {F<:Real,N}
+    maxdist = length(A)-1) where {F<:Number,N}
     qs = tuple(reduce(vcat, [x,x] for x in size(A[begin])[3:end])...)
     b = Array{F,2*(N-2)}[zeros(zeros(Int, 2*(N-2))...) 
         for _ in eachindex(A), _ in eachindex(A)]
