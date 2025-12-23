@@ -35,6 +35,15 @@ rng = MersenneTwister(0)
         C = TensorTrain(complex.(tensors))
         @test nparams(C) == 2 * np
     end
+    @testset "sum" begin
+        tensors = [ones(1,5,5), ones(5,4,5), ones(4,10,5), ones(10,1,5)]
+        A = TensorTrain(tensors)
+        A.z = 1000
+        x = [1,2,3,4]
+        Ax = evaluate(A,x)
+        A2x = evaluate(A+A,x)
+        @test 2Ax ≈ A2x
+    end
 
     @testset "Bond dimensions" begin
         tensors = [rand(1,4,2,2), rand(3,5,2,2)]
