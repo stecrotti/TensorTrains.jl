@@ -24,7 +24,7 @@
         A = PeriodicTensorTrain(tensors)
         l, = TensorTrains.accumulate_L(A; normalize=false)
         r, = TensorTrains.accumulate_R(A; normalize=false)
-        m = TensorTrains.accumulate_M(A)
+        m = TensorTrains.accumulate_M(A; normalize=false)
         Z = float(normalization(A))
         @test Z ≈ exact_normalization(A)
         @test TensorTrains.accumulate_R(A)[2] ≈ Z

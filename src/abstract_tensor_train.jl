@@ -116,7 +116,7 @@ function accumulate_R(A::AbstractTensorTrain{F}; normalize=true) where {F}
     return R, z
 end
 
-function accumulate_M(A::AbstractTensorTrain{F}) where {F}
+function accumulate_M(A::AbstractTensorTrain{F}; normalize=true) where {F}
     L = length(A)
     M = fill(zeros(F, 0, 0), L, L)
 
@@ -124,6 +124,10 @@ function accumulate_M(A::AbstractTensorTrain{F}) where {F}
         Au = trace(A[u-1])
         for t in 1:u-2
             M[t, u] = M[t, u-1] * Au
+            nt = maximum(abs, M[t,u])
+            if !iszero(nt) && normalize
+                M[t,u] ./= nt
+            end
         end
         # initial condition
         M[u-1, u] = Matrix{F}(I, size(A[u],1), size(A[u],1))
