@@ -1,7 +1,7 @@
 name = "TensorTrains"
 uuid = "89893e69-996d-40b1-ba32-8ff5f34c0dd5"
-authors = ["stecrotti <stefano.crotti@polito.it>", "abraunst <alfredo.braunstein@polito.it"]
 version = "0.14.0"
+authors = ["stecrotti <stefano.crotti@polito.it>", "abraunst <alfredo.braunstein@polito.it"]
 
 [deps]
 KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
@@ -26,7 +26,7 @@ LogarithmicNumbers = "1.4"
 MKL = "0.6.3, 0.7, 0.9"
 MPSKit = "0.11.5"
 OffsetArrays = "1.15.0"
-Optim = "1.11"
+Optim = "1.11, 2"
 Random = "1.8"
 StatsBase = "0.33, 0.34"
 TensorCast = "0.4"
