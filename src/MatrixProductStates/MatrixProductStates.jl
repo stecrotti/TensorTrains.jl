@@ -2,7 +2,7 @@ module MatrixProductStates
 
 using TensorTrains
 import TensorTrains: _reshape1, accumulate_L, accumulate_R, accumulate_M,
-    sample_noalloc, 
+    sample_noalloc, normalize_eachmatrix!,
     normalize!, _merge_tensors, _split_tensor, LeftOrRight, Left, Right,
     precompute_left_environments, precompute_right_environments, update_environments!,
     _two_site_dmrg_generic!, two_site_dmrg!
@@ -16,9 +16,10 @@ import Optim
 
 export MPS
 export rand_mps
+export nparams, evaluate
 export grad_normalization_canonical, grad_normalization_two_site_canonical,
     loglikelihood, grad_loglikelihood, grad_loglikelihood_two_site,
-    two_site_dmrg!
+    two_site_dmrg!, empirical_distribution_mps
 
 include("mps.jl")
 include("derivatives.jl")
