@@ -67,6 +67,7 @@ function _two_site_dmrg_sweep_generic!(
     η = 1e-3,   # learning rate for gradient descent
     ndesc = 100,    # number of gradient descent steps
     optimizer = Optim.Adam(; alpha=η),
+    normalize_gradient = false,    # normalize gradient to go quicker on flat regions
     callback = (sweep, k, p, loss_val) -> nothing,
     prodA_left = [precompute_left_environments(p, x) for x in data[1]],
     prodA_right = [precompute_right_environments(p, x) for x in data[1]],
@@ -87,6 +88,9 @@ function _two_site_dmrg_sweep_generic!(
                 )
                 if G !== nothing
                     G .= reshape(grad, length(G))
+                    if normalize_gradient
+                        G ./= norm(G)
+                    end
                 end
                 if F !== nothing
                     return val
